@@ -1,6 +1,7 @@
 // Robot players. Each one decides what to plant and upgrade between waves, the same way a
 // person would, using only what the game allows (seeds, unlocked defenders, open grass).
-import { G, plantAt, upgrade, costOf, upCostOf, towerAt } from '../../web/js/engine/game.js';
+import { G, plantAt, upgrade, costOf, upCostOf, towerAt, spray, sprayReady, sprayStats } from '../../web/js/engine/game.js';
+import { PLANTS, SPRAY } from '../../web/js/data/spray.js';
 import { path, pointAt, buildable } from '../../web/js/engine/path.js';
 import { TYPES } from '../../web/js/data/towers.js';
 import { COLS, ROWS } from '../../web/js/data/levels.js';
@@ -111,3 +112,22 @@ export function monoStrategy(type){
   };
 }
 export const MONO_TYPES = ATTACKERS;
+
+// Sprayer use during a wave: when a pest gets close to the crops, spray where it hits the most
+// pests and wilts the fewest plants. Called every half second of game time.
+export function maybeSpray(){
+  const S=G.S; if (!sprayReady() || !S.enemies.length) return false;
+  const { radius } = sprayStats();
+  const live = S.enemies.filter(e => !e.dead && !e.under && e.dist>0.3);
+  const danger = live.filter(e => e.dist > path.total*.72);
+  if (!danger.length) return false;
+  let best=null, bestScore=0;
+  for (const c of danger){
+    const pests = live.filter(e => Math.hypot(e.x-c.x, e.y-c.y) <= radius).length;
+    const plants = S.towers.filter(t => PLANTS.includes(t.type) && Math.hypot(t.x-c.x, t.y-c.y) <= radius*SPRAY.drift).length;
+    const score = pests - plants*1.5;
+    if (score > bestScore){ bestScore=score; best=c; }
+  }
+  if (!best) return false;
+  return !!spray(best.x, best.y);
+}

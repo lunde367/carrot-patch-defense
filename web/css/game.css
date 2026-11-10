@@ -88,6 +88,21 @@ canvas{ display:block }
 .switch[aria-checked="true"] i{ transform:translateX(20px) }
 .version{ margin:0; text-align:center; color:var(--muted); font-size:.8rem }
 
+/* Pesticide Sprayer button: sits in the board's corner, its ring fills as it recharges */
+.spray-btn{ position:absolute; right:10px; bottom:10px; z-index:4; width:56px; height:56px; border-radius:50%; border:0; padding:0; cursor:pointer;
+  display:grid; place-items:center; color:#3c4a10; background:#e4ecb4; box-shadow:0 2px 8px rgba(20,30,10,.3) }
+.spray-ring{ position:absolute; inset:-4px; border-radius:50%; z-index:-1;
+  background:conic-gradient(#a7bb3a calc(var(--p, 1) * 360deg), rgba(255,255,255,.35) 0);
+  -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px)); mask:radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px)) }
+.board.spray-left .spray-btn{ right:auto; left:10px }
+.spray-btn:not(.ready){ filter:grayscale(.7); opacity:.85; cursor:default }
+.spray-btn.ready .spray-ring{ animation:spray-glow 1.6s ease-in-out infinite }
+.spray-btn.aiming{ background:#c4d65c; outline:3px solid #fff; outline-offset:3px }
+@keyframes spray-glow{ 50%{ box-shadow:0 0 0 6px rgba(167,187,58,.35) } }
+@media (prefers-reduced-motion: reduce){ .spray-btn.ready .spray-ring{ animation:none } }
+.spray-art{ width:84px; height:84px; border-radius:50%; display:grid; place-items:center; background:#e4ecb4; color:#3c4a10 }
+.spray-art svg{ width:48px; height:48px }
+
 /* new defender card (shown on the board) */
 .newdef{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; padding:14px 14px 12px }
 .newdef .tag{ font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#e07a26 }

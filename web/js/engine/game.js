@@ -5,6 +5,7 @@ import { LEVELS, WAVES } from '../data/levels.js';
 import { path, setPath, pointAt, buildable } from './path.js';
 import { emit } from '../../kit/js/events.js';
 import { NO_PERKS } from '../data/perks.js';
+import { SPRAY, PLANTS } from '../data/spray.js';
 
 export const G = { S:null, LV:null, CH:null, hint:null };   // hint: a tile the tutorial highlights
 const MAX_FX = 260;
@@ -15,6 +16,7 @@ export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
   const maxLives = 20;
   G.S = { mode:'play', paused:false, seeds:120+gi*15+bonusSeeds+perks.seeds, lives:maxLives, maxLives, perks, wave:0,
     fence:perks.fence, headStartUsed:false,
+    sprayOn: gi >= SPRAY.unlock, sprayCd:0, aiming:false,
     enemies:[], towers:[], shots:[], fx:[], spawnQ:[], spawnT:0, active:false, speed, sel:null, build:null };
   emit('levelStart', LV);
 }
@@ -80,6 +82,30 @@ export function sell(t){
   const v=Math.floor(t.spent*.7); S.seeds+=v; S.towers=S.towers.filter(x=>x!==t); S.sel=null; emit('sell', v); return v;
 }
 
+// ---------- the Pesticide Sprayer ----------
+export const sprayStats = () => { const p=G.S.perks;
+  return { damage:SPRAY.damage*p.sprayDmg, radius:SPRAY.radius*p.sprayRadius, recharge:SPRAY.recharge*p.sprayRecharge, wilt:SPRAY.wilt*p.sprayWilt }; };
+export const sprayReady = () => G.S.sprayOn && G.S.sprayCd<=0 && G.S.mode==='play';
+// Spray a circle centred on tile coordinates (x, y). Returns how many pests and plants it hit.
+export function spray(x, y){
+  const S=G.S; if (!sprayReady()) return null;
+  const st=sprayStats(), dmg=Math.round(st.damage*(1-G.LV.resist));
+  let pests=0, plants=0;
+  for (const e of S.enemies){
+    if (e.dead || (e.under && !SPRAY.hitsUnderground) || e.dist<=0.3) continue;
+    if (Math.hypot(e.x-x, e.y-y) > st.radius) continue;
+    pests++;
+    e.hp-=dmg; e.hit=.2;                                // spray soaks through armor
+    if (e.hp<=0){ e.hp=1; damage(e, 999); }              // reuse the normal squash (seeds, puffs, events)
+  }
+  for (const t of S.towers) if (PLANTS.includes(t.type) && Math.hypot(t.x-x, t.y-y) <= st.radius*SPRAY.drift){ t.wilt=st.wilt; plants++; }
+  S.sprayCd=st.recharge; S.aiming=false;
+  S.fx.push({k:'spray',x,y,r:st.radius*SPRAY.drift,life:.9,max:.9});
+  if (G.LV.resist>0 && pests) floatText(x, y-st.radius*.6, `resisted ${Math.round(G.LV.resist*100)}%`, '#8a6bb0', 1.1);
+  emit('spray', { pests, plants });
+  return { pests, plants };
+}
+
 // ---------- combat ----------
 let newShots=[];
 function puffs(x,y,n,spd){ const S=G.S; if (S.fx.length>MAX_FX) return;
@@ -140,8 +166,10 @@ export function update(dt){
     }
   }
 
+  if (S.sprayCd>0 && S.active) S.sprayCd=Math.max(0, S.sprayCd-dt);   // recharges during waves
   for (const t of S.towers){
     const T=TYPES[t.type]; t.cd-=dt; t.hop=Math.max(0,t.hop-dt*4);
+    if (t.wilt>0){ t.wilt=Math.max(0, t.wilt-dt); continue; }          // wilted by the spray
     if (t.type==='sunflower') continue;
     const R=rangeOf(t);
     const inR=S.enemies.filter(e=>targetable(e)&&!(T.ground&&e.fly)&&Math.hypot(e.x-t.x,e.y-t.y)<=R);

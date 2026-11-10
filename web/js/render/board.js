@@ -39,6 +39,11 @@ export function resize(){
   rebuild();
 }
 
+// Exact board position in tiles (for aiming the Sprayer).
+export function tileAt(clientX, clientY){
+  const rc=cv.getBoundingClientRect();
+  return [(clientX-rc.left)/tile, (clientY-rc.top)/tile];
+}
 export function cellAt(clientX, clientY){
   const rc=cv.getBoundingClientRect();
   return [Math.floor((clientX-rc.left)/tile), Math.floor((clientY-rc.top)/tile)];
@@ -91,6 +96,16 @@ export function draw(clock){
   for (const f of S.fx){ const p=1-f.life/f.max;
     if (f.k==='ring'){ g.beginPath(); g.arc(f.x*s,f.y*s,f.r*s*p,0,6.28); g.strokeStyle=`rgba(150,210,240,${1-p})`; g.lineWidth=3; g.stroke(); }
     if (f.k==='thud') ell(g,f.x*s,f.y*s,f.r*s*(.4+.6*p),f.r*s*(.25+.4*p),`rgba(120,80,40,${.35*(1-p)})`,`rgba(94,61,32,${1-p})`,2); }
+  // spray mist: a yellow-green cloud that billows out and fades
+  for (const f of S.fx) if (f.k==='spray'){ const p=1-f.life/f.max, R=f.r*s*(.55+.45*Math.min(1,p*2.2)), a=.42*(1-p);
+    g.beginPath(); g.arc(f.x*s,f.y*s,R,0,6.28); g.fillStyle=`rgba(196,214,92,${a})`; g.fill();
+    g.setLineDash([5,6]); g.strokeStyle=`rgba(140,160,40,${a*1.6})`; g.lineWidth=2; g.stroke(); g.setLineDash([]);
+    for (let i=0;i<9;i++){ const ang=i*.698+p*1.5, rr=R*(.35+.55*((i*37)%10)/10); ell(g,f.x*s+Math.cos(ang)*rr,f.y*s+Math.sin(ang)*rr,s*.12*(1-p*.5),s*.1*(1-p*.5),`rgba(220,232,140,${a})`); } }
+  // aiming: show the spray circle where it will land
+  if (S.aiming && G.aim){ const R=G.aim.r*s, D=R*(G.aim.drift||1);
+    g.beginPath(); g.arc(G.aim.x*s,G.aim.y*s,D,0,6.28); g.setLineDash([3,6]); g.strokeStyle='rgba(160,120,40,.75)'; g.lineWidth=1.5; g.stroke(); g.setLineDash([]);
+    g.beginPath(); g.arc(G.aim.x*s,G.aim.y*s,R,0,6.28);
+    g.fillStyle='rgba(196,214,92,.18)'; g.fill(); g.setLineDash([6,5]); g.strokeStyle='rgba(120,140,30,.9)'; g.lineWidth=2; g.stroke(); g.setLineDash([]); }
 
   if (G.hint){ const p=.5+.5*Math.sin(clockReal()*6), x=(G.hint.c+.5)*s, y=(G.hint.r+.5)*s;
     g.beginPath(); g.arc(x,y,s*(.36+.08*p),0,6.28); g.fillStyle=`rgba(255,240,170,${.35+.25*p})`; g.fill();
@@ -105,7 +120,10 @@ export function draw(clock){
     g.save();
     if (it.t){ const t=it.t; g.translate(t.x*s,t.y*s);
       if (S.sel===t) ell(g,0,s*.26,s*.36,s*.12,null,'#fff',2);
-      g.save(); DRAW[t.type](g,s,t.hop,t.lv,clock+t.x,t.look||1); g.restore(); drawPips(g,s,t.lv); }
+      if (t.wilt>0){ g.globalAlpha=.5; g.save(); g.translate(s*.06,s*.06); g.rotate(.22); DRAW[t.type](g,s,0,t.lv,0,t.look||1); g.restore(); g.globalAlpha=1;
+        ell(g,s*.22,-s*.3,s*.07,s*.07,'#c4d65c','#7d8f2a',1); g.fillStyle='#4a5a14'; g.font=`800 ${Math.round(s*.13)}px Nunito, sans-serif`; g.textAlign='center'; g.fillText('!',s*.22,-s*.255); }
+      else { g.save(); DRAW[t.type](g,s,t.hop,t.lv,clock+t.x,t.look||1); g.restore(); }
+      drawPips(g,s,t.lv); }
     else { const e=it.e; g.translate(e.x*s,e.y*s); g.save(); if (e.face<0) g.scale(-1,1); drawEnemy(g,e,s); g.restore();
       const lift=e.fly?s*.28:0;
       if (e.hit>0&&!e.under){ g.globalAlpha=e.hit*4; ell(g,0,-lift,e.size*s,e.size*s*.8,'rgba(255,255,255,.8)'); g.globalAlpha=1; }

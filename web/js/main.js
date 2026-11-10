@@ -25,6 +25,7 @@ on('cocoon', () => Audio.play('cocoon'));
 on('grow', () => Audio.play('grow'));
 on('leak', () => Audio.play('leak'));
 on('fence', () => Audio.play('fence'));
+on('spray', ({ plants }) => { Audio.play('spray'); if (plants) setTimeout(() => Audio.play('wilt'), 350); shake(document.getElementById('board'), .7); });
 
 // Screen shake and confetti on the big moments
 const board = () => document.getElementById('board');

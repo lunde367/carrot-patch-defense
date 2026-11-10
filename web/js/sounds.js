@@ -16,6 +16,8 @@ Audio.register({
   pop:      [.04, ()=>tone(380,.09,{vol:.14,to:950})],
   cocoon:   [.2,  ()=>tone(300,.4,{type:'triangle',vol:.06,to:600,attack:.1})],
   grow:     [.15, ()=>{ tone(500,.12,{type:'triangle',vol:.08,to:900}); tone(700,.12,{type:'triangle',vol:.06,at:.08,to:1200}); }],
+  spray:    [.5,  ()=>{ noise(.9,{freq:4200,q:.5,vol:.22,type:'highpass'}); noise(.6,{freq:900,q:.8,vol:.08,at:.1}); }],
+  wilt:     [.4,  ()=>tone(520,.5,{type:'triangle',vol:.07,to:260,attack:.02})],
   fence:    [.15, ()=>{ noise(.1,{freq:350,vol:.2}); tone(196,.18,{type:'triangle',vol:.12,to:150}); }],
   leak:     [.2,  ()=>tone(330,.35,{type:'triangle',vol:.14,to:150})],
   wave:     [.3,  ()=>{ [392,494,587].forEach((f,i)=>tone(f,.5,{type:'triangle',vol:.1,at:i*.07})); }],

@@ -16,7 +16,8 @@ import { TYPES } from '../../web/js/data/towers.js';
 import { ENEMY } from '../../web/js/data/enemies.js';
 import { LEVELS, WAVES } from '../../web/js/data/levels.js';
 import { PERKS, perkValues } from '../../web/js/data/perks.js';
-import { STRATEGIES, monoStrategy, MONO_TYPES, preparePath } from './bots.js';
+import { STRATEGIES, monoStrategy, MONO_TYPES, preparePath, maybeSpray } from './bots.js';
+import { SPRAY } from '../../web/js/data/spray.js';
 import { buildReport } from './report.js';
 import { PLAYERS, starsBefore, shop, describe } from './shed.js';
 
@@ -27,30 +28,32 @@ const ONLY = arg('level', null);
 const PERK_MODE = arg('perks', 'typical');
 const SEED = +arg('seed', 1);
 const QUICK = process.argv.includes('--quick');
+const SPRAY_MODE = arg('spray', 'on');   // on | off: whether robot players use the Sprayer
 const DT = 1/30;
 
 const allPerks = Object.fromEntries(PERKS.map(p=>[p.id, p.costs.length]));
 const perks = perkValues(PERK_MODE==='all' ? allPerks : {});
 // Upgrades used for the main per-level table.
-const perksFor = gi => PERK_MODE==='typical' ? perkValues(shop(starsBefore(gi, 2.5)).owned) : perks;
+const perksFor = gi => PERK_MODE==='typical' ? perkValues(shop(starsBefore(gi, 2.5), gi).owned) : perks;
 
 // Repeatable randomness: the same seed always produces the same games.
 function mulberry32(a){ return () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 
-function playOne(gi, strategy, seed, perkSet=perks){
+function playOne(gi, strategy, seed, perkSet=perks, useSpray=SPRAY_MODE==='on'){
   const rnd = mulberry32(seed); Math.random = mulberry32(seed*7919+13);
   startLevel(gi, 1, 0, perkSet); preparePath();
-  const S = G.S;
+  const S = G.S; let sprays=0, wilted=0;
   const avail = Object.keys(TYPES).filter(k => TYPES[k].unlock <= gi);
   for (let w=0; w<WAVES; w++){
     strategy(avail, w+1, rnd);
     if (!startWave()) break;
     let t=0;
-    while (S.mode==='play' && S.active && t<900){ update(DT); t+=DT; }
+    let nextSpray=0;
+    while (S.mode==='play' && S.active && t<900){ update(DT); t+=DT; if (useSpray && t>=nextSpray){ nextSpray=t+.5; if (maybeSpray()){ sprays++; wilted+=G.lastWilt||0; } } }
     if (S.mode!=='play') break;
   }
   const won = S.mode==='won', lost = S.maxLives - S.lives;
-  return { won, lost, stars: won ? (lost<=4?3:lost<=10?2:1) : 0, wave: S.wave, towers: S.towers.length };
+  return { won, lost, stars: won ? (lost<=4?3:lost<=10?2:1) : 0, wave: S.wave, towers: S.towers.length, sprays };
 }
 
 function summarize(games){
@@ -94,7 +97,7 @@ if (!QUICK && ONLY==null){
   for (const LV of LEVELS.filter(l => l.li===l.ch.levels.length-1)){
     const row = { gi:LV.gi, name:LV.name, chapter:LV.ch.name, players:{} };
     for (const pl of PLAYERS){
-      const stars = starsBefore(LV.gi, pl.starsPerLevel), { owned, left } = shop(stars), set = perkValues(owned);
+      const stars = starsBefore(LV.gi, pl.starsPerLevel), { owned, left } = shop(stars, LV.gi), set = perkValues(owned);
       const sum = k => summarize(Array.from({length:RUNS}, (_,i) => playOne(LV.gi, STRATEGIES[k], SEED*200000+LV.gi*1000+i, set)));
       row.players[pl.id] = { stars, left, owned:describe(owned), sensible:sum('balanced'), beginner:sum('random') };
       const r=row.players[pl.id];
@@ -106,7 +109,7 @@ if (!QUICK && ONLY==null){
   // their usual upgrades with that one taken away, versus with it maxed.
   console.log('\nWhat each Garden Shed upgrade adds to a typical player, across the finales:');
   const fin = LEVELS.filter(l => l.li===l.ch.levels.length-1);
-  const typicalAt = gi => shop(starsBefore(gi, 2.5)).owned;
+  const typicalAt = gi => shop(starsBefore(gi, 2.5), gi).owned;
   const test = edit => { let three=0, won=0, n=0;
     for (const LV of fin){ const set=perkValues(edit({ ...typicalAt(LV.gi) }));
       for (let i=0;i<Math.ceil(RUNS*.75);i++){ const g=playOne(LV.gi, STRATEGIES.balanced, SEED*300000+LV.gi*1000+i, set); three+=g.stars===3; won+=g.won; n++; } }
@@ -121,11 +124,25 @@ if (!QUICK && ONLY==null){
   upgradeValue.base = base;
 }
 
+// ---------- the Sprayer: how much it helps on the levels that have it ----------
+const sprayCheck = [];
+if (!QUICK && ONLY==null){
+  console.log('\nPesticide Sprayer (sensible player, typical upgrades), with vs without spraying:');
+  for (const LV of LEVELS.filter(l => l.gi >= SPRAY.unlock)){
+    const set = perksFor(LV.gi);
+    const games = on => Array.from({length:RUNS}, (_,i) => playOne(LV.gi, STRATEGIES.balanced, SEED*400000+LV.gi*1000+i, set, on));
+    const w = games(true), wo = games(false);
+    const row = { gi:LV.gi, name:LV.name, resist:LV.resist, with:summarize(w), without:summarize(wo), sprays:w.reduce((a,g)=>a+g.sprays,0)/w.length };
+    sprayCheck.push(row);
+    console.log(`  ${LV.name.padEnd(14)} resist ${String(Math.round(LV.resist*100)).padStart(2)}%  3★ ${(row.without.threeStar*100).toFixed(0).padStart(3)}% → ${(row.with.threeStar*100).toFixed(0).padStart(3)}%   win ${(row.without.winRate*100).toFixed(0).padStart(3)}% → ${(row.with.winRate*100).toFixed(0).padStart(3)}%   sprays per game ${row.sprays.toFixed(1)}`);
+  }
+}
+
 const meta = { runs:RUNS, perks:PERK_MODE, seed:SEED, seconds:(Date.now()-t0)/1000, date:new Date().toISOString() };
-const { html, fragment, flags } = buildReport(results, meta, { finales, upgradeValue, base:upgradeValue.base });
+const { html, fragment, flags } = buildReport(results, meta, { finales, upgradeValue, base:upgradeValue.base, sprayCheck });
 const dir = new URL('./reports/', import.meta.url);
 await mkdir(dir, { recursive:true });
-await writeFile(new URL('latest.json', dir), JSON.stringify({ meta, flags, results, finales, upgradeValue }, null, 2));
+await writeFile(new URL('latest.json', dir), JSON.stringify({ meta, flags, results, finales, upgradeValue, sprayCheck }, null, 2));
 await writeFile(new URL('report.html', dir), html);
 await writeFile(new URL('report-page.html', dir), fragment);
 console.log(`\n${flags.length} things to look at:`);

@@ -25,6 +25,7 @@ export const MARKUP = `
 
   <div class="board" id="board">
     <canvas id="cv" aria-label="Garden map"></canvas>
+    <button class="spray-btn" id="spray" hidden aria-label="Pesticide Sprayer"><i class="spray-ring"></i><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 9h5l1 3v8a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-8z"/><path d="M10 9V6h3v3"/><path d="M13 6h3l2-2"/><path d="M19 7.5h.01M20.5 5h.01M21 9h.01"/></svg></button>
     <div class="over" id="over" hidden></div>
   </div>
 

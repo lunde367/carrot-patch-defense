@@ -38,6 +38,8 @@ Most tuning only touches `js/data/`:
 - **When defenders unlock:** `unlock` in `towers.js` (0 = Seedlings, 1 = Leafy Heads, …).
 - **Garden Shed upgrades:** `perks.js`. Costs add up to 31, a bit more than the 27 stars you can earn, so players choose.
 - **Stars:** lose 4 or fewer crops for 3 stars, 10 or fewer for 2 (in `engine/game.js`).
+- **Pesticide Sprayer:** `spray.js` (damage, circle, recharge, wilt time, how far the wilting mist
+  drifts, which level unlocks it); spray resistance per level is `SPRAY_RESIST` in `levels.js`.
 
 ## Start another game in the family
 
@@ -55,6 +57,7 @@ npm run balance -- --runs 100       # more games, steadier numbers
 npm run balance -- --level 5        # one level (0 = Seedlings … 8 = Big Dig)
 npm run balance -- --perks all      # as if every Garden Shed upgrade is owned
 npm run balance -- --quick          # skip the chapter-finale and upgrade-value checks
+npm run balance -- --spray off      # robot players never use the Pesticide Sprayer
 ```
 
 Robot players play every level using the game's real rules: a sensible player, an upgrader, a
