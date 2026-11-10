@@ -9,7 +9,7 @@ same code runs in a browser, on GitHub Pages, and inside an iPhone/Android app v
 npm run dev        # then open http://localhost:5173
 ```
 
-Add `#dev` to the end of the address (e.g. `http://localhost:5173/#dev`) for **test mode**:
+Add `#dev` to the end of the address (e.g. `http://localhost:5173/#dev`), or **tap the game's title 7 times**, for **test mode** (it stays on until you tap the title 7 times again):
 every level and defender unlocked, tap the seeds counter for +200 seeds, and ads are simulated.
 Test mode also adds a **Reset progress** button at the bottom of the garden picker that erases
 all stars, upgrades and unlocks (two taps), so you can replay from the very beginning.

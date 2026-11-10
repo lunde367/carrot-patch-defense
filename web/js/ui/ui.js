@@ -7,7 +7,7 @@ import { PERKS, perkValues, REWARDS } from '../data/perks.js';
 import { Save, starsLeft } from '../save.js';
 import { Audio } from '../../kit/js/audio.js';
 import { Ads } from '../../kit/js/monetization.js';
-import { devMode } from '../../kit/js/native.js';
+import { devMode, secretTaps } from '../../kit/js/native.js';
 import { on, emit } from '../../kit/js/events.js';
 import { $, starStr, ICON } from '../../kit/js/ui.js';
 import { DRAW } from '../render/art-towers.js';
@@ -77,7 +77,7 @@ export function showMenu(){
   }).join('');
   home(`<div class="home-head"><h2>Pick a garden</h2>
       <button class="shed-btn" data-go="shed">${ICON.shed}Garden Shed <b>★ ${starsLeft()}</b></button></div>
-    ${html}${devMode?'<p class="devnote">Test mode: every level and defender is unlocked.</p>':''}
+    ${html}${devMode?'<p class="devnote">Test mode is on: every level and defender is unlocked. Tap the title 7 times to turn it off.</p>':''}
     ${devMode?'<div class="home-foot"><button class="reset-btn" data-go="reset">Reset progress (test mode)</button></div>':''}`);
   for (const c2 of $('home').querySelectorAll('canvas[data-crop]')){ const c=c2.getContext('2d'); c.setTransform(2,0,0,2,0,0); drawCrop(c,c2.dataset.crop,20,22,32); }
 }
@@ -258,6 +258,11 @@ function onSound(){
   msg(soundState()==='all'?'Music and sound effects on.':soundState()==='fx'?'Sound effects only.':'Sound off.');
 }
 
+function paintDev(){
+  const chip=$('seedsChip'); chip.classList.toggle('dev', devMode); chip.tabIndex=devMode?0:-1;
+  chip.title = devMode ? 'Test mode: tap for +200 seeds' : 'Seeds';
+}
+
 // ---------- board input ----------
 function onBoardTap(ev){
   const S=G.S; if (!S||S.mode!=='play'||S.paused) return;
@@ -286,8 +291,14 @@ export function initUI(){
   $('map').onclick=()=>{ Audio.play('tap'); showMenu(); };
   $('iUp').onclick=()=>{ const t=G.S.sel; if (upgrade(t)){ renderInfo(); msg(`${TYPES[t.type].name} upgraded to level ${t.lv+1}.`); } };
   $('iSell').onclick=()=>{ const v=sell(G.S.sel); renderInfo(); msg(`Sold for ${v} seeds.`); };
-  if (devMode){ const chip=$('seedsChip'); chip.tabIndex=0; chip.classList.add('dev'); chip.title='Test mode: tap for +200 seeds';
-    chip.onclick=()=>{ if (G.S){ G.S.seeds+=200; msg('Test mode: +200 seeds.'); } }; }
+  $('seedsChip').onclick=()=>{ if (devMode && G.S){ G.S.seeds+=200; msg('Test mode: +200 seeds.'); } };
+  paintDev();
+  // Secret switch: tap the title 7 times quickly to turn test mode on or off.
+  secretTaps(document.querySelector('.k-title'), on => {
+    Audio.play(on ? 'sparkle' : 'tap'); paintDev();
+    if (G.S && G.S.mode==='play'){ renderBar(); msg(on ? 'Test mode on. Tap the seeds counter for +200 seeds.' : 'Test mode off.'); }
+    else showMenu();
+  });
   paintSound();
 
   on('waveStart', ({ wave, boss }) => { if (!tutorialActive()) msg(boss ? `Final wave! The ${ENEMY[G.LV.boss].name} is coming!` : wave===WAVES-1 ? 'One more wave before the boss.' : 'Here they come…'); });
