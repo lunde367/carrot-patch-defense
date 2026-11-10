@@ -1,7 +1,7 @@
 import { COLS, ROWS } from '../data/levels.js';
 
 // The current level's dirt path: segments, total length, and which tiles it covers.
-export const path = { pts:[], segs:[], total:0, cells:new Set(), exitCol:0 };
+export const path = { pts:[], segs:[], total:0, cells:new Set(), exitCol:0, scenery:[], blocked:new Set() };
 
 export function setPath(pts){
   path.pts = pts; path.segs = []; path.total = 0; path.cells = new Set();
@@ -24,4 +24,10 @@ export function pointAt(d){
   const s=path.segs[path.segs.length-1]; return [s.x2, s.y2, 0];
 }
 
-export const buildable = (c,r) => c>=0 && c<COLS && r>=0 && r<ROWS-1 && !path.cells.has(c+','+r);
+// Rocks, stumps, pots and other scenery that take up tiles.
+export function setScenery(list){
+  path.scenery = list; path.blocked = new Set();
+  for (const o of list) for (let y=o.r;y<o.r+o.h;y++) for (let x=o.c;x<o.c+o.w;x++) path.blocked.add(x+','+y);
+}
+export const sceneryAt = (c,r) => path.blocked.has(c+','+r);
+export const buildable = (c,r) => c>=0 && c<COLS && r>=0 && r<ROWS-1 && !path.cells.has(c+','+r) && !path.blocked.has(c+','+r);

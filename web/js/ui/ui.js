@@ -416,6 +416,7 @@ function onBoardTap(ev){
     if (res.ok){ if (!tutorialActive()) msg(S.wave===0&&S.towers.length===1?'Nice. Plant more, or tap Start wave when ready.':`${TYPES[res.tower.type].name} planted.`); dirty(); return; }
     Audio.play('denied');
     if (res.reason==='seeds') msg(`Not enough seeds. ${res.name} costs ${res.cost}.`);
+    else if (res.reason==='scenery') msg('Something’s already there. Plant on open grass.');
     else msg(r>=ROWS-1?'That’s your crop row. Plant on the grass.':'Keep the path clear. Plant on the grass.');
     return;
   }

@@ -2,7 +2,8 @@
 import { TYPES } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
 import { LEVELS, WAVES } from '../data/levels.js';
-import { path, setPath, pointAt, buildable } from './path.js';
+import { path, setPath, setScenery, sceneryAt, pointAt, buildable } from './path.js';
+import { sceneryFor } from '../data/scenery.js';
 import { emit } from '../../kit/js/events.js';
 import { NO_PERKS } from '../data/perks.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
@@ -13,6 +14,7 @@ const HEAT_SLOW = .75;   // in a heat wave, uncooled defenders fire at 75% speed
 
 export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
   const LV = G.LV = LEVELS[gi]; G.CH = LV.ch; setPath(LV.pts); G.hint = null;
+  setScenery(sceneryFor(LV, (c,r)=>path.cells.has(c+','+r), LV.gi===0 ? [[2,1],[4,3]] : []));
   newShots = [];                                   // drop shots left over from a game that ended mid-wave
   const maxLives = 20;
   G.S = { mode:'play', paused:false, seeds:120+gi*15+bonusSeeds+perks.seeds, lives:maxLives, maxLives, perks, wave:0,
@@ -68,7 +70,7 @@ export const rangeOf = t => TYPES[t.type].range[t.lv]*G.S.perks.rangeMul;
 export const towerAt = (c,r) => G.S.towers.find(t=>t.c===c&&t.r===r);
 export function plantAt(c,r){
   const S=G.S, T=TYPES[S.build], cost=costOf(S.build);
-  if (!buildable(c,r)) return { ok:false, reason:'path' };
+  if (!buildable(c,r)) return { ok:false, reason: sceneryAt(c,r) ? 'scenery' : 'path' };
   if (towerAt(c,r)) return { ok:false, reason:'taken' };
   if (S.seeds<cost) return { ok:false, reason:'seeds', cost, name:T.name };
   S.seeds-=cost;
