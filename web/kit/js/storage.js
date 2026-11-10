@@ -30,6 +30,12 @@ export function createSave({ key, defaults, migrate = (d, base) => ({ ...base, .
       this.data = (d && typeof d === 'object') ? migrate(d, defaults()) : defaults();
       return this.data;
     },
+    // Erase everything and start fresh. Pass keys to keep (e.g. purchases or settings).
+    reset(keep = []){
+      const fresh = defaults();
+      for (const k of keep) if (k in this.data) fresh[k] = this.data[k];
+      this.data = fresh; return this.flush();
+    },
     // Batched write shortly after a change.
     commit(){ clearTimeout(timer); timer = setTimeout(() => this.flush(), 200); },
     // Immediate write, used when the app goes to the background.
