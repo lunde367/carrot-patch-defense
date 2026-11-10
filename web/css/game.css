@@ -14,45 +14,57 @@ button.chip.dev{ cursor:pointer; border-style:dashed; border-color:var(--accent)
 
 .board{ position:relative; align-self:center; border-radius:var(--r-lg); overflow:hidden; box-shadow:0 0 0 3px var(--line); touch-action:manipulation }
 canvas{ display:block }
-.devnote{ font-size:.8rem; opacity:.8 }
 
-/* garden picker */
-.menu-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; max-width:340px }
-.menu-head h2{ text-align:left }
-.shed-btn{ display:inline-flex; align-items:center; gap:6px; font:inherit; font-weight:800; background:#f0913f; color:#24170a;
-  border:0; border-radius:var(--r-pill); padding:7px 12px 7px 10px; cursor:pointer; white-space:nowrap }
-.shed-btn b{ font-variant-numeric:tabular-nums }
-.chap{ display:flex; flex-direction:column; gap:7px; padding:8px }
-.chap header{ display:flex; gap:10px; align-items:center }
-.chap canvas{ width:40px; height:40px; border-radius:9px; background:#8a5e3c; flex:none }
-.chap b{ font-family:var(--display); font-size:1.02rem; display:block }
-.chap small{ font-weight:700; font-size:.76rem }
-.lvls{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px }
-.lv{ font:inherit; border:2px solid var(--panel-line); background:#fff; color:var(--panel-ink); border-radius:var(--r-sm); padding:5px 4px; display:flex;
-  flex-direction:column; align-items:center; gap:1px; cursor:pointer; min-width:0 }
-.lv b{ font-family:var(--body); font-size:.74rem; font-weight:800; line-height:1.15 }
-.lv:disabled{ opacity:.45; cursor:default }
-.lv.cur{ border-color:#e07a26 }
+/* game view vs. home screen: the HUD, board and tray only show inside a level */
+.app.home-mode .stats, .app.home-mode .controls, .app.home-mode .board,
+.app.home-mode .msg, .app.home-mode .info, .app.home-mode .bar{ display:none }
 
-/* new defender card */
+/* home screen: garden picker and Garden Shed, on the page itself (no game board behind) */
+.home{ display:flex; flex-direction:column; gap:12px; padding-top:6px }
+.home h2{ margin:0; font-size:1.4rem; flex:1 }
+.home-head{ display:flex; align-items:center; justify-content:space-between; gap:10px }
+.home-note{ margin:0; color:var(--muted); line-height:1.45 }
+.devnote{ font-size:.8rem; color:var(--muted); margin:0 }
+.shed-btn{ display:inline-flex; align-items:center; gap:6px; font:inherit; font-weight:800; background:var(--accent); color:var(--accent-ink);
+  border:0; border-radius:var(--r-pill); padding:8px 13px 8px 11px; cursor:pointer; white-space:nowrap }
+.shed-btn b, .star-count{ font-variant-numeric:tabular-nums }
+.star-count{ font-weight:800; color:var(--gold); font-size:1.1rem }
+
+.chap{ display:flex; flex-direction:column; gap:9px; padding:12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg) }
+.chap header{ display:flex; gap:12px; align-items:center }
+.chap canvas{ width:44px; height:44px; border-radius:10px; background:#8a5e3c; flex:none }
+.chap b{ font-family:var(--display); font-size:1.08rem; display:block }
+.chap small{ font-weight:700; font-size:.8rem; color:var(--muted) }
+.lvls{ display:grid; grid-template-columns:repeat(3,1fr); gap:7px }
+.lv{ font:inherit; border:2px solid var(--line); background:var(--bg); color:var(--ink); border-radius:var(--r-sm); padding:7px 4px; display:flex;
+  flex-direction:column; align-items:center; gap:2px; cursor:pointer; min-width:0 }
+.lv b{ font-family:var(--body); font-size:.78rem; font-weight:800; line-height:1.15; text-align:center }
+.lv .stars{ font-size:.9rem; letter-spacing:1px; color:var(--gold) }
+.lv .stars i{ color:var(--line) }
+.lv-lock{ font-size:.72rem; font-weight:700; color:var(--muted) }
+.lv:disabled{ opacity:.5; cursor:default }
+.lv.cur{ border-color:var(--accent) }
+
+/* new defender card (shown on the board) */
 .newdef{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; padding:14px 14px 12px }
 .newdef .tag{ font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#e07a26 }
 .newdef canvas{ width:84px; height:84px }
 .newdef h3{ margin:0; font-size:1.35rem }
 .newdef p{ margin:0; color:var(--panel-muted) }
 
-/* garden shed */
-.perks{ display:flex; flex-direction:column; gap:8px; width:100%; max-width:340px }
-.perk{ display:grid; grid-template-columns:1fr auto; gap:2px 10px; align-items:center; padding:10px 12px }
-.perk h3{ margin:0; font-size:1.02rem }
-.perk p{ margin:0; font-size:.82rem; color:var(--panel-muted); min-width:0 }
-.perk .tiers{ display:flex; gap:4px; grid-column:1 }
-.perk .tiers i{ width:18px; height:6px; border-radius:3px; background:var(--panel-line) }
-.perk .tiers i.on{ background:#e07a26 }
-.perk button{ grid-column:2; grid-row:1 / span 3; font:inherit; font-weight:800; border-radius:var(--r-sm); border:2px solid #e07a26;
-  background:#e07a26; color:#fff; padding:7px 10px; cursor:pointer; white-space:nowrap; min-width:72px }
-.perk button:disabled{ background:transparent; color:var(--panel-muted); border-color:var(--panel-line); cursor:default }
-.shed-foot{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap }
+/* Garden Shed */
+.perks{ display:flex; flex-direction:column; gap:8px }
+.perk{ display:grid; grid-template-columns:1fr auto; gap:3px 12px; align-items:center; padding:12px 14px;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg) }
+.perk h3{ margin:0; font-size:1.05rem }
+.perk p{ margin:0; font-size:.85rem; color:var(--muted); min-width:0 }
+.perk .tiers{ display:flex; gap:4px; grid-column:1; margin-top:3px }
+.perk .tiers i{ width:18px; height:6px; border-radius:3px; background:var(--line) }
+.perk .tiers i.on{ background:var(--accent) }
+.perk button{ grid-column:2; grid-row:1 / span 3; font:inherit; font-weight:800; border-radius:var(--r-sm); border:2px solid var(--accent);
+  background:var(--accent); color:var(--accent-ink); padding:8px 12px; cursor:pointer; white-space:nowrap; min-width:76px }
+.perk button:disabled{ background:transparent; color:var(--muted); border-color:var(--line); cursor:default }
+.shed-foot{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding-top:4px }
 
 .msg{ margin:0; min-height:1.3em; color:var(--muted); font-weight:700; font-size:.92rem; text-align:center; text-wrap:balance }
 .info{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:10px 12px; display:grid;

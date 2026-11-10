@@ -13,6 +13,8 @@ export const MARKUP = `
     </div>
   </header>
 
+  <main class="home" id="home" hidden></main>
+
   <div class="controls">
     <button class="btn main" id="go">Start wave 1</button>
     <button class="btn ghost" id="spd" aria-label="Game speed">1×</button>

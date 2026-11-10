@@ -12,7 +12,7 @@ import { on, emit } from '../../kit/js/events.js';
 import { $, starStr, ICON } from '../../kit/js/ui.js';
 import { DRAW } from '../render/art-towers.js';
 import { drawCrop } from '../render/art-common.js';
-import { cellAt, rebuild } from '../render/board.js';
+import { cellAt, resize } from '../render/board.js';
 import { startTutorial, stopTutorial, tutorialActive } from './tutorial.js';
 
 const msg = t => { $('msg').textContent = t; };
@@ -34,7 +34,7 @@ export function play(gi, bonusSeeds=0){
   startLevel(gi, Save.data.settings.speed, bonusSeeds, perkValues(Save.data.perks));
 }
 on('levelStart', LV => {
-  hideOverlay(); disarmRestart(); rebuild(); renderBar(); renderInfo(); dirty();
+  setHome(false); hideOverlay(); disarmRestart(); resize(); renderBar(); renderInfo(); dirty();
   msg(`${LV.ch.name} ${LV.li+1}: ${LV.name}. ${LV.intro}`);
   const fresh = TRAY.filter(k => towerOpen(k) && TYPES[k].unlock>0 && !Save.data.seen[k]);
   if (fresh.length && !devMode) showNewDefender(fresh[0]);
@@ -43,6 +43,10 @@ on('levelStart', LV => {
 
 // ---------- overlays ----------
 function overlay(html){ const o=$('over'); o.innerHTML=html; o.hidden=false; o.scrollTop=0; }
+// The home screen (garden picker and shed) replaces the game view entirely.
+function setHome(on){ document.querySelector('.app').classList.toggle('home-mode', on); $('home').hidden=!on; }
+function home(html){ hideOverlay(); setHome(true); $('home').innerHTML=html; window.scrollTo(0,0); }
+function leaveLevel(){ const S=G.S; if (S){ S.mode='menu'; S.active=false; S.sel=null; S.build=null; S.paused=false; } stopTutorial(); }
 function hideOverlay(){ $('over').hidden=true; }
 
 function showNewDefender(key){
@@ -56,21 +60,18 @@ function showNewDefender(key){
 }
 
 export function showMenu(){
-  stopTutorial();
-  const S=G.S; if (S){ S.mode='menu'; S.active=false; S.sel=null; S.build=null; S.paused=false; }
-  renderInfo(); renderBar(); disarmRestart(); dirty();
+  leaveLevel(); renderInfo(); disarmRestart(); dirty();
   const html = CHAPTERS.map(ch => {
     const lvls = ch.levels.map(l => { const ok=unlocked(l.gi), st=Save.data.stars[l.gi]||0;
       return `<button class="lv${G.LV&&G.LV.gi===l.gi?' cur':''}" data-lv="${l.gi}" ${ok?'':'disabled'}><b>${l.li+1}. ${l.name}</b>
-        <span class="stars">${ok?starStr(st):'Locked'}</span></button>`; }).join('');
-    return `<div class="panel chap"><header><canvas data-crop="${ch.crop}" width="80" height="80"></canvas>
+        ${ok?`<span class="stars">${starStr(st)}</span>`:'<span class="lv-lock">Locked</span>'}</button>`; }).join('');
+    return `<div class="chap"><header><canvas data-crop="${ch.crop}" width="80" height="80"></canvas>
       <span><b>${ch.name}</b><small>${ch.pests}</small></span></header><div class="lvls">${lvls}</div></div>`;
   }).join('');
-  overlay(`<div class="menu-head"><h2>Pick a garden</h2>
+  home(`<div class="home-head"><h2>Pick a garden</h2>
       <button class="shed-btn" data-go="shed">${ICON.shed}Garden Shed <b>★ ${starsLeft()}</b></button></div>
     ${html}${devMode?'<p class="devnote">Test mode: every level and defender is unlocked.</p>':''}`);
-  for (const c2 of $('over').querySelectorAll('canvas[data-crop]')){ const c=c2.getContext('2d'); c.setTransform(2,0,0,2,0,0); drawCrop(c,c2.dataset.crop,20,22,32); }
-  msg('Each garden has three levels. Beat one to unlock the next.');
+  for (const c2 of $('home').querySelectorAll('canvas[data-crop]')){ const c=c2.getContext('2d'); c.setTransform(2,0,0,2,0,0); drawCrop(c,c2.dataset.crop,20,22,32); }
 }
 
 // ---------- Garden Shed ----------
@@ -79,23 +80,23 @@ function showShed(){
   const rows = PERKS.map(p => {
     const tier=Save.data.perks[p.id]||0, maxed=tier>=p.costs.length, cost=p.costs[tier];
     const desc = p.desc(maxed ? tier-1 : tier);
-    return `<div class="panel perk"><h3>${p.name}</h3>
+    return `<div class="perk"><h3>${p.name}</h3>
       <button data-perk="${p.id}" ${maxed||cost>left?'disabled':''}>${maxed?'Owned':`★ ${cost}`}</button>
       <p>${maxed?desc:(tier?`Next: ${desc}`:desc)}</p>
       <span class="tiers">${p.costs.map((_,i)=>`<i class="${i<tier?'on':''}"></i>`).join('')}</span></div>`;
   }).join('');
   const anyOwned = Object.values(Save.data.perks).some(Boolean);
-  overlay(`<h2>Garden Shed</h2><p>You have <b>★ ${left}</b> to spend. Earn more by beating levels with more crops left.</p>
+  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button>
+      <h2>Garden Shed</h2><span class="star-count">★ ${left}</span></div>
+    <p class="home-note">Spend stars on upgrades that help in every level. Earn more stars by beating levels with more crops left.</p>
     <div class="perks">${rows}</div>
     <div class="shed-foot"><button class="btn main" data-go="menu">Back to gardens</button>
     ${anyOwned?'<button class="btn ghost" data-go="refund">Refund all stars</button>':''}</div>`);
-  msg('Upgrades in the shed apply to every level.');
 }
 function buyPerk(id){
   const p=PERKS.find(x=>x.id===id), tier=Save.data.perks[id]||0, cost=p.costs[tier];
   if (cost==null || cost>starsLeft()){ Audio.play('denied'); return; }
   Save.data.perks[id]=tier+1; Save.commit(); Audio.play('sparkle'); showShed();
-  msg(`${p.name} upgraded!`);
 }
 
 on('win', ({ stars, lives, maxLives, lost, gi }) => {
@@ -148,7 +149,7 @@ async function onOverlayClick(ev){
     case 'next': return play(gi+1);
     case 'retry': return play(gi);
     case 'menu': return showMenu();
-    case 'shed': if (G.S){ G.S.mode='menu'; G.S.active=false; } return showShed();
+    case 'shed': leaveLevel(); return showShed();
     case 'refund': Save.data.perks={}; Save.commit(); return showShed();
     case 'resume': return resume();
     case 'gotit': {
@@ -257,6 +258,7 @@ function onBoardTap(ev){
 export function initUI(){
   $('cv').addEventListener('pointerdown', onBoardTap);
   $('over').addEventListener('click', onOverlayClick);
+  $('home').addEventListener('click', onOverlayClick);
   $('go').onclick=()=>{ if (startWave()) disarmRestart(); };
   $('spd').onclick=()=>{ const S=G.S; if (!S) return; S.speed=S.speed===1?2:S.speed===2?3:1; Save.data.settings.speed=S.speed; Save.commit(); Audio.play('tap'); };
   $('restart').onclick=onRestart;

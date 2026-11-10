@@ -47,7 +47,6 @@ async function boot(){
   initUI();
   play(lastOpenLevel());
   showMenu();
-  resize();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);
 
   initLifecycle({
