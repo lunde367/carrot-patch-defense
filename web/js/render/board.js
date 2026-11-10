@@ -26,7 +26,8 @@ export function resize(){
   const app=boardEl.parentElement;
   const vh=(window.visualViewport && window.visualViewport.height) || window.innerHeight;
   // Height of everything except the board: visible siblings, the gaps between them, page padding.
-  const kids=[...app.children].filter(el=>el!==boardEl && el.offsetParent!==null);
+  // The defender info card comes and goes as you tap, so it never shrinks the board.
+  const kids=[...app.children].filter(el=>el!==boardEl && el.id!=='info' && el.offsetParent!==null);
   const gap=parseFloat(getComputedStyle(app).rowGap)||0;
   const pad=el=>{ const cs=getComputedStyle(el); return parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom); };
   const reserved = kids.reduce((h,el)=>h+el.offsetHeight,0) + gap*kids.length + pad(document.body) + pad(document.documentElement) + 6;
