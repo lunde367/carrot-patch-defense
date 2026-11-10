@@ -3,6 +3,8 @@
 //   npm run balance                      every level, 40 games per bot
 //   npm run balance -- --runs 100        more games (slower, steadier numbers)
 //   npm run balance -- --level 4         one level (0 = Seedlings … 8 = Big Dig)
+//   npm run balance -- --perks none      play with no Garden Shed upgrades (default: the upgrades a
+//                                        typical player owns when they reach each level)
 //   npm run balance -- --perks all       play with every Garden Shed upgrade owned
 //   npm run balance -- --quick           skip the chapter-finale and upgrade-value checks
 //   npm run balance -- --seed 7          a different (but repeatable) set of games
@@ -22,13 +24,15 @@ import { PLAYERS, starsBefore, shop, describe } from './shed.js';
 const arg = (name, def) => { const i=process.argv.indexOf('--'+name); return i>0 ? process.argv[i+1] : def; };
 const RUNS = +arg('runs', 40);
 const ONLY = arg('level', null);
-const PERK_MODE = arg('perks', 'none');
+const PERK_MODE = arg('perks', 'typical');
 const SEED = +arg('seed', 1);
 const QUICK = process.argv.includes('--quick');
 const DT = 1/30;
 
 const allPerks = Object.fromEntries(PERKS.map(p=>[p.id, p.costs.length]));
 const perks = perkValues(PERK_MODE==='all' ? allPerks : {});
+// Upgrades used for the main per-level table.
+const perksFor = gi => PERK_MODE==='typical' ? perkValues(shop(starsBefore(gi, 2.5)).owned) : perks;
 
 // Repeatable randomness: the same seed always produces the same games.
 function mulberry32(a){ return () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
@@ -71,11 +75,11 @@ for (const LV of levels){
   const row = { gi:LV.gi, name:LV.name, chapter:LV.ch.name, boss:LV.boss, fliers, bots:{}, mono:{} };
   const avail = Object.keys(TYPES).filter(k => TYPES[k].unlock <= LV.gi);
   for (const [name, strat] of Object.entries(STRATEGIES)){
-    row.bots[name] = summarize(Array.from({length:RUNS}, (_,i) => playOne(LV.gi, strat, SEED*100000+LV.gi*1000+i)));
+    row.bots[name] = summarize(Array.from({length:RUNS}, (_,i) => playOne(LV.gi, strat, SEED*100000+LV.gi*1000+i, perksFor(LV.gi))));
   }
   for (const type of MONO_TYPES){
     if (!avail.includes(type)) continue;
-    row.mono[type] = summarize(Array.from({length:Math.ceil(RUNS/2)}, (_,i) => playOne(LV.gi, monoStrategy(type), SEED*100000+LV.gi*1000+500+i)));
+    row.mono[type] = summarize(Array.from({length:Math.ceil(RUNS/2)}, (_,i) => playOne(LV.gi, monoStrategy(type), SEED*100000+LV.gi*1000+500+i, perksFor(LV.gi))));
   }
   results.push(row);
   const b=row.bots.balanced;
@@ -98,17 +102,21 @@ if (!QUICK && ONLY==null){
     }
     finales.push(row);
   }
-  // How much each upgrade helps, alone and maxed, on the three finales.
-  console.log('\nEach Garden Shed upgrade on its own (maxed), across the finales:');
+  // What each upgrade adds to a typical player's real setup at each finale:
+  // their usual upgrades with that one taken away, versus with it maxed.
+  console.log('\nWhat each Garden Shed upgrade adds to a typical player, across the finales:');
   const fin = LEVELS.filter(l => l.li===l.ch.levels.length-1);
-  const test = owned => { const set=perkValues(owned); let three=0, won=0, n=0;
-    for (const LV of fin) for (let i=0;i<Math.ceil(RUNS*.75);i++){ const g=playOne(LV.gi, STRATEGIES.balanced, SEED*300000+LV.gi*1000+i, set); three+=g.stars===3; won+=g.won; n++; }
+  const typicalAt = gi => shop(starsBefore(gi, 2.5)).owned;
+  const test = edit => { let three=0, won=0, n=0;
+    for (const LV of fin){ const set=perkValues(edit({ ...typicalAt(LV.gi) }));
+      for (let i=0;i<Math.ceil(RUNS*.75);i++){ const g=playOne(LV.gi, STRATEGIES.balanced, SEED*300000+LV.gi*1000+i, set); three+=g.stars===3; won+=g.won; n++; } }
     return { threeStar:three/n, winRate:won/n }; };
-  const base = test({});
+  const base = test(o => o);
   for (const p of PERKS){
-    const cost = p.costs.reduce((a,b)=>a+b,0), r = test({ [p.id]:p.costs.length });
-    upgradeValue.push({ id:p.id, name:p.name, cost, ...r, perStar:(r.threeStar-base.threeStar)/cost });
-    console.log(`  ${p.name.padEnd(15)} ★${cost}  3★ ${(base.threeStar*100).toFixed(0)}% → ${(r.threeStar*100).toFixed(0)}%  (+${((r.threeStar-base.threeStar)*100/cost).toFixed(1)} pts per star)`);
+    const cost = p.costs.reduce((a,b)=>a+b,0);
+    const without = test(o => { delete o[p.id]; return o; }), withMax = test(o => { o[p.id]=p.costs.length; return o; });
+    upgradeValue.push({ id:p.id, name:p.name, cost, without:without.threeStar, threeStar:withMax.threeStar, perStar:(withMax.threeStar-without.threeStar)/cost });
+    console.log(`  ${p.name.padEnd(15)} ★${cost}  3★ without ${(without.threeStar*100).toFixed(0).padStart(3)}% → maxed ${(withMax.threeStar*100).toFixed(0).padStart(3)}%  (+${((withMax.threeStar-without.threeStar)*100/cost).toFixed(1)} pts per star)`);
   }
   upgradeValue.base = base;
 }

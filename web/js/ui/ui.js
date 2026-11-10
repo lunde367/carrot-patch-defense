@@ -35,7 +35,7 @@ export function play(gi, bonusSeeds=0){
 }
 on('levelStart', LV => {
   setHome(false); hideOverlay(); disarmRestart(); resize(); renderBar(); renderInfo(); dirty();
-  msg(`${LV.ch.name} ${LV.li+1}: ${LV.name}. ${LV.intro}`);
+  msg(`${LV.ch.name} ${LV.li+1}: ${LV.name}. ${LV.intro}${G.S.fence?` Your fence will stop the first ${G.S.fence} pests that get through.`:''}`);
   const fresh = TRAY.filter(k => towerOpen(k) && TYPES[k].unlock>0 && !Save.data.seen[k]);
   if (fresh.length && !devMode) showNewDefender(fresh[0]);
   else if (LV.gi===0 && !Save.data.tutorialDone) startTutorial();
@@ -303,5 +303,6 @@ export function initUI(){
   paintSound();
 
   on('waveStart', ({ wave, boss }) => { if (!tutorialActive()) msg(boss ? `Final wave! The ${ENEMY[G.LV.boss].name} is coming!` : wave===WAVES-1 ? 'One more wave before the boss.' : 'Here they come…'); });
+  on('fence', left => msg(left ? `Your Sturdy Fence stopped a pest! It can stop ${left} more this level.` : 'Your Sturdy Fence stopped a pest! That was its last one this level.'));
   on('waveClear', ({ wave, seeds, fromFlowers }) => msg(`Wave ${wave} cleared. +${seeds} seeds${fromFlowers?` (${fromFlowers} from sunflowers)`:''}.`));
 }

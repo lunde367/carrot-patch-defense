@@ -46,7 +46,7 @@ export function findExtraFlags({ finales=[], upgradeValue=[] }){
     const per=upgradeValue.map(u=>u.perStar), med=median(per);
     for (const u of upgradeValue){
       if (med>0 && u.perStar>=2*med && u.perStar>.08) flags.push({ kind:'Upgrade', level:'Garden Shed', gi:100, text:`${u.name} is a bargain: +${(u.perStar*100).toFixed(1)} three-star points per star spent, about ${(u.perStar/med).toFixed(1)}× the typical upgrade.` });
-      if (u.perStar<=.005) flags.push({ kind:'Upgrade', level:'Garden Shed', gi:100, text:`${u.name} barely changes three-star results. It may only help you survive, not earn stars.` });
+      if (u.perStar<=.005 && med>.02) flags.push({ kind:'Upgrade', level:'Garden Shed', gi:100, text:`${u.name} barely changes three-star results. It may only help you survive, not earn stars.` });
     }
   }
   return flags;
@@ -84,7 +84,7 @@ export function buildReport(results, meta, extras={}){
   const body = `
 <main class="rep">
   <header><p class="eyebrow">Carrot Patch Defense</p><h1>Balance Check</h1>
-    <p class="meta">${meta.runs} games per robot player per level · Garden Shed upgrades: ${meta.perks==='all'?'all owned':'none'} · seed ${meta.seed} · ${new Date(meta.date).toLocaleString()}</p></header>
+    <p class="meta">${meta.runs} games per robot player per level · Garden Shed upgrades: ${meta.perks==='all'?'all owned':meta.perks==='typical'?'what a typical player owns at each level':'none'} · seed ${meta.seed} · ${new Date(meta.date).toLocaleString()}</p></header>
   <section><h2>Things to look at</h2><ul class="flags">${flagList}</ul></section>
   <section><h2>Difficulty curve</h2><p class="note">How often each robot wins, level by level. A healthy curve slopes gently down, with the beginner falling behind the sensible player.</p>
     <div class="legend"><span><i class="s1"></i>Sensible player</span><span><i class="s2"></i>Beginner (random)</span></div>
@@ -99,9 +99,9 @@ export function buildReport(results, meta, extras={}){
       <td class="lbl">${{struggling:'Struggling (2★/level)',typical:'Typical (2.5★/level)',perfect:'Perfectionist (3★/level)'}[id]}</td><td>★ ${p.stars}</td><td class="wrap">${p.owned}</td>
       ${cell(p.sensible.threeStar)}${cell(p.beginner.winRate)}</tr>`).join('')).join('')}</tbody></table></div></section>`:''}
   ${upgradeValue.length?`<section><h2>What each upgrade is worth</h2>
-    <p class="note">Each Garden Shed upgrade owned alone and maxed, across the three finales. Without upgrades a sensible player gets 3 stars ${pct(base.threeStar)} of the time. "Per star" is the gain for each star it costs.</p>
-    <div class="scroll"><table><thead><tr><th>Upgrade</th><th>Total cost</th><th>3★ with it</th><th>Gain per star</th></tr></thead><tbody>
-    ${upgradeValue.map(u=>`<tr><th>${u.name}</th><td>★ ${u.cost}</td>${cell(u.threeStar)}<td>+${(u.perStar*100).toFixed(1)} pts</td></tr>`).join('')}</tbody></table></div></section>`:''}
+    <p class="note">Starting from the upgrades a typical player owns at each finale (3 stars ${pct(base.threeStar)} of the time), this compares their setup without each upgrade against the same setup with it maxed. "Per star" is the gain for each star it costs.</p>
+    <div class="scroll"><table><thead><tr><th>Upgrade</th><th>Total cost</th><th>3★ without it</th><th>3★ maxed</th><th>Gain per star</th></tr></thead><tbody>
+    ${upgradeValue.map(u=>`<tr><th>${u.name}</th><td>★ ${u.cost}</td>${cell(u.without)}${cell(u.threeStar)}<td>${u.perStar>=0?'+':''}${(u.perStar*100).toFixed(1)} pts</td></tr>`).join('')}</tbody></table></div></section>`:''}
   <section><h2>One defender only</h2>
     <div class="scroll"><table><thead><tr><th>Level</th>${monoTypes.map(k=>`<th>${TYPES[k].name}</th>`).join('')}</tr></thead><tbody>${monoRows}</tbody></table></div>
     <p class="note">Win rate when a robot uses just one kind of defender. One column far above the rest means that defender is too strong; a column that's always low may need a boost. Sprinklers and Pine Trees are expected to struggle alone where pests fly.</p></section>

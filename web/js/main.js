@@ -22,6 +22,7 @@ on('sell', () => Audio.play('sell'));
 on('cocoon', () => Audio.play('cocoon'));
 on('grow', () => Audio.play('grow'));
 on('leak', () => Audio.play('leak'));
+on('fence', () => Audio.play('fence'));
 on('boss', () => Audio.play('boss'));
 on('waveStart', () => Audio.play('wave'));
 on('waveClear', () => Audio.play('chime'));

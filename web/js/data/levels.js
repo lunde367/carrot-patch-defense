@@ -48,9 +48,10 @@ export const CHAPTERS = [
 ];
 
 // Pest toughness per level, in play order (1 = base health). Tuned with the balance check
-// (npm run balance) so a sensible player's win rate slopes gently down from level to level.
+// (npm run balance) with the Garden Shed upgrades a typical player owns at each level, so the
+// three-star rate slopes down from about 90% early to about 25% on Big Dig.
 // Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
-const TOUGHNESS = [1.15, 2.05, 1.0,   2.6, 1.95, 1.5,   2.75, 1.8, 1.85];
+const TOUGHNESS = [1.15, 2.35, 1.5,   3.8, 2.45, 1.95,   4.5, 2.4, 2.7];
 
 // Flat list of every level in play order, each linked back to its chapter.
 export const LEVELS = [];

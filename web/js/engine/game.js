@@ -12,8 +12,9 @@ const MAX_FX = 260;
 export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
   const LV = G.LV = LEVELS[gi]; G.CH = LV.ch; setPath(LV.pts); G.hint = null;
   newShots = [];                                   // drop shots left over from a game that ended mid-wave
-  const maxLives = 20 + perks.lives;
+  const maxLives = 20;
   G.S = { mode:'play', paused:false, seeds:120+gi*15+bonusSeeds+perks.seeds, lives:maxLives, maxLives, perks, wave:0,
+    fence:perks.fence, headStartUsed:false,
     enemies:[], towers:[], shots:[], fx:[], spawnQ:[], spawnT:0, active:false, speed, sel:null, build:null };
   emit('levelStart', LV);
 }
@@ -63,7 +64,9 @@ export function plantAt(c,r){
   if (towerAt(c,r)) return { ok:false, reason:'taken' };
   if (S.seeds<cost) return { ok:false, reason:'seeds', cost, name:T.name };
   S.seeds-=cost;
-  const lv = S.build==='bunny' ? S.perks.bunnyLv : 0;
+  const head = S.build==='bunny' && S.perks.headStart && !S.headStartUsed;
+  if (head) S.headStartUsed = true;
+  const lv = head ? 1 : 0;
   const t={ type:S.build, c, r, x:c+.5, y:r+.5, lv, cd:0, hop:1, look:1, spent:cost };
   S.towers.push(t); emit('plant', t); return { ok:true, tower:t };
 }
@@ -129,7 +132,9 @@ export function update(dt){
     e.dist+=e.spd*mul*dt;
     const [x,y,f]=pointAt(e.dist); e.x=x; e.y=y; if (f) e.face=f;
     if (e.dist>=path.total){
-      e.dead=true; const lost=D.boss?5:1; S.lives=Math.max(0,S.lives-lost);
+      e.dead=true;
+      if (S.fence>0){ S.fence--; floatText(e.x,12.7,'Fence!','#8a6a48',1); emit('fence', S.fence); continue; }   // Sturdy Fence
+      const lost=D.boss?5:1; S.lives=Math.max(0,S.lives-lost);
       floatText(e.x,12.9,'−'+lost,'#c2456b',1); emit('leak', lost);
       if (S.lives<=0){ S.mode='lost'; S.active=false; emit('lose', { wave:S.wave }); return; }
     }

@@ -36,7 +36,7 @@ capacitor.config.json   ← app name & ID for the stores
 
 Most tuning only touches `js/data/`:
 - **When defenders unlock:** `unlock` in `towers.js` (0 = Seedlings, 1 = Leafy Heads, …).
-- **Garden Shed upgrades:** `perks.js`. Costs add up to 27, the most stars you can earn.
+- **Garden Shed upgrades:** `perks.js`. Costs add up to 31, a bit more than the 27 stars you can earn, so players choose.
 - **Stars:** lose 4 or fewer crops for 3 stars, 10 or fewer for 2 (in `engine/game.js`).
 
 ## Start another game in the family
