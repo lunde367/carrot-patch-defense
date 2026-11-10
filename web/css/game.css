@@ -52,6 +52,42 @@ canvas{ display:block }
 .lv:disabled{ opacity:.5; cursor:default }
 .lv.cur{ border-color:var(--accent) }
 
+/* home toolbar: achievements and settings */
+.home-tools{ display:grid; grid-template-columns:1.35fr 1fr; gap:8px }
+.tool-btn{ display:flex; align-items:center; gap:8px; font:inherit; font-weight:800; color:var(--ink); background:var(--surface);
+  border:1px solid var(--line); border-radius:var(--r-md); padding:11px 12px; cursor:pointer; min-width:0 }
+.tool-btn span{ flex:1; text-align:left; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.tool-btn b{ color:var(--gold); font-variant-numeric:tabular-nums }
+.tool-btn svg{ flex:none; color:var(--muted) }
+
+/* achievements page */
+.achs{ display:flex; flex-direction:column; gap:8px }
+.ach{ display:flex; gap:12px; align-items:center; padding:11px 13px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg) }
+.ach-icon{ flex:none; width:38px; height:38px; border-radius:50%; display:grid; place-items:center; background:var(--line); color:var(--muted); font-size:1.15rem }
+.ach-icon svg{ width:18px; height:18px }
+.ach.got .ach-icon{ background:#f6c344; color:#3a2a10 }
+.ach:not(.got) b{ color:var(--muted) }
+.ach-text{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px }
+.ach-text b{ font-family:var(--display); font-size:1rem }
+.ach-text small{ color:var(--muted); font-size:.82rem }
+.ach-bar{ display:block; height:6px; border-radius:3px; background:var(--line); overflow:hidden; margin-top:4px }
+.ach-bar i{ display:block; height:100%; background:var(--accent); border-radius:3px }
+.ach-num{ font-variant-numeric:tabular-nums }
+.ach-date{ flex:none; font-size:.75rem; color:var(--muted); font-variant-numeric:tabular-nums }
+
+/* settings page */
+.set-group{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden }
+.set-group.dev{ border-style:dashed; border-color:var(--berry) }
+.set-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 14px }
+.set-row + .set-row{ border-top:1px solid var(--line) }
+.set-row > span{ display:flex; flex-direction:column; gap:2px; min-width:0 }
+.set-row small{ color:var(--muted); font-size:.82rem }
+.switch{ flex:none; width:50px; height:30px; border-radius:15px; border:0; background:var(--line); position:relative; cursor:pointer; padding:0; transition:background .15s }
+.switch i{ position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .15s }
+.switch[aria-checked="true"]{ background:var(--leaf) }
+.switch[aria-checked="true"] i{ transform:translateX(20px) }
+.version{ margin:0; text-align:center; color:var(--muted); font-size:.8rem }
+
 /* new defender card (shown on the board) */
 .newdef{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; padding:14px 14px 12px }
 .newdef .tag{ font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#e07a26 }

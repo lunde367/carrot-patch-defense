@@ -13,7 +13,9 @@
     "ios": "npx cap sync ios && npx cap open ios",
     "android": "npx cap sync android && npx cap open android",
     "new-game": "node scripts/new-game.mjs",
-    "balance": "node tools/balance/run.js"
+    "balance": "node tools/balance/run.js",
+    "icons": "node tools/icons/render.cjs",
+    "assets": "npx @capacitor/assets generate --iconBackgroundColor \"#a6cf8a\" --splashBackgroundColor \"#edf2e3\" --splashBackgroundColorDark \"#182016\""
   },
   "dependencies": {
     "@capacitor/app": "^7.0.0",

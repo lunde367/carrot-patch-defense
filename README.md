@@ -89,7 +89,9 @@ Before you publish:
   It can't be changed after the first store release.
 - Lock to portrait: in Xcode, uncheck Landscape under *Device Orientation*; on Android set
   `android:screenOrientation="portrait"` on the activity in `AndroidManifest.xml`.
-- Add an app icon and splash screen (`@capacitor/assets` can generate all sizes from one image).
+- App icon and splash screens are already drawn from the game's art in `assets/` (icon.png,
+  splash.png, splash-dark.png). After `npx cap add ios/android`, run `npm run assets` to generate every
+  size the stores need. To redraw them after art changes, edit `tools/icons/art.html` and run `npm run icons`.
 
 After any change in `web/`, run `npm run sync` (or `npm run ios` / `npm run android`).
 

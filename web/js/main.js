@@ -5,10 +5,12 @@ import { Save, starsLeft } from './save.js';
 import { SHOT_SOUND } from './sounds.js';
 import { on } from '../kit/js/events.js';
 import { Audio } from '../kit/js/audio.js';
+import { shake, confetti } from '../kit/js/fx.js';
 import { bindSave } from '../kit/js/monetization.js';
 import { initLifecycle } from '../kit/js/lifecycle.js';
 import { initBoard, resize, draw } from './render/board.js';
 import { initUI, play, showMenu, lastOpenLevel, refresh, pause, resume } from './ui/ui.js';
+import { initAchievements } from './ui/achievements.js';
 
 // Engine events → sound effects
 on('shoot', type => Audio.play(SHOT_SOUND[type]));
@@ -23,6 +25,14 @@ on('cocoon', () => Audio.play('cocoon'));
 on('grow', () => Audio.play('grow'));
 on('leak', () => Audio.play('leak'));
 on('fence', () => Audio.play('fence'));
+
+// Screen shake and confetti on the big moments
+const board = () => document.getElementById('board');
+on('kill', ({ boss }) => { if (boss) shake(board(), 2.2); });
+on('leak', lost => shake(board(), lost>1 ? 2.5 : .8));
+on('boss', () => shake(board(), 1.4));
+on('fence', () => shake(board(), .6));
+on('win', ({ stars }) => { if (stars===3) setTimeout(() => confetti(), 250); });
 on('boss', () => Audio.play('boss'));
 on('waveStart', () => Audio.play('wave'));
 on('waveClear', () => Audio.play('chime'));
@@ -48,6 +58,7 @@ async function boot(){
   Audio.init(Save.data.settings);
   initBoard(document.getElementById('cv'), document.getElementById('board'));
   initUI();
+  initAchievements();
   play(lastOpenLevel());
   showMenu();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);

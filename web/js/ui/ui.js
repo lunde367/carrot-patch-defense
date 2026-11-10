@@ -14,6 +14,8 @@ import { DRAW } from '../render/art-towers.js';
 import { drawCrop } from '../render/art-common.js';
 import { cellAt, resize } from '../render/board.js';
 import { startTutorial, stopTutorial, tutorialActive } from './tutorial.js';
+import { ACHIEVEMENTS } from '../data/achievements.js';
+import { achievementCount, progressOf } from './achievements.js';
 
 const msg = t => { $('msg').textContent = t; };
 const highest = () => { let gi=0; while (gi+1<LEVELS.length && (Save.data.stars[gi]||0)>0) gi++; return gi; };
@@ -37,8 +39,8 @@ on('levelStart', LV => {
   setHome(false); hideOverlay(); disarmRestart(); resize(); renderBar(); renderInfo(); dirty();
   msg(`${LV.ch.name} ${LV.li+1}: ${LV.name}. ${LV.intro}${G.S.fence?` Your fence will stop the first ${G.S.fence} pests that get through.`:''}`);
   const fresh = TRAY.filter(k => towerOpen(k) && TYPES[k].unlock>0 && !Save.data.seen[k]);
-  if (fresh.length && !devMode) showNewDefender(fresh[0]);
-  else if (LV.gi===0 && !Save.data.tutorialDone) startTutorial();
+  if (LV.gi===0 && !Save.data.tutorialDone) startTutorial();          // the tutorial comes first
+  else if (fresh.length && !devMode) showNewDefender(fresh[0]);
 });
 
 // ---------- overlays ----------
@@ -78,7 +80,10 @@ export function showMenu(){
   home(`<div class="home-head"><h2>Pick a garden</h2>
       <button class="shed-btn" data-go="shed">${ICON.shed}Garden Shed <b>★ ${starsLeft()}</b></button></div>
     ${html}${devMode?'<p class="devnote">Test mode is on: every level and defender is unlocked. Tap the title 7 times to turn it off.</p>':''}
-    ${devMode?'<div class="home-foot"><button class="reset-btn" data-go="reset">Reset progress (test mode)</button></div>':''}`);
+    <div class="home-tools">
+      <button class="tool-btn" data-go="achievements">${ICON.trophy}<span>Achievements</span><b>${achievementCount()}/${ACHIEVEMENTS.length}</b></button>
+      <button class="tool-btn" data-go="settings">${ICON.gear}<span>Settings</span></button>
+    </div>`);
   for (const c2 of $('home').querySelectorAll('canvas[data-crop]')){ const c=c2.getContext('2d'); c.setTransform(2,0,0,2,0,0); drawCrop(c,c2.dataset.crop,20,22,32); }
 }
 
@@ -104,7 +109,43 @@ function showShed(){
 function buyPerk(id){
   const p=PERKS.find(x=>x.id===id), tier=Save.data.perks[id]||0, cost=p.costs[tier];
   if (cost==null || cost>starsLeft()){ Audio.play('denied'); return; }
-  Save.data.perks[id]=tier+1; Save.commit(); Audio.play('sparkle'); showShed();
+  Save.data.perks[id]=tier+1; Save.commit(); Audio.play('sparkle'); showShed(); emit('perk', id);
+}
+
+// ---------- Achievements ----------
+function showAchievements(){
+  const rows = ACHIEVEMENTS.map(a => {
+    const got = Save.data.ach[a.id], prog = progressOf(a);
+    return `<div class="ach${got?' got':''}"><span class="ach-icon" aria-hidden="true">${got?'★':ICON.lock}</span>
+      <span class="ach-text"><b>${a.name}</b><small>${a.desc}</small>
+      ${!got && prog!=null ? `<span class="ach-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${a.goal}" aria-valuenow="${prog}"><i style="width:${prog/a.goal*100}%"></i></span><small class="ach-num">${prog.toLocaleString()} / ${a.goal.toLocaleString()}</small>` : ''}
+      </span>${got?`<span class="ach-date">${got}</span>`:''}</div>`;
+  }).join('');
+  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button>
+      <h2>Achievements</h2><span class="star-count">${achievementCount()}/${ACHIEVEMENTS.length}</span></div>
+    <div class="achs">${rows}</div>`);
+}
+
+// ---------- Settings ----------
+function showSettings(){
+  const s=Save.data.settings;
+  const toggle=(id,label,on,note)=>`<div class="set-row"><span><b>${label}</b>${note?`<small>${note}</small>`:''}</span>
+    <button class="switch" role="switch" aria-checked="${on}" data-go="${id}" aria-label="${label}"><i></i></button></div>`;
+  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button><h2>Settings</h2></div>
+    <div class="set-group">
+      ${toggle('t-sfx','Sound effects',s.sfx)}
+      ${toggle('t-music','Music',s.music)}
+    </div>
+    <div class="set-group">
+      <div class="set-row"><span><b>Tutorial</b><small>Play the guided first level again.</small></span>
+        <button class="btn ghost small" data-go="replay-tutorial">Replay</button></div>
+    </div>
+    ${devMode?`<div class="set-group dev">
+      <div class="set-row"><span><b>Test mode is on</b><small>Every level and defender is unlocked. Tap the title 7 times to turn it off.</small></span></div>
+      <div class="set-row"><span><b>Reset progress</b><small>Erase all stars, upgrades, unlocks and achievements.</small></span>
+        <button class="reset-btn" data-go="reset">Reset</button></div>
+    </div>`:''}
+    <p class="version">Carrot Patch Defense · version 0.3</p>`);
 }
 
 on('win', ({ stars, lives, maxLives, lost, gi }) => {
@@ -157,6 +198,13 @@ async function onOverlayClick(ev){
     case 'next': return play(gi+1);
     case 'retry': return play(gi);
     case 'menu': return showMenu();
+    case 'achievements': return showAchievements();
+    case 'settings': return showSettings();
+    case 't-sfx': case 't-music': {
+      const s=Save.data.settings, k=b.dataset.go==='t-sfx'?'sfx':'music'; s[k]=!s[k];
+      Save.commit(); Audio.setSettings(s); paintSound(); showSettings(); if (k==='sfx' && s.sfx) Audio.play('tap'); return;
+    }
+    case 'replay-tutorial': Save.data.tutorialDone=false; Save.commit(); return play(0);
     case 'shed': leaveLevel(); return showShed();
     case 'refund': Save.data.perks={}; Save.commit(); return showShed();
     case 'resume': return resume();
@@ -164,8 +212,8 @@ async function onOverlayClick(ev){
       // Two taps: the first arms the button, the second erases.
       if (!devMode) return;
       if (!b.classList.contains('armed')){
-        b.classList.add('armed'); b.textContent='Tap again to erase all stars, upgrades and unlocks';
-        setTimeout(()=>{ if (b.isConnected){ b.classList.remove('armed'); b.textContent='Reset progress (test mode)'; } }, 4000);
+        b.classList.add('armed'); b.textContent='Tap again to erase everything';
+        setTimeout(()=>{ if (b.isConnected){ b.classList.remove('armed'); b.textContent='Reset'; } }, 4000);
         return;
       }
       await Save.reset(['settings','owned']);       // keep sound settings and any purchases

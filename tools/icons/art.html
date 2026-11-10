@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent}</style></head><body>
+<canvas id="c"></canvas>
+<script type="module">
+// Draws the app icon or splash art from the game's own characters.
+import { DRAW } from '/web/js/render/art-towers.js';
+import { drawCrop } from '/web/js/render/art-common.js';
+import { ell, rng } from '/web/kit/js/draw.js';
+const q = new URLSearchParams(location.search), kind = q.get('kind') || 'icon', S = +(q.get('size') || 1024), dark = q.get('dark') === '1';
+const c = document.getElementById('c'); c.width = c.height = S; const g = c.getContext('2d');
+function iconScene(){
+  // grass with a checker, a winding dirt path, cabbages at the bottom, a big bunny on top
+  const n = 6, t = S/n;
+  for (let r=0;r<n;r++) for (let k=0;k<n;k++){ g.fillStyle=(r+k)%2?'#a6cf8a':'#9ec781'; g.fillRect(k*t,r*t,t,t); }
+  g.lineCap='round'; g.lineJoin='round';
+  const path=()=>{ g.beginPath(); g.moveTo(S*.78,-S*.05); g.lineTo(S*.78,S*.28); g.lineTo(S*.22,S*.28); g.lineTo(S*.22,S*.62); g.lineTo(S*.6,S*.62); g.lineTo(S*.6,S*1.05); };
+  path(); g.strokeStyle='#b48d5a'; g.lineWidth=S*.15; g.stroke(); path(); g.strokeStyle='#dcbd8b'; g.lineWidth=S*.12; g.stroke();
+  const R=rng(3); for (let i=0;i<40;i++){ ell(g,S*(.1+R()*.8),S*(.1+R()*.8),S*.006,S*.004,'rgba(160,120,70,.25)'); }
+  for (const [x,y] of [[.12,.9],[.36,.92],[.86,.86]]) drawCrop(g,'cabbage',S*x,S*y,S*.3);
+  g.save(); g.translate(S*.5,S*.5); DRAW.bunny(g,S*.62,0,0,0,1); g.restore();
+}
+function splashScene(){
+  g.fillStyle = dark ? '#182016' : '#edf2e3'; g.fillRect(0,0,S,S);
+  // a rounded tile of the icon art in the middle; the rest stays plain so any crop of the square works
+  const w=S*.24, x=(S-w)/2, y=(S-w)/2;
+  const tmp=document.createElement('canvas'); tmp.width=tmp.height=1024; const tg=tmp.getContext('2d');
+  const save=g; window.__g=tg;
+  g.save(); g.beginPath(); g.roundRect(x,y,w,w,w*.22); g.clip();
+  g.translate(x,y); g.scale(w/S,w/S); iconScene(); g.restore();
+}
+if (kind === 'icon') iconScene(); else splashScene();
+document.title = 'ready';
+</script></body></html>
