@@ -1,7 +1,7 @@
 // Boot: build the page, load the save, wire sound and phone lifecycle, run the game loop.
 import { MARKUP } from './ui/markup.js';
 import { G, update } from './engine/game.js';
-import { Save } from './save.js';
+import { Save, starsLeft } from './save.js';
 import { SHOT_SOUND } from './sounds.js';
 import { on } from '../kit/js/events.js';
 import { Audio } from '../kit/js/audio.js';
@@ -42,6 +42,8 @@ function frame(now){
 async function boot(){
   document.getElementById('root').innerHTML = MARKUP;
   await Save.load();
+  // If upgrade prices went up after an update, refund rather than leave the player owing stars.
+  if (starsLeft() < 0){ Save.data.perks = {}; Save.commit(); }
   bindSave(Save);
   Audio.init(Save.data.settings);
   initBoard(document.getElementById('cv'), document.getElementById('board'));
