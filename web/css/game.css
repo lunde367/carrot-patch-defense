@@ -4,6 +4,9 @@
 
 .top{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap }
 .stats{ display:flex; gap:6px }
+.title-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap }
+.dev-badge{ font-size:.68rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#fff; background:var(--berry);
+  border-radius:var(--r-pill); padding:3px 8px }
 button.chip.dev{ cursor:pointer; border-style:dashed; border-color:var(--accent) }
 .d-seed{ background:#d9a441; border-radius:50% 50% 50% 50%/60% 60% 40% 40% }
 .d-life{ background:#8fc25a; box-shadow:inset -3px -2px 0 #5f9a35 }

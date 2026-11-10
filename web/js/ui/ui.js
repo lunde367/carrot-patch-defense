@@ -261,6 +261,7 @@ function onSound(){
 function paintDev(){
   const chip=$('seedsChip'); chip.classList.toggle('dev', devMode); chip.tabIndex=devMode?0:-1;
   chip.title = devMode ? 'Test mode: tap for +200 seeds' : 'Seeds';
+  $('devBadge').hidden = !devMode;
 }
 
 // ---------- board input ----------

@@ -5,7 +5,7 @@ export { ICON };
 export const MARKUP = `
 <div class="app">
   <header class="top">
-    <h1 class="k-title">Carrot Patch <span>Defense</span></h1>
+    <div class="title-row"><h1 class="k-title">Carrot Patch <span>Defense</span></h1><span class="dev-badge" id="devBadge" hidden>Test mode</span></div>
     <div class="stats">
       <button class="chip" id="seedsChip" title="Seeds" tabindex="-1"><i class="dot d-seed"></i><span id="seeds">0</span><small>seeds</small></button>
       <div class="chip" title="Crops left"><i class="dot d-life"></i><span id="lives">0</span></div>
