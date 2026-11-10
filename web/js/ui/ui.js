@@ -243,6 +243,7 @@ async function onOverlayClick(ev){
       msg(`${TYPES[key].name} selected. Tap the grass to plant it.`);
       const more = TRAY.find(k => towerOpen(k) && TYPES[k].unlock>0 && !Save.data.seen[k]);
       if (more) showNewDefender(more);
+      else if (G.S.sprayOn && !Save.data.seen.spray && !devMode) showSprayIntro();   // then the Sprayer, if it's new too
       return;
     }
     case 'adretry': { b.disabled=true; const ok=await Ads.showRewarded('retry_bonus'); if (ok) play(gi, REWARDS.retrySeeds); else b.disabled=false; return; }
