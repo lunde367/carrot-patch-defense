@@ -3,3 +3,4 @@ ios/App/Pods/
 android/.gradle/
 android/app/build/
 .DS_Store
+tools/balance/reports/

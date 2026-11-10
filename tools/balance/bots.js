@@ -1,0 +1,113 @@
+// Robot players. Each one decides what to plant and upgrade between waves, the same way a
+// person would, using only what the game allows (seeds, unlocked defenders, open grass).
+import { G, plantAt, upgrade, costOf, upCostOf, towerAt } from '../../web/js/engine/game.js';
+import { path, pointAt, buildable } from '../../web/js/engine/path.js';
+import { TYPES } from '../../web/js/data/towers.js';
+import { COLS, ROWS } from '../../web/js/data/levels.js';
+
+const ATTACKERS = ['bunny','rose','squirrel','sprinkler','pine','owl'];
+
+// Points along the path, used to judge how much of it a spot can reach.
+let samples = [];
+export function preparePath(){
+  samples = [];
+  for (let d=0.6; d<path.total; d+=0.25){ const [x,y]=pointAt(d); samples.push({x,y,w:.6+.8*d/path.total}); }
+}
+function coverage(c, r, range){
+  const x=c+.5, y=r+.5; let s=0;
+  for (const p of samples) if (Math.hypot(p.x-x,p.y-y)<=range) s+=p.w;
+  return s;
+}
+function freeCells(){
+  const out=[];
+  for (let r=0;r<ROWS-1;r++) for (let c=0;c<COLS;c++) if (buildable(c,r) && !towerAt(c,r)) out.push([c,r]);
+  return out;
+}
+// Best open spot for a defender; sunflowers go wherever no defender would want to stand.
+function bestCell(type, rnd=null){
+  const cells=freeCells(); if (!cells.length) return null;
+  if (type==='sunflower'){ let best=null, bs=Infinity; for (const [c,r] of cells){ const s=coverage(c,r,2.5); if (s<bs){ bs=s; best=[c,r]; } } return best; }
+  const range=TYPES[type].range[0]*G.S.perks.rangeMul;
+  const scored=cells.map(([c,r])=>({c,r,s:coverage(c,r,range)})).sort((a,b)=>b.s-a.s);
+  const pick = rnd ? scored[Math.floor(rnd()*Math.min(8,scored.length))] : scored[0];
+  return [pick.c, pick.r];
+}
+function place(type, rnd){
+  const S=G.S; if (S.seeds<costOf(type)) return false;
+  const cell=bestCell(type, rnd); if (!cell) return false;
+  S.build=type; const res=plantAt(cell[0],cell[1]); S.build=null;
+  return res.ok;
+}
+// Upgrade the defender standing on the most path, if affordable.
+function upgradeBest(filter=()=>true){
+  const S=G.S;
+  const cands=S.towers.filter(t=>t.lv<2 && t.type!=='sunflower' && filter(t) && S.seeds>=upCostOf(t));
+  if (!cands.length) return false;
+  cands.sort((a,b)=>coverage(b.c,b.r,TYPES[b.type].range[b.lv])-coverage(a.c,a.r,TYPES[a.type].range[a.lv]));
+  return upgrade(cands[0]);
+}
+const count = type => G.S.towers.filter(t=>t.type===type).length;
+const attackers = avail => ATTACKERS.filter(k=>avail.includes(k));
+
+// Each strategy: spend(available defenders, wave number about to start, random fn)
+export const STRATEGIES = {
+  // A sensible player: a mix of defenders, one sunflower early, upgrades once there are enough.
+  balanced(avail, wave){
+    const atk=attackers(avail);
+    for (let guard=0; guard<40; guard++){
+      if (avail.includes('sunflower') && wave<=2 && count('sunflower')===0 && place('sunflower')) continue;
+      const want = 3 + Math.floor(wave*.8);
+      const n = G.S.towers.filter(t=>t.type!=='sunflower').length;
+      if (n < want){
+        const next = atk.slice().sort((a,b)=>count(a)-count(b))[0];
+        if (place(next)) continue;
+        if (upgradeBest()) continue;
+        break;
+      }
+      if (upgradeBest()) continue;
+      if (place(atk.slice().sort((a,b)=>count(a)-count(b))[0])) continue;
+      break;
+    }
+  },
+  // Lots of defenders, never upgrades.
+  spammer(avail){
+    const atk=attackers(avail);
+    for (let guard=0; guard<60; guard++){
+      const next=atk.slice().sort((a,b)=>count(a)-count(b)||costOf(a)-costOf(b));
+      if (!next.some(k=>place(k))) break;
+    }
+  },
+  // Few defenders, upgraded as high as possible.
+  upgrader(avail){
+    const atk=attackers(avail);
+    for (let guard=0; guard<40; guard++){
+      if (upgradeBest()) continue;
+      if (G.S.towers.length<3 + Math.floor(G.S.wave/3) && place(atk[G.S.towers.length % atk.length])) continue;
+      if (G.S.towers.every(t=>t.lv>=2) && place(atk[G.S.towers.length % atk.length])) continue;
+      break;
+    }
+  },
+  // A sloppy beginner: random choices, decent-but-not-best spots.
+  random(avail, wave, rnd){
+    for (let guard=0; guard<40; guard++){
+      const roll=rnd();
+      if (roll<.25 && upgradeBest(()=>rnd()<.5)) continue;
+      const type=avail[Math.floor(rnd()*avail.length)];
+      if (place(type, rnd)) continue;
+      if (rnd()<.5) break;
+      if (!avail.some(k=>G.S.seeds>=costOf(k))) break;
+    }
+  },
+};
+// One-defender-only players, to find defenders that are too strong or too weak.
+export function monoStrategy(type){
+  return function(avail, wave){
+    for (let guard=0; guard<40; guard++){
+      if (count(type) < 3 + Math.floor(wave*.8) && place(type)) continue;
+      if (upgradeBest(t=>t.type===type)) continue;
+      if (place(type)) continue;
+      break;
+    }
+  };
+}
+export const MONO_TYPES = ATTACKERS;

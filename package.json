@@ -12,7 +12,8 @@
     "sync": "npx cap sync",
     "ios": "npx cap sync ios && npx cap open ios",
     "android": "npx cap sync android && npx cap open android",
-    "new-game": "node scripts/new-game.mjs"
+    "new-game": "node scripts/new-game.mjs",
+    "balance": "node tools/balance/run.js"
   },
   "dependencies": {
     "@capacitor/app": "^7.0.0",

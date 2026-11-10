@@ -47,6 +47,21 @@ npm run new-game -- "Pond Pals"
 Creates `../pond-pals/` with the kit, a tiny working starter game (with a tutorial), the
 GitHub Pages workflow and the app setup.
 
+## Balance check (robot players)
+
+```
+npm run balance                     # every level, 40 games per robot player (~45 seconds)
+npm run balance -- --runs 100       # more games, steadier numbers
+npm run balance -- --level 5        # one level (0 = Seedlings … 8 = Big Dig)
+npm run balance -- --perks all      # as if every Garden Shed upgrade is owned
+```
+
+Robot players play every level using the game's real rules: a sensible player, an upgrader, a
+spammer, a random beginner, and one-defender-only players for each defender. The report
+(`tools/balance/reports/report.html`) flags levels that are too hard, too easy or a sudden spike,
+bosses that cause most losses, and defenders that are too strong or too weak. Run it after any
+change in `web/js/data/`. The tool lives in `tools/balance/` and never ships with the game.
+
 ## Put it online (free, for play-testing on any phone)
 
 1. Push this folder to a GitHub repo.
