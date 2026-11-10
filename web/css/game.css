@@ -32,6 +32,10 @@ canvas{ display:block }
 
 .chap{ display:flex; flex-direction:column; gap:9px; padding:12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg) }
 .chap header{ display:flex; gap:12px; align-items:center }
+.chap.locked{ background:transparent; border-style:dashed }
+.chap.locked b{ color:var(--muted) }
+.chap-lock{ width:44px; height:44px; border-radius:10px; flex:none; display:grid; place-items:center; background:var(--line); color:var(--muted) }
+.chap-lock svg{ width:22px; height:22px }
 .chap canvas{ width:44px; height:44px; border-radius:10px; background:#8a5e3c; flex:none }
 .chap b{ font-family:var(--display); font-size:1.08rem; display:block }
 .chap small{ font-weight:700; font-size:.8rem; color:var(--muted) }

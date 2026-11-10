@@ -61,7 +61,14 @@ function showNewDefender(key){
 
 export function showMenu(){
   leaveLevel(); renderInfo(); disarmRestart(); dirty();
-  const html = CHAPTERS.map(ch => {
+  const html = CHAPTERS.map((ch, ci) => {
+    // A garden opens only once every level of the garden before it is beaten.
+    const prev = CHAPTERS[ci-1];
+    if (ci>0 && !devMode && !prev.levels.every(l => (Save.data.stars[l.gi]||0)>0)){
+      const done = prev.levels.filter(l => (Save.data.stars[l.gi]||0)>0).length;
+      return `<div class="chap locked" aria-disabled="true"><header><span class="chap-lock">${ICON.lock}</span>
+        <span><b>${ch.name}</b><small>Beat all 3 ${prev.name} levels to unlock · ${done} of 3 done</small></span></header></div>`;
+    }
     const lvls = ch.levels.map(l => { const ok=unlocked(l.gi), st=Save.data.stars[l.gi]||0;
       return `<button class="lv${G.LV&&G.LV.gi===l.gi?' cur':''}" data-lv="${l.gi}" ${ok?'':'disabled'}><b>${l.li+1}. ${l.name}</b>
         ${ok?`<span class="stars">${starStr(st)}</span>`:'<span class="lv-lock">Locked</span>'}</button>`; }).join('');
