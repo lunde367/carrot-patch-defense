@@ -7,7 +7,8 @@
 //     { text:'All done!', button:'Got it' },
 //   ]);
 //
-// Step fields: text, target (selector, element or function), place ('auto' next to the target |
+// Step fields: text, target (selector, element or function; without one the bubble sits at the
+// bottom of the screen), place ('auto' next to the target |
 // 'over' or 'over-bottom' inside its bottom edge | 'over-top' inside its top edge), until (event
 // name), when (filter for that event), button (shows a button that advances), enter()/leave() hooks.
 import { on } from './events.js';
@@ -50,7 +51,12 @@ export function createCoach({ onFinish = () => {}, skipLabel = 'Skip tutorial' }
     const w = Math.min(300, vw - 32); el.style.width = w + 'px';
     const h = el.offsetHeight;
     let top, left, arrowSide = 'none', ax = 0;
-    if (!target){ top = Math.max(16, vh*.18); left = (vw - w)/2; }
+    if (!target){
+      // Nothing to point at: sit at the bottom of the screen, clear of the play area
+      // (games keep the action up top and controls at the bottom).
+      const safe = parseFloat(getComputedStyle(document.documentElement).paddingBottom) || 0;
+      top = vh - h - 12 - safe; left = (vw - w)/2;
+    }
     else {
       const r = target.getBoundingClientRect();
       left = Math.min(Math.max(16, r.left + r.width/2 - w/2), vw - w - 16);
