@@ -1,17 +1,11 @@
 // The page layout. Injected by main.js so the web page and the app share one copy.
-const svg = d => `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-export const ICON = {
-  restart: svg('<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/>'),
-  map:     svg('<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>'),
-  soundAll:svg('<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/>'),
-  soundFx: svg('<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/>'),
-  soundOff:svg('<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/>'),
-};
+import { ICON } from '../../kit/js/ui.js';
+export { ICON };
 
 export const MARKUP = `
 <div class="app">
   <header class="top">
-    <h1>Carrot Patch <span>Defense</span></h1>
+    <h1 class="k-title">Carrot Patch <span>Defense</span></h1>
     <div class="stats">
       <button class="chip" id="seedsChip" title="Seeds" tabindex="-1"><i class="dot d-seed"></i><span id="seeds">0</span><small>seeds</small></button>
       <div class="chip" title="Crops left"><i class="dot d-life"></i><span id="lives">0</span></div>

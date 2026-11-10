@@ -1,0 +1,97 @@
+/* ==========================================================================
+   Cozy Kit — the shared look for the game family.
+   Every game links this file first, then its own game.css. Change a token here and every
+   game picks it up. A game can re-theme by overriding --accent (and friends) in game.css.
+   ========================================================================== */
+:root{
+  /* palette: garden greens with a warm accent */
+  --bg:#edf2e3; --surface:#fafcf5; --line:#d3dcc4; --ink:#28331f; --muted:#64725a;
+  --accent:#e07a26; --accent-ink:#ffffff; --berry:#c2456b; --leaf:#4f8a3c; --gold:#e0a21c;
+  /* overlay panels sit on a dim scrim and are always light, in both themes */
+  --scrim:rgba(30,40,24,.8); --panel:#fafcf5; --panel-ink:#28331f; --panel-muted:#64725a; --panel-line:#d3dcc4;
+  /* type */
+  --display:'Sniglet','Nunito',ui-rounded,system-ui,sans-serif;
+  --body:'Nunito',ui-rounded,system-ui,sans-serif;
+  /* shape */
+  --r-sm:10px; --r-md:12px; --r-lg:14px; --r-pill:999px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#182016; --surface:#222c1e; --line:#35432e; --ink:#e6eedb; --muted:#9dad8d;
+  --accent:#f0913f; --accent-ink:#24170a; --berry:#e8749a; --leaf:#86c06d; --gold:#f2c14e; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#182016; --surface:#222c1e; --line:#35432e; --ink:#e6eedb; --muted:#9dad8d;
+  --accent:#f0913f; --accent-ink:#24170a; --berry:#e8749a; --leaf:#86c06d; --gold:#f2c14e; color-scheme:dark }
+
+/* ---------- base ---------- */
+*,*::before,*::after{ box-sizing:border-box }
+[hidden]{ display:none !important }
+html.app-shell{ padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); background:var(--bg) }
+html,body{ min-height:100% }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:var(--body); font-size:15px;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:12px 20px;
+  -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  touch-action:manipulation; overscroll-behavior:none; -webkit-text-size-adjust:100% }
+h1,h2,h3{ font-family:var(--display); text-wrap:balance }
+button:focus-visible{ outline:3px solid var(--leaf); outline-offset:2px }
+
+/* ---------- title: two-tone wordmark ---------- */
+.k-title{ font-weight:800; font-size:1.45rem; line-height:1; margin:0; letter-spacing:.2px }
+.k-title span{ color:var(--accent) }
+
+/* ---------- chips: counters in the HUD ---------- */
+.chip{ display:flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-pill);
+  padding:4px 10px 4px 7px; font:inherit; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; font-size:.95rem }
+.chip small{ font-weight:700; color:var(--muted); font-size:.68rem; text-transform:uppercase; letter-spacing:.06em }
+button.chip{ cursor:default }
+.dot{ width:12px; height:12px; border-radius:50%; flex:none }
+
+/* ---------- buttons ---------- */
+button.btn{ font:inherit; font-weight:800; border-radius:var(--r-md); border:2px solid transparent; padding:10px 12px; cursor:pointer; white-space:nowrap }
+.btn.main{ background:var(--accent); color:var(--accent-ink); font-family:var(--display); font-size:1.02rem; overflow:hidden; text-overflow:ellipsis }
+.btn.main:disabled{ background:var(--line); color:var(--muted); cursor:default }
+.btn.ghost{ background:var(--surface); border-color:var(--line); color:var(--ink); font-size:.88rem }
+.btn.ghost:disabled{ opacity:.5; cursor:default }
+.btn.icon{ display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:9px 10px; min-width:44px }
+.btn.icon .lbl:empty{ display:none }
+.btn.small{ padding:6px 12px; font-size:.85rem }
+.btn.ghost.armed{ border-color:var(--berry); color:var(--berry) }
+
+/* ---------- overlay: full-board scrim with a centered column ---------- */
+.over{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:safe center; gap:10px;
+  text-align:center; padding:16px; background:var(--scrim); color:#f4f7ec; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:5 }
+.over h2{ font-size:1.5rem; margin:0 }
+.over p{ margin:0; max-width:32ch }
+.over .row{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center }
+.over .btn.main{ flex:0 0 auto; background:#f0913f; color:#24170a }
+.over .btn.ghost{ background:transparent; border-color:rgba(255,255,255,.5); color:#f4f7ec; white-space:normal }
+/* light card inside an overlay */
+.panel{ background:var(--panel); color:var(--panel-ink); border-radius:var(--r-lg); padding:10px; width:100%; max-width:340px; text-align:left }
+.panel small, .panel .muted{ color:var(--panel-muted) }
+.stars{ font-size:2rem; letter-spacing:4px; color:#f6c344 }
+.stars i{ font-style:normal; color:rgba(255,255,255,.25) }
+.panel .stars, .stars.sm{ font-size:.85rem; letter-spacing:1px; color:var(--gold) }
+.panel .stars i, .stars.sm i{ color:#cfd6c3 }
+
+/* ---------- tutorial coach bubble ---------- */
+.coach{ position:fixed; z-index:40; background:#2e3a26; color:#f4f7ec; border-radius:var(--r-lg); padding:12px 14px 10px;
+  box-shadow:0 8px 24px rgba(20,30,15,.35); font-weight:700; line-height:1.35; animation:coach-in .25s ease-out }
+.coach-text{ margin:0 0 8px }
+.coach-acts{ display:flex; gap:8px; align-items:center; justify-content:space-between }
+.coach-btn{ font:inherit; font-weight:800; background:#f0913f; color:#24170a; border:0; border-radius:var(--r-sm); padding:6px 14px; cursor:pointer }
+.coach-skip{ font:inherit; font-size:.8rem; font-weight:700; background:none; border:0; color:#b8c7a8; cursor:pointer; padding:4px 0; margin-left:auto; text-decoration:underline }
+.coach-arrow{ position:absolute; width:14px; height:14px; background:#2e3a26; transform:translateX(-50%) rotate(45deg) }
+.coach-arrow[data-side="down"]{ bottom:-7px } .coach-arrow[data-side="up"]{ top:-7px } .coach-arrow[data-side="none"]{ display:none }
+.coach-target{ position:relative; z-index:3; animation:coach-pulse 1.2s ease-in-out infinite; border-color:var(--accent) !important }
+@keyframes coach-pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(240,145,63,.65) } 50%{ box-shadow:0 0 0 7px rgba(240,145,63,0) } }
+@keyframes coach-in{ from{ opacity:0; transform:translateY(6px) } to{ opacity:1; transform:none } }
+
+/* ---------- dev-mode stand-in for a rewarded ad ---------- */
+.testad{ position:fixed; inset:0; z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+  background:#1d2433; color:#fff; font-family:var(--body) }
+.testad b{ font-family:var(--display); font-size:1.6rem }
+.testad-bar{ width:180px; height:6px; background:rgba(255,255,255,.2); border-radius:3px; overflow:hidden }
+.testad-bar i{ display:block; height:100%; width:100%; background:#f0913f; transform-origin:left; animation:adbar 1.8s linear forwards }
+@keyframes adbar{ from{ transform:scaleX(0) } to{ transform:scaleX(1) } }
+
+@media (prefers-reduced-motion: reduce){ .coach, .coach-target, .testad-bar i{ animation:none } }

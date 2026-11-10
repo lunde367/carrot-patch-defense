@@ -1,0 +1,7 @@
+/* Your game's own layout. The family look (colors, type, buttons, overlays) comes from kit.css.
+   To give this game its own accent, override it here, e.g.  :root{ --accent:#3a8fd1 }  */
+.app{ max-width:560px; margin:0 auto; display:flex; flex-direction:column; gap:12px }
+.top{ display:flex; align-items:center; justify-content:space-between; gap:10px }
+.stage{ position:relative; align-self:center; width:min(100%,360px); aspect-ratio:1; max-width:100%;
+  border-radius:var(--r-lg); overflow:hidden; box-shadow:0 0 0 3px var(--line); background:#a6cf8a }
+.stage canvas{ width:100%; height:100%; display:block }

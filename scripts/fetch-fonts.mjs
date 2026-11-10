@@ -1,9 +1,9 @@
-// Downloads the game's fonts from Google Fonts into web/fonts/ so the app works offline.
+// Downloads the game's fonts from Google Fonts into web/kit/fonts/ so the app works offline.
 // Usage: npm run fonts   (needs Node 18+ and an internet connection, run once)
 import { writeFile, mkdir } from 'node:fs/promises';
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36';
-const out = new URL('../web/fonts/', import.meta.url);
+const out = new URL('../web/kit/fonts/', import.meta.url);
 const jobs = [
   { css:'https://fonts.googleapis.com/css2?family=Sniglet:wght@400&display=swap', file:'sniglet-400.woff2' },
   { css:'https://fonts.googleapis.com/css2?family=Sniglet:wght@800&display=swap', file:'sniglet-800.woff2' },

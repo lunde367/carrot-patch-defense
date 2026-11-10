@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" class="app-shell">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Cozy Kit Style Guide</title>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/kit.css">
+  <style>
+    /* Layout: a single reading column of labeled specimen sections */
+    body{ -webkit-user-select:text; user-select:text }
+    .wrap{ max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:28px; padding-block:12px 40px }
+    section{ display:flex; flex-direction:column; gap:12px }
+    .lbl{ font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:0 }
+    .lede{ color:var(--muted); margin:6px 0 0; max-width:60ch; line-height:1.5 }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center }
+    .sw{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px }
+    .sw div{ border:1px solid var(--line); border-radius:var(--r-md); overflow:hidden; background:var(--surface) }
+    .sw i{ display:block; height:54px }
+    .sw span{ display:block; padding:6px 8px; font-size:.78rem; font-weight:700 }
+    .sw code{ display:block; color:var(--muted); font-size:.72rem; font-weight:600 }
+    .type p{ margin:0 }
+    .stage{ position:relative; height:240px; border-radius:var(--r-lg); overflow:hidden; background:linear-gradient(#a6cf8a,#9ec781) }
+    .stage .over{ position:absolute }
+    .demo-coach{ position:static; animation:none; max-width:300px }
+    canvas{ display:block }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 class="k-title">Cozy <span>Kit</span></h1>
+    <p class="lede">The shared look, sound and phone plumbing for the game family. Every game links
+      <code>kit/css/kit.css</code> and imports from <code>kit/js/</code>, so a change here reaches all of them.</p>
+  </header>
+
+  <section>
+    <p class="lbl">Palette (switches with light and dark mode)</p>
+    <div class="sw" id="swatches"></div>
+  </section>
+
+  <section class="type">
+    <p class="lbl">Type</p>
+    <h1 class="k-title">Display: Sniglet <span>800</span></h1>
+    <h2 style="margin:0">Headings use Sniglet too</h2>
+    <p>Body text is Nunito: friendly, rounded and easy to read at small sizes on a phone.</p>
+  </section>
+
+  <section>
+    <p class="lbl">Buttons and chips</p>
+    <div class="row">
+      <button class="btn main">Start wave 1</button>
+      <button class="btn main" disabled>Wave 3…</button>
+      <button class="btn ghost">2×</button>
+      <button class="btn ghost small">Upgrade · 50</button>
+      <button class="btn ghost armed">Tap again</button>
+    </div>
+    <div class="row">
+      <div class="chip"><i class="dot" style="background:#d9a441"></i>135<small>seeds</small></div>
+      <div class="chip"><i class="dot" style="background:#8fc25a"></i>20</div>
+      <div class="chip"><i class="dot" style="background:var(--berry)"></i><small>summer</small>3/8</div>
+    </div>
+  </section>
+
+  <section>
+    <p class="lbl">Overlay, panel and stars</p>
+    <div class="stage">
+      <div class="over">
+        <h2>Level saved!</h2>
+        <div class="stars">★★<i>★</i></div>
+        <div class="panel"><b>Panels</b> <span class="muted">stay light on the dark scrim in both themes.</span></div>
+        <div class="row"><button class="btn main">Next level</button><button class="btn ghost">Play again</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="lbl">Tutorial coach bubble</p>
+    <div class="coach demo-coach"><p class="coach-text">Tap the Carrot Bunny to pick it.</p>
+      <div class="coach-acts"><button class="coach-btn">Got it</button><button class="coach-skip">Skip tutorial</button></div></div>
+  </section>
+
+  <section>
+    <p class="lbl">Art style: rounded shapes, darker outline, soft shadow, white highlight</p>
+    <canvas id="art" width="640" height="160" style="width:320px;height:80px"></canvas>
+  </section>
+
+  <section>
+    <p class="lbl">Sounds (tap to hear)</p>
+    <div class="row" id="sounds"></div>
+  </section>
+</div>
+<script type="module">
+  import { Audio } from './js/audio.js';
+  import { ell, crown, shadow } from './js/draw.js';
+  const tokens = ['--bg','--surface','--line','--ink','--muted','--accent','--berry','--leaf','--gold'];
+  const css = getComputedStyle(document.documentElement);
+  document.getElementById('swatches').innerHTML = tokens.map(t =>
+    `<div><i style="background:var(${t})"></i><span>${t.slice(2)}<code>${css.getPropertyValue(t).trim()}</code></span></div>`).join('');
+  const c = document.getElementById('art').getContext('2d'); c.scale(2,2);
+  c.save(); c.translate(50,46); shadow(c,22,26,7); ell(c,0,0,24,20,'#8fc25a','#4f8a3c',2); ell(c,-7,-3,11,12,'#a9d672'); ell(c,0,-6,8,8,'#cdeaa0'); c.restore();
+  c.save(); c.translate(150,46); shadow(c,22,30,7); ell(c,0,4,30,18,'#f0cf45','#9c7d16',2); ell(c,-6,-4,16,5,'rgba(255,255,255,.3)'); ell(c,20,0,3,3,'#222'); crown(c,-2,-10,12); c.restore();
+  c.save(); c.translate(250,46); shadow(c,22,22,7); ell(c,0,6,18,16,'#f7f2ec','#7d6f62',2); ell(c,0,-10,14,12,'#f7f2ec','#7d6f62',2); ell(c,-5,-12,2,2.5,'#3a2e26'); ell(c,5,-12,2,2.5,'#3a2e26'); c.restore();
+  Audio.init({ sfx:true, music:false });
+  const box = document.getElementById('sounds');
+  for (const n of ['tap','chime','sparkle','win','lose','denied']){
+    const b = document.createElement('button'); b.className='btn ghost small'; b.textContent=n;
+    b.onclick = () => setTimeout(() => Audio.play(n), 30); box.append(b);
+  }
+</script>
+</body>
+</html>

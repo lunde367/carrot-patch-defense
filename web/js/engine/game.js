@@ -3,14 +3,16 @@ import { TYPES } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
 import { LEVELS, WAVES } from '../data/levels.js';
 import { path, setPath, pointAt, buildable } from './path.js';
-import { emit } from '../core/events.js';
+import { emit } from '../../kit/js/events.js';
+import { NO_PERKS } from '../data/perks.js';
 
-export const G = { S:null, LV:null, CH:null };
+export const G = { S:null, LV:null, CH:null, hint:null };   // hint: a tile the tutorial highlights
 const MAX_FX = 260;
 
-export function startLevel(gi, speed=1, bonusSeeds=0){
-  const LV = G.LV = LEVELS[gi]; G.CH = LV.ch; setPath(LV.pts);
-  G.S = { mode:'play', paused:false, seeds:120+gi*15+bonusSeeds, lives:20, wave:0,
+export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
+  const LV = G.LV = LEVELS[gi]; G.CH = LV.ch; setPath(LV.pts); G.hint = null;
+  const maxLives = 20 + perks.lives;
+  G.S = { mode:'play', paused:false, seeds:120+gi*15+bonusSeeds+perks.seeds, lives:maxLives, maxLives, perks, wave:0,
     enemies:[], towers:[], shots:[], fx:[], spawnQ:[], spawnT:0, active:false, speed, sel:null, build:null };
   emit('levelStart', LV);
 }
@@ -49,19 +51,24 @@ function grow(e){
 }
 
 // ---------- building ----------
+// Prices and reach after Garden Shed perks.
+export const costOf = type => Math.round(TYPES[type].cost*G.S.perks.costMul);
+export const upCostOf = t => Math.round(TYPES[t.type].up[t.lv]*G.S.perks.costMul);
+export const rangeOf = t => TYPES[t.type].range[t.lv]*G.S.perks.rangeMul;
 export const towerAt = (c,r) => G.S.towers.find(t=>t.c===c&&t.r===r);
 export function plantAt(c,r){
-  const S=G.S, T=TYPES[S.build];
+  const S=G.S, T=TYPES[S.build], cost=costOf(S.build);
   if (!buildable(c,r)) return { ok:false, reason:'path' };
   if (towerAt(c,r)) return { ok:false, reason:'taken' };
-  if (S.seeds<T.cost) return { ok:false, reason:'seeds', cost:T.cost, name:T.name };
-  S.seeds-=T.cost;
-  const t={ type:S.build, c, r, x:c+.5, y:r+.5, lv:0, cd:0, hop:1, look:1, spent:T.cost };
+  if (S.seeds<cost) return { ok:false, reason:'seeds', cost, name:T.name };
+  S.seeds-=cost;
+  const lv = S.build==='bunny' ? S.perks.bunnyLv : 0;
+  const t={ type:S.build, c, r, x:c+.5, y:r+.5, lv, cd:0, hop:1, look:1, spent:cost };
   S.towers.push(t); emit('plant', t); return { ok:true, tower:t };
 }
 export function upgrade(t){
   const S=G.S; if (!t||t.lv>=2) return false;
-  const cost=TYPES[t.type].up[t.lv]; if (S.seeds<cost) return false;
+  const cost=upCostOf(t); if (S.seeds<cost) return false;
   S.seeds-=cost; t.spent+=cost; t.lv++; t.hop=1; emit('upgrade', t); return true;
 }
 export function sell(t){
@@ -81,8 +88,9 @@ function damage(e,d){
   if (e.armor && d<=e.armor+1 && Math.random()<.15){ floatText(e.x,e.y-.3,'tink','#7a8a96',.5); emit('tink'); }
   else emit('hit');
   if (e.hp<=0){
-    e.dead=true; S.seeds+=e.reward;
-    floatText(e.x,e.y-.3,'+'+e.reward,'#c98a12'); puffs(e.x,e.y,7,1.4);
+    const gain=Math.round(e.reward*S.perks.rewardMul);
+    e.dead=true; S.seeds+=gain;
+    floatText(e.x,e.y-.3,'+'+gain,'#c98a12'); puffs(e.x,e.y,7,1.4);
     emit('kill', { boss:!!ENEMY[e.type].boss });
   }
 }
@@ -129,7 +137,7 @@ export function update(dt){
   for (const t of S.towers){
     const T=TYPES[t.type]; t.cd-=dt; t.hop=Math.max(0,t.hop-dt*4);
     if (t.type==='sunflower') continue;
-    const R=T.range[t.lv];
+    const R=rangeOf(t);
     const inR=S.enemies.filter(e=>targetable(e)&&!(T.ground&&e.fly)&&Math.hypot(e.x-t.x,e.y-t.y)<=R);
     if (!inR.length||t.cd>0) continue;
     t.cd=1/T.rate[t.lv]; t.hop=1;
@@ -169,8 +177,8 @@ export function update(dt){
   if (S.active && !S.spawnQ.length && !S.enemies.length && S.mode==='play'){
     S.active=false;
     if (S.wave>=WAVES){
-      S.mode='won'; const stars=S.lives>=18?3:S.lives>=10?2:1;
-      emit('win', { stars, lives:S.lives, gi:G.LV.gi }); return;
+      const lost=S.maxLives-S.lives, stars=lost<=2?3:lost<=10?2:1;
+      S.mode='won'; emit('win', { stars, lives:S.lives, maxLives:S.maxLives, lost, gi:G.LV.gi }); return;
     }
     const bonus=8+S.wave*2; let inc=0;
     for (const t of S.towers) if (t.type==='sunflower'){ const v=TYPES.sunflower.income[t.lv]; inc+=v; floatText(t.x,t.y-.5,'+'+v,'#c98a12',1.3); t.hop=1; }

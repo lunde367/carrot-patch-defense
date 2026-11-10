@@ -1,11 +1,10 @@
-// Ads and purchases live behind this one small interface. The game only ever calls these
-// functions, so plugging in a real ad network (e.g. AdMob) or store (e.g. RevenueCat) later
-// means editing this file and nothing else.
+// Ads and purchases for every game in the family, behind one small interface.
+// Games only call these functions, so plugging in a real ad network (e.g. AdMob) or store
+// (e.g. RevenueCat) later means editing this file and nothing else.
 import { devMode } from './native.js';
-import { Save } from './storage.js';
 
-export const PRODUCTS = { removeAds:'remove_ads' };
-export const REWARDS = { retrySeeds:60 };
+let save = null;
+export function bindSave(s){ save = s; }   // the save object must have data.owned = {}
 
 export const Ads = {
   // True when a rewarded ad is loaded and ready to show.
@@ -23,16 +22,16 @@ export const Ads = {
 };
 
 export const Store = {
-  owns(id){ return !!Save.data.owned[id]; },
+  owns(id){ return !!(save && save.data.owned && save.data.owned[id]); },
   async buy(id){
     // TODO(app): call the store plugin; on success:
-    // Save.data.owned[id] = true; Save.commit(); return true;
+    // save.data.owned[id] = true; save.commit(); return true;
     return false;
   },
   async restore(){ /* TODO(app): restore purchases on a new phone */ return false; },
 };
 
-// Dev-mode stand-in so the reward flow can be tested in a browser. Clearly labeled, never shipped as a real ad.
+// Dev-mode stand-in so reward flows can be tested in a browser. Clearly labeled; never a real ad.
 function testAd(placement){
   return new Promise(resolve => {
     const el = document.createElement('div');

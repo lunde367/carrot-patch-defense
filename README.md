@@ -10,26 +10,41 @@ npm run dev        # then open http://localhost:5173
 ```
 
 Add `#dev` to the end of the address (e.g. `http://localhost:5173/#dev`) for **test mode**:
-every level unlocked, tap the seeds counter for +200 seeds, and ads are simulated.
+every level and defender unlocked, tap the seeds counter for +200 seeds, and ads are simulated.
+To replay the tutorial, clear the site's storage (or use a private window).
 
 ## Project layout
 
 ```
 web/                    ← everything the player gets (this folder becomes the app)
   index.html
-  css/style.css         ← house style: colors, fonts, buttons (reuse for future games)
-  css/fonts.css         ← offline fonts (files go in web/fonts/)
+  kit/                  ← Cozy Kit: the shared look, sound and phone code for the whole game family
+                          (open web/kit/index.html for the style guide; see web/kit/README.md)
+  css/game.css          ← this game's own layout
   js/main.js            ← starts the game, game loop, sound hookups
-  js/data/              ← towers.js, enemies.js, levels.js  ← balance & content lives here
+  js/save.js            ← what gets saved: stars, Garden Shed upgrades, settings
+  js/sounds.js          ← this game's sound effects and music
+  js/data/              ← towers.js, enemies.js, levels.js, perks.js  ← balance & content lives here
   js/engine/            ← game.js (rules & simulation), path.js
   js/render/            ← board.js (drawing the garden), art-*.js (all the characters)
-  js/ui/                ← ui.js (menus, buttons, panels), markup.js (page layout)
-  js/platform/          ← phone stuff: storage, audio, lifecycle, ads/purchases, native detection
-scripts/fetch-fonts.mjs ← downloads the fonts once
+  js/ui/                ← ui.js (menus, tray, shed), tutorial.js, markup.js (page layout)
+templates/new-game/     ← starter used by `npm run new-game`
+scripts/                ← fetch-fonts.mjs, new-game.mjs
 capacitor.config.json   ← app name & ID for the stores
 ```
 
-Most tuning — new pests, levels, tower stats — only touches `js/data/`.
+Most tuning only touches `js/data/`:
+- **When defenders unlock:** `unlock` in `towers.js` (0 = Seedlings, 1 = Leafy Heads, …).
+- **Garden Shed upgrades:** `perks.js`. Costs add up to 27, the most stars you can earn.
+- **Stars:** lose 2 or fewer crops for 3 stars, 10 or fewer for 2 (in `engine/game.js`).
+
+## Start another game in the family
+
+```
+npm run new-game -- "Pond Pals"
+```
+Creates `../pond-pals/` with the kit, a tiny working starter game (with a tutorial), the
+GitHub Pages workflow and the app setup.
 
 ## Put it online (free, for play-testing on any phone)
 
@@ -74,7 +89,7 @@ After any change in `web/`, run `npm run sync` (or `npm run ios` / `npm run andr
 
 ## Ads & purchases
 
-All money code goes through `js/platform/monetization.js`. The game already calls:
+All money code goes through `web/kit/js/monetization.js`. The game already calls:
 - `Ads.rewardedReady(placement)` / `Ads.showRewarded(placement)` — used on the lose screen
   ("watch an ad: retry with +60 seeds").
 - `Store.owns(id)` / `Store.buy(id)` / `Store.restore()` — product ID `remove_ads` is reserved.

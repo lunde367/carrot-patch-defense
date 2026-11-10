@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" class="app-shell">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#edf2e3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#182016" media="(prefers-color-scheme: dark)">
+  <title>__GAME_NAME__</title>
+  <link rel="stylesheet" href="kit/css/fonts.css">
+  <link rel="stylesheet" href="kit/css/kit.css">
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <h1 class="k-title">__GAME_NAME__</h1>
+      <div class="chip"><i class="dot" style="background:#d9a441"></i><span id="score">0</span><small>points</small></div>
+    </header>
+    <div class="stage" id="stage">
+      <canvas id="cv" width="360" height="360"></canvas>
+      <div class="over" id="over" hidden></div>
+    </div>
+    <button class="btn main" id="play">Play</button>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

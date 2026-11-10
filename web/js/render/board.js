@@ -1,14 +1,16 @@
 // Draws the garden board. Sizes itself to fit any phone, tablet or desktop window.
-import { G, towerAt } from '../engine/game.js';
+import { G, towerAt, rangeOf } from '../engine/game.js';
 import { path, buildable } from '../engine/path.js';
 import { COLS, ROWS } from '../data/levels.js';
 import { TYPES } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
-import { ell, rng, drawCrop } from './art-common.js';
+import { ell, rng } from '../../kit/js/draw.js';
+import { drawCrop } from './art-common.js';
 import { DRAW, drawPips, drawShot } from './art-towers.js';
 import { drawEnemy } from './art-enemies.js';
 
 let cv, g, bgc, boardEl, tile=0, W=0, H=0, dpr=1;
+const clockReal = () => performance.now()/1000;   // keeps hints pulsing while the game is paused
 
 export function initBoard(canvas, el){
   cv=canvas; boardEl=el; g=cv.getContext('2d', { alpha:false }); bgc=document.createElement('canvas');
@@ -76,18 +78,22 @@ export function draw(clock){
   const s=tile;
   g.setTransform(1,0,0,1,0,0); g.drawImage(bgc,0,0); g.setTransform(dpr,0,0,dpr,0,0);
 
-  const show=Math.ceil(S.lives/20*(COLS-1)); let k=0;
+  const show=Math.ceil(S.lives/S.maxLives*(COLS-1)); let k=0;
   for (let c=0;c<COLS;c++){ if (c===path.exitCol) continue; if (k++>=show) continue; drawCrop(g,G.CH.crop,(c+.5)*s,(ROWS-.45)*s,s); }
 
   if (S.build && S.mode==='play'){ g.fillStyle='rgba(255,255,255,.28)';
     for (let r=0;r<ROWS-1;r++) for (let c=0;c<COLS;c++) if (buildable(c,r)&&!towerAt(c,r)){ g.beginPath(); g.arc((c+.5)*s,(r+.5)*s,s*.1,0,6.28); g.fill(); } }
-  if (S.sel && TYPES[S.sel.type].range){ const R=TYPES[S.sel.type].range[S.sel.lv];
+  if (S.sel && TYPES[S.sel.type].range){ const R=rangeOf(S.sel);
     g.beginPath(); g.arc(S.sel.x*s,S.sel.y*s,R*s,0,6.28); g.fillStyle='rgba(255,255,255,.18)'; g.fill();
     g.setLineDash([6,5]); g.strokeStyle='rgba(255,255,255,.85)'; g.lineWidth=2; g.stroke(); g.setLineDash([]); }
 
   for (const f of S.fx){ const p=1-f.life/f.max;
     if (f.k==='ring'){ g.beginPath(); g.arc(f.x*s,f.y*s,f.r*s*p,0,6.28); g.strokeStyle=`rgba(150,210,240,${1-p})`; g.lineWidth=3; g.stroke(); }
     if (f.k==='thud') ell(g,f.x*s,f.y*s,f.r*s*(.4+.6*p),f.r*s*(.25+.4*p),`rgba(120,80,40,${.35*(1-p)})`,`rgba(94,61,32,${1-p})`,2); }
+
+  if (G.hint){ const p=.5+.5*Math.sin(clockReal()*6), x=(G.hint.c+.5)*s, y=(G.hint.r+.5)*s;
+    g.beginPath(); g.arc(x,y,s*(.36+.08*p),0,6.28); g.fillStyle=`rgba(255,240,170,${.35+.25*p})`; g.fill();
+    g.lineWidth=3; g.strokeStyle='#f0913f'; g.stroke(); }
 
   // towers and pests sorted by depth so nearer things overlap farther ones
   const items=[];
