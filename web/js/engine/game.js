@@ -11,6 +11,7 @@ const MAX_FX = 260;
 
 export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
   const LV = G.LV = LEVELS[gi]; G.CH = LV.ch; setPath(LV.pts); G.hint = null;
+  newShots = [];                                   // drop shots left over from a game that ended mid-wave
   const maxLives = 20 + perks.lives;
   G.S = { mode:'play', paused:false, seeds:120+gi*15+bonusSeeds+perks.seeds, lives:maxLives, maxLives, perks, wave:0,
     enemies:[], towers:[], shots:[], fx:[], spawnQ:[], spawnT:0, active:false, speed, sel:null, build:null };
@@ -150,7 +151,7 @@ export function update(dt){
         S.shots.push({k:'thorn',x:t.x,y:t.y-.2,tgt:e,tx:e.x,ty:e.y,spd:8,dmg:T.dmg[t.lv],a:0,spin:0});
     } else if (t.type==='pine'){
       const d0=Math.hypot(lead.x-t.x,lead.y-t.y)||1;
-      S.shots.push({k:'cone',x:t.x,y:t.y-.3,tgt:lead,tx:lead.x,ty:lead.y,spd:4.5,dmg:T.dmg[t.lv],splash:T.splash[t.lv],a:0,spin:0,d0,gone:0});
+      S.shots.push({k:'cone',x:t.x,y:t.y-.3,tgt:lead,tx:lead.x,ty:lead.y,spd:6.5,dmg:T.dmg[t.lv],splash:T.splash[t.lv],a:0,spin:0,d0,gone:0});
     } else if (t.type==='squirrel'){
       t.look=Math.sign(lead.x-t.x)||t.look;
       S.shots.push({k:'acorn',x:t.x,y:t.y-.1,tgt:lead,tx:lead.x,ty:lead.y,spd:9,dmg:T.dmg[t.lv],bounce:T.bounce[t.lv],hits:[],a:0,spin:0});
@@ -177,7 +178,7 @@ export function update(dt){
   if (S.active && !S.spawnQ.length && !S.enemies.length && S.mode==='play'){
     S.active=false;
     if (S.wave>=WAVES){
-      const lost=S.maxLives-S.lives, stars=lost<=2?3:lost<=10?2:1;
+      const lost=S.maxLives-S.lives, stars=lost<=4?3:lost<=10?2:1;
       S.mode='won'; emit('win', { stars, lives:S.lives, maxLives:S.maxLives, lost, gi:G.LV.gi }); return;
     }
     const bonus=8+S.wave*2; let inc=0;

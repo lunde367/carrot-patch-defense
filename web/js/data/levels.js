@@ -47,8 +47,14 @@ export const CHAPTERS = [
   ]},
 ];
 
+// Pest toughness per level, in play order (1 = base health). Tuned with the balance check
+// (npm run balance) so a sensible player's win rate slopes gently down from level to level.
+// Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
+const TOUGHNESS = [1.15, 2.05, 1.0,   2.6, 1.95, 1.5,   2.75, 1.8, 1.85];
+
 // Flat list of every level in play order, each linked back to its chapter.
 export const LEVELS = [];
 CHAPTERS.forEach((ch,ci) => ch.levels.forEach((lv,li) => {
-  LEVELS.push(Object.assign(lv, { ch, ci, li, gi:LEVELS.length, hpMul:1+LEVELS.length*.14 }));
+  LEVELS.push(Object.assign(lv, { ch, ci, li, gi:LEVELS.length }));
 }));
+LEVELS.forEach(l => { l.hpMul = TOUGHNESS[l.gi] ?? 1+l.gi*.14; });

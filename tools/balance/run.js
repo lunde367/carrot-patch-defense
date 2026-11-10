@@ -10,6 +10,7 @@
 import { writeFile, mkdir } from 'node:fs/promises';
 import { G, startLevel, startWave, update } from '../../web/js/engine/game.js';
 import { TYPES } from '../../web/js/data/towers.js';
+import { ENEMY } from '../../web/js/data/enemies.js';
 import { LEVELS, WAVES } from '../../web/js/data/levels.js';
 import { PERKS, perkValues } from '../../web/js/data/perks.js';
 import { STRATEGIES, monoStrategy, MONO_TYPES, preparePath } from './bots.js';
@@ -42,7 +43,7 @@ function playOne(gi, strategy, seed){
     if (S.mode!=='play') break;
   }
   const won = S.mode==='won', lost = S.maxLives - S.lives;
-  return { won, lost, stars: won ? (lost<=2?3:lost<=10?2:1) : 0, wave: S.wave, towers: S.towers.length };
+  return { won, lost, stars: won ? (lost<=4?3:lost<=10?2:1) : 0, wave: S.wave, towers: S.towers.length };
 }
 
 function summarize(games){
@@ -62,7 +63,9 @@ const levels = ONLY!=null ? [LEVELS[+ONLY]] : LEVELS;
 const results = [];
 const t0 = Date.now();
 for (const LV of levels){
-  const row = { gi:LV.gi, name:LV.name, chapter:LV.ch.name, boss:LV.boss, bots:{}, mono:{} };
+  const pests = [...LV.pool.map(p=>p[0]), LV.boss];
+  const fliers = pests.some(k => ENEMY[k].fly || (ENEMY[k].adult && ENEMY[ENEMY[k].adult].fly));
+  const row = { gi:LV.gi, name:LV.name, chapter:LV.ch.name, boss:LV.boss, fliers, bots:{}, mono:{} };
   const avail = Object.keys(TYPES).filter(k => TYPES[k].unlock <= LV.gi);
   for (const [name, strat] of Object.entries(STRATEGIES)){
     row.bots[name] = summarize(Array.from({length:RUNS}, (_,i) => playOne(LV.gi, strat, SEED*100000+LV.gi*1000+i)));

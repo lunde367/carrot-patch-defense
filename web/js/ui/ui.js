@@ -114,7 +114,7 @@ on('win', ({ stars, lives, maxLives, lost, gi }) => {
   const next=LEVELS[gi+1], LV=G.LV, gained=Math.max(0, stars-before);
   const unlocks = next ? TRAY.filter(k => TYPES[k].unlock===next.gi) : [];
   overlay(`<h2>${LV.name} saved!</h2><div class="stars">${starStr(stars)}</div>
-    <p>You beat the ${ENEMY[LV.boss].name} with ${lives} of ${maxLives} ${LV.ch.cropPlural} left.${stars<3?' Lose 2 or fewer for three stars.':''}</p>
+    <p>You beat the ${ENEMY[LV.boss].name} with ${lives} of ${maxLives} ${LV.ch.cropPlural} left.${stars<3?' Lose 4 or fewer for three stars.':''}</p>
     ${gained?`<p>+${gained} ★ for the Garden Shed (★ ${starsLeft()} to spend).</p>`:''}
     ${unlocks.length&&before===0?`<p>Next level unlocks the ${unlocks.map(k=>TYPES[k].name).join(' and ')}!</p>`:''}
     <div class="row">${next?`<button class="btn main" data-go="next">${next.ci!==LV.ci?`On to ${next.ch.name}`:'Next level'}</button>`:''}

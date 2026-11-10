@@ -24,6 +24,7 @@ export function findFlags(results){
   for (const type of Object.keys(TYPES)){
     const weakAt=results.filter(row=>{
       const m=row.mono[type]; if (!m) return false;
+      if (TYPES[type].ground && row.fliers) return false;   // can't hit fliers by design
       const others=Object.entries(row.mono).filter(([k])=>k!==type).map(([,v])=>v.winRate);
       return others.length>=2 && m.winRate<.2 && median(others)>=.6;
     });
