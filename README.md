@@ -11,7 +11,8 @@ npm run dev        # then open http://localhost:5173
 
 Add `#dev` to the end of the address (e.g. `http://localhost:5173/#dev`) for **test mode**:
 every level and defender unlocked, tap the seeds counter for +200 seeds, and ads are simulated.
-To replay the tutorial, clear the site's storage (or use a private window).
+Test mode also adds a **Reset progress** button at the bottom of the garden picker that erases
+all stars, upgrades and unlocks (two taps), so you can replay from the very beginning.
 
 ## Project layout
 

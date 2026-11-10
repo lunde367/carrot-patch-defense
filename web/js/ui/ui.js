@@ -78,7 +78,7 @@ export function showMenu(){
   home(`<div class="home-head"><h2>Pick a garden</h2>
       <button class="shed-btn" data-go="shed">${ICON.shed}Garden Shed <b>★ ${starsLeft()}</b></button></div>
     ${html}${devMode?'<p class="devnote">Test mode: every level and defender is unlocked.</p>':''}
-    <div class="home-foot"><button class="reset-btn" data-go="reset">Reset progress</button></div>`);
+    ${devMode?'<div class="home-foot"><button class="reset-btn" data-go="reset">Reset progress (test mode)</button></div>':''}`);
   for (const c2 of $('home').querySelectorAll('canvas[data-crop]')){ const c=c2.getContext('2d'); c.setTransform(2,0,0,2,0,0); drawCrop(c,c2.dataset.crop,20,22,32); }
 }
 
@@ -162,9 +162,10 @@ async function onOverlayClick(ev){
     case 'resume': return resume();
     case 'reset': {
       // Two taps: the first arms the button, the second erases.
+      if (!devMode) return;
       if (!b.classList.contains('armed')){
         b.classList.add('armed'); b.textContent='Tap again to erase all stars, upgrades and unlocks';
-        setTimeout(()=>{ if (b.isConnected){ b.classList.remove('armed'); b.textContent='Reset progress'; } }, 4000);
+        setTimeout(()=>{ if (b.isConnected){ b.classList.remove('armed'); b.textContent='Reset progress (test mode)'; } }, 4000);
         return;
       }
       await Save.reset(['settings','owned']);       // keep sound settings and any purchases
