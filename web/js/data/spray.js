@@ -4,7 +4,7 @@
 // Tuned with the balance check: careful aiming adds about +15 three-star points on the Carrot Rows
 // levels, careless spraying about +6, so spraying always helps but aiming matters.
 export const SPRAY = {
-  unlock: 6,            // first level where it's available (6 = Carrot Rows: Sprouting). Moves to Act 2 later.
+  unlock: 3,            // first level where it's available (3 = Strawberry Bed: First Blossoms), in the cozy act
   damage: 30,           // before resistance and the Stronger Formula upgrade
   radius: 1.6,          // tiles
   recharge: 35,         // seconds of game time

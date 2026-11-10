@@ -49,9 +49,10 @@ export const CHAPTERS = [
 
 // Pest toughness per level, in play order (1 = base health). Tuned with the balance check
 // (npm run balance) with the Garden Shed upgrades a typical player owns at each level, so the
-// three-star rate slopes down from about 90% early to about 25% on Big Dig.
+// three-star rate slopes down from about 90% early to about 25% on Big Dig even for a player who
+// never sprays. The Pesticide Sprayer then makes levels easier, a shortcut, never a requirement.
 // Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
-const TOUGHNESS = [1.15, 2.35, 1.5,   3.8, 2.45, 1.95,   4.6, 2.36, 2.6];
+const TOUGHNESS = [1.15, 2.35, 1.5,   3.8, 2.4, 1.95,   4.45, 2.38, 2.65];
 
 // Flat list of every level in play order, each linked back to its chapter.
 export const LEVELS = [];
@@ -61,5 +62,5 @@ CHAPTERS.forEach((ch,ci) => ch.levels.forEach((lv,li) => {
 LEVELS.forEach(l => { l.hpMul = TOUGHNESS[l.gi] ?? 1+l.gi*.14; });
 // How much less spray damage pests take on each level (0 = none, 0.3 = 30% less). Grows through
 // the story, the same for every player: rising in Act 2, high in Act 3, fading in Act 4.
-const SPRAY_RESIST = [0, 0, 0,   0, 0, 0,   0, .1, .2];
+const SPRAY_RESIST = [0, 0, 0,   0, 0, 0,   0, 0, 0];   // Act 1 (gardens 1-3): the spray works like magic
 LEVELS.forEach(l => { l.resist = SPRAY_RESIST[l.gi] ?? 0; });

@@ -130,7 +130,9 @@ if (!QUICK && ONLY==null){
   console.log('\nPesticide Sprayer (sensible player, typical upgrades), with vs without spraying:');
   for (const LV of LEVELS.filter(l => l.gi >= SPRAY.unlock)){
     const set = perksFor(LV.gi);
-    const games = on => Array.from({length:RUNS}, (_,i) => playOne(LV.gi, STRATEGIES.balanced, SEED*400000+LV.gi*1000+i, set, on));
+    // A player who never sprays spends their stars on garden upgrades instead of sprayer ones.
+    const noSpraySet = perkValues(shop(starsBefore(LV.gi, 2.5), 0).owned);
+    const games = on => Array.from({length:RUNS}, (_,i) => playOne(LV.gi, STRATEGIES.balanced, SEED*400000+LV.gi*1000+i, on ? set : noSpraySet, on));
     const w = games(true), wo = games(false);
     const row = { gi:LV.gi, name:LV.name, resist:LV.resist, with:summarize(w), without:summarize(wo), sprays:w.reduce((a,g)=>a+g.sprays,0)/w.length };
     sprayCheck.push(row);

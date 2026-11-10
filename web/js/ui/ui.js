@@ -70,7 +70,7 @@ const sprayUnlocked = () => devMode || highest() >= SPRAY.unlock;
 function showSprayIntro(){
   G.S.paused=true;
   overlay(`<div class="panel newdef"><span class="tag">New tool</span><div class="spray-art">${$('spray').querySelector('svg').outerHTML}</div>
-    <h3>Pesticide Sprayer</h3><p>Tap the spray button, then tap the garden. Every pest in the circle gets soaked.</p>
+    <h3>Pesticide Sprayer</h3><p>A gift from the garden center: “Works like magic!” Tap the spray button during a wave, then tap the garden. Every pest in the circle gets soaked.</p>
     <p>It needs time to refill. The mist drifts wider than the spray, and any Roses, Sunflowers or Pine Trees it reaches wilt for a while. Aim away from your plants!</p></div>
     <div class="row"><button class="btn main" data-go="spray-ok">Got it</button></div>`);
   Audio.play('sparkle');

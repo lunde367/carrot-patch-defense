@@ -33,8 +33,13 @@ export function findFlags(results){
   return flags;
 }
 
-export function findExtraFlags({ finales=[], upgradeValue=[] }){
+export function findExtraFlags({ finales=[], upgradeValue=[], sprayCheck=[] }){
   const flags=[];
+  for (const r of sprayCheck){
+    const lvl=`${r.gi+1}. ${r.name}`;
+    if (r.without.winRate<.85) flags.push({ kind:'Too hard', level:lvl, gi:r.gi, text:`Without spraying, a sensible player wins only ${pct(r.without.winRate)}. The Sprayer should be a shortcut, not a requirement.` });
+    if (r.with.threeStar-r.without.threeStar>.45) flags.push({ kind:'Upgrade', level:lvl, gi:r.gi, text:`Spraying lifts three-star rates from ${pct(r.without.threeStar)} to ${pct(r.with.threeStar)}; the Sprayer may be too strong here.` });
+  }
   for (const f of finales){
     const t=f.players.typical, s=f.players.struggling, lvl=`${f.gi+1}. ${f.name}`;
     if (t && t.sensible.threeStar>=.95 && t.beginner.winRate>=.95)
@@ -54,7 +59,7 @@ export function findExtraFlags({ finales=[], upgradeValue=[] }){
 
 export function buildReport(results, meta, extras={}){
   const flags=[...findFlags(results), ...findExtraFlags(extras)];
-  const { finales=[], upgradeValue=[], base } = extras;
+  const { finales=[], upgradeValue=[], base, sprayCheck=[] } = extras;
   const monoTypes=Object.keys(TYPES).filter(k=>results.some(r=>r.mono[k]));
   const BOTS=[['balanced','Sensible'],['upgrader','Upgrader'],['spammer','Spammer'],['random','Beginner']];
 
@@ -98,6 +103,10 @@ export function buildReport(results, meta, extras={}){
     ${finales.map(f=>Object.entries(f.players).map(([id,p],i)=>`<tr>${i===0?`<th rowspan="3">${f.gi+1}. ${f.name}<small>${f.chapter}</small></th>`:''}
       <td class="lbl">${{struggling:'Struggling (2★/level)',typical:'Typical (2.5★/level)',perfect:'Perfectionist (3★/level)'}[id]}</td><td>★ ${p.stars}</td><td class="wrap">${p.owned}</td>
       ${cell(p.sensible.threeStar)}${cell(p.beginner.winRate)}</tr>`).join('')).join('')}</tbody></table></div></section>`:''}
+  ${sprayCheck.length?`<section><h2>Pesticide Sprayer</h2>
+    <p class="note">A sensible player on each level that has the Sprayer: never spraying (stars spent on garden upgrades) versus spraying when pests get close (with the sprayer upgrades a typical player owns).</p>
+    <div class="scroll"><table><thead><tr><th>Level</th><th>Spray resistance</th><th>3★ never spraying</th><th>3★ spraying</th><th>Wins never spraying</th><th>Wins spraying</th><th>Sprays per game</th></tr></thead><tbody>
+    ${sprayCheck.map(r=>`<tr><th>${r.gi+1}. ${r.name}</th><td>${pct(r.resist)}</td>${cell(r.without.threeStar)}${cell(r.with.threeStar)}${cell(r.without.winRate)}${cell(r.with.winRate)}<td>${r.sprays.toFixed(1)}</td></tr>`).join('')}</tbody></table></div></section>`:''}
   ${upgradeValue.length?`<section><h2>What each upgrade is worth</h2>
     <p class="note">Starting from the upgrades a typical player owns at each finale (3 stars ${pct(base.threeStar)} of the time), this compares their setup without each upgrade against the same setup with it maxed. "Per star" is the gain for each star it costs.</p>
     <div class="scroll"><table><thead><tr><th>Upgrade</th><th>Total cost</th><th>3★ without it</th><th>3★ maxed</th><th>Gain per star</th></tr></thead><tbody>
