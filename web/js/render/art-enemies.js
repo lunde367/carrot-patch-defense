@@ -45,7 +45,7 @@ export function drawEnemy(c,e,s){
     if (D.boss){ c.strokeStyle=D.dk; c.lineWidth=3; c.beginPath(); c.moveTo(r*1.1,-r*.1); c.quadraticCurveTo(r*1.6,-r*.4,r*1.5,-r*.8); c.stroke(); crown(c,0,-r*.6,r*.35); }
     break;
   case 'grub':
-    ell(c,-r*.6,Math.sin(e.ph)*r*.1,r*.6,r*.55,'#e9dfb6','#a89a66',1); ell(c,r*.2,0,r*.75,r*.68,'#f1e8c2','#a89a66',1);
+    ell(c,-r*.6,Math.sin(e.ph)*r*.1,r*.6,r*.55,D.col2||'#e9dfb6',D.dk||'#a89a66',1); ell(c,r*.2,0,r*.75,r*.68,D.col||'#f1e8c2',D.dk||'#a89a66',1);
     ell(c,r*.65,-r*.1,r*.3,r*.3,'#b07a3c'); ell(c,r*.75,-r*.15,r*.08,r*.08,'#222'); break;
   case 'inch': {
     const hump=(.5+Math.abs(Math.sin(e.ph*.8))*.9)*r;
@@ -71,6 +71,19 @@ export function drawEnemy(c,e,s){
     ell(c,0,0,r*.65,r*.24,D.body,D.dk,1.2); ell(c,r*.6,0,r*.2,r*.2,D.body);
     c.strokeStyle=D.dk; c.lineWidth=1; c.beginPath(); c.moveTo(r*.7,-r*.1); c.quadraticCurveTo(r*1,-r*.5,r*1.2,-r*.45); c.moveTo(r*.7,r*.1); c.quadraticCurveTo(r*1,r*.5,r*1.2,r*.45); c.stroke();
     if (D.boss) crown(c,r*.55,-r*.2,r*.25); break; }
+  case 'shield': {
+    // stink bug, seen from above: a shield-shaped body with a darker triangle on its back
+    c.strokeStyle=D.dk; c.lineWidth=1.4;
+    for (const o of [-.45,0,.45]) for (const sy of [-1,1]){ c.beginPath(); c.moveTo(o*r,sy*r*.5); c.lineTo(o*r+w*r*.3*sy,sy*r*1.0); c.stroke(); }
+    c.beginPath(); c.moveTo(r*1.05,-r*.15); c.quadraticCurveTo(r*1.5,-r*.5,r*1.6,-r*.75); c.moveTo(r*1.05,r*.15); c.quadraticCurveTo(r*1.5,r*.5,r*1.6,r*.75); c.stroke();
+    c.beginPath(); c.moveTo(r*.95,0); c.lineTo(r*.45,-r*.8); c.lineTo(-r*.85,-r*.62); c.lineTo(-r*1.05,0); c.lineTo(-r*.85,r*.62); c.lineTo(r*.45,r*.8); c.closePath();
+    c.fillStyle=D.col; c.fill(); c.strokeStyle=D.dk; c.lineWidth=Math.max(1.4,r*.08); c.stroke();
+    c.beginPath(); c.moveTo(r*.4,0); c.lineTo(-r*.55,-r*.38); c.lineTo(-r*.55,r*.38); c.closePath(); c.fillStyle=D.dk; c.globalAlpha=.35; c.fill(); c.globalAlpha=1;
+    if (D.spots) for (const [x,y] of [[-.2,-.45],[-.2,.45],[.2,-.5],[.2,.5]]) ell(c,x*r,y*r,r*.09,r*.08,'#efe3c4');
+    ell(c,-r*.35,-r*.25,r*.25,r*.1,'rgba(255,255,255,.25)');
+    ell(c,r*1.02,0,r*.24,r*.22,D.dk); ell(c,r*1.1,-r*.12,r*.05,r*.05,'#f6e7c0'); ell(c,r*1.1,r*.12,r*.05,r*.05,'#f6e7c0');
+    if (D.boss) crown(c,-r*.15,-r*.55,r*.32);
+    break; }
   case 'mouse':
     c.strokeStyle='#b39a8e'; c.lineWidth=1.5; c.beginPath(); c.moveTo(-r*.9,r*.2);
     if (D.short) c.lineTo(-r*1.3,r*.3); else c.quadraticCurveTo(-r*1.6,-r*.2+w*r*.6,-r*2,r*.3); c.stroke();

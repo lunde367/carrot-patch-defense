@@ -53,7 +53,8 @@ canvas{ display:block }
 .lv.cur{ border-color:var(--accent) }
 
 /* home toolbar: achievements and settings */
-.home-tools{ display:grid; grid-template-columns:1.35fr 1fr; gap:8px }
+.home-tools{ display:grid; grid-template-columns:1.6fr 1fr auto; gap:8px }
+.tool-btn.icon-only{ padding:11px 13px }
 .tool-btn{ display:flex; align-items:center; gap:8px; font:inherit; font-weight:800; color:var(--ink); background:var(--surface);
   border:1px solid var(--line); border-radius:var(--r-md); padding:11px 12px; cursor:pointer; min-width:0 }
 .tool-btn span{ flex:1; text-align:left; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
@@ -102,6 +103,17 @@ canvas{ display:block }
 @media (prefers-reduced-motion: reduce){ .spray-btn.ready .spray-ring{ animation:none } }
 .spray-art{ width:84px; height:84px; border-radius:50%; display:grid; place-items:center; background:#e4ecb4; color:#3c4a10 }
 .spray-art svg{ width:48px; height:48px }
+
+/* garden diary: a sheet of lined paper, the same in both themes */
+.diary-page{ position:relative; width:100%; max-width:340px; text-align:left; color:#3b3226; border-radius:6px; padding:16px 18px 18px 30px;
+  background:#fbf6e6 repeating-linear-gradient(transparent 0 23px, #e5dcc2 23px 24px); background-position:0 10px;
+  box-shadow:0 6px 18px rgba(20,15,5,.25); transform:rotate(-.6deg) }
+.diary-page::before{ content:''; position:absolute; left:20px; top:0; bottom:0; width:1px; background:#e8a39a }
+.diary-page h3{ margin:0 0 6px; font-size:1.05rem; color:#4a3b25 }
+.diary-page p{ margin:0; font-size:1rem; line-height:24px; font-style:italic; max-width:none }
+.diary-tag{ display:block; font-size:.68rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#a0784a; margin-bottom:4px }
+.diary-list{ display:flex; flex-direction:column; gap:16px; align-items:center }
+.diary-list .diary-page:nth-child(even){ transform:rotate(.5deg) }
 
 /* new defender card (shown on the board) */
 .newdef{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; padding:14px 14px 12px }

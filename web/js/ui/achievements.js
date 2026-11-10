@@ -15,7 +15,7 @@ function unlock(a){
   Save.data.ach[a.id] = new Date().toISOString().slice(0,10);
   Save.commit();
   Audio.play('sparkle');
-  toast(`${TROPHY}<span><small>Achievement unlocked</small><b>${a.name}</b></span>`, { kind:'ach', ms:3200 });
+  toast(`${TROPHY}<span><small>Achievement unlocked</small><b>${a.name}</b></span>`, { kind:'ach', ms:7000 });
 }
 function evaluate(e){
   for (const a of ACHIEVEMENTS){

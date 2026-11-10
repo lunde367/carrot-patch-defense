@@ -30,4 +30,13 @@ export const ENEMY = {
   molemom:{name:'Mama Mole',boss:true,hp:330,spd:.55,reward:50,size:.46,burrow:true,shape:'mole',fur:'#3c3642'},
   gopher:{name:'Gopher',hp:60,spd:.7,reward:9,size:.34,gap:1.1,burrow:true,shape:'gopher'},
   gopherboss:{name:'Grumpy Gopher',boss:true,hp:460,spd:.55,reward:60,size:.48,burrow:true,shape:'gopher'},
+  // ---- Tomato Greenhouse: whiteflies & stink bugs (Act 2) ----
+  whitenymph:{name:'Whitefly Nymph',hp:6,spd:.8,reward:2,size:.15,gap:.34,shape:'grub',col:'#e3ecb0',col2:'#d6e29c',dk:'#98a65e',adult:'whitefly'},
+  whitefly:{name:'Whitefly',hp:9,spd:1.6,reward:3,size:.18,gap:.32,fly:true,shape:'moth',wing:'#fbfbf2',body:'#dfe6c4',dk:'#8f9878'},
+  stinknymph:{name:'Stink Bug Nymph',hp:13,spd:.75,reward:3,size:.21,gap:.55,shape:'shield',col:'#b08454',dk:'#5a3c1e',spots:true,adult:'stinkbug'},
+  stinkbug:{name:'Stink Bug',hp:30,armor:2,spd:.7,reward:6,size:.28,gap:.8,shape:'shield',col:'#8a6a4a',dk:'#4a3420'},
+  bigstink:{name:'Marmorated Stink Bug',hp:58,armor:3,spd:.6,reward:9,size:.33,gap:1,shape:'shield',col:'#76624e',dk:'#3e3024',spots:true},
+  sapsucker:{name:'Sap Sucker',boss:true,hp:300,spd:.6,reward:50,size:.46,fly:true,shape:'moth',wing:'#f4f6e8',body:'#c9d29a',dk:'#7d8660'},
+  shieldbug:{name:'Shield Bug',boss:true,hp:360,armor:4,spd:.45,reward:55,size:.48,shape:'shield',col:'#6f8a3e',dk:'#33461a'},
+  baron:{name:'Stink Bug Baron',boss:true,hp:520,armor:5,spd:.42,reward:70,size:.52,shape:'shield',col:'#6b4a2e',dk:'#33210f',spots:true},
 };

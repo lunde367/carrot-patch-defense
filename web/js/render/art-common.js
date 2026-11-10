@@ -6,6 +6,12 @@ export function drawCrop(c,type,x,y,s){
   if (type==='cabbage'){
     ell(c,x,y+s*.12,s*.26,s*.07,'rgba(30,20,10,.3)'); ell(c,x,y,s*.25,s*.2,'#8fc25a','#4f8a3c',1.5);
     ell(c,x-s*.07,y-s*.02,s*.12,s*.13,'#a9d672'); ell(c,x+s*.07,y-s*.03,s*.11,s*.12,'#b7df82'); ell(c,x,y-s*.05,s*.09,s*.09,'#cdeaa0');
+  } else if (type==='tomato'){
+    ell(c,x,y+s*.13,s*.24,s*.06,'rgba(30,20,10,.3)');
+    for (const [dx,dy,rr] of [[-.1,.02,.12],[.1,.03,.11]]){
+      ell(c,x+dx*s,y+dy*s,s*rr,s*rr*.9,'#e2483a','#a3261c',1.2); ell(c,x+dx*s-s*.04,y+dy*s-s*.04,s*.03,s*.02,'rgba(255,255,255,.55)');
+      c.fillStyle='#4f8a3c'; c.beginPath(); for (let k=0;k<5;k++){ const a=k*1.2566-1.57; c.lineTo(x+dx*s+Math.cos(a)*s*.06,y+dy*s-s*rr*.7+Math.sin(a)*s*.03); c.lineTo(x+dx*s+Math.cos(a+.63)*s*.02,y+dy*s-s*rr*.7+Math.sin(a+.63)*s*.012); } c.closePath(); c.fill(); }
+    c.strokeStyle='#4f8a3c'; c.lineWidth=Math.max(1.2,s*.03); c.beginPath(); c.moveTo(x-s*.1,y-s*.1); c.quadraticCurveTo(x,y-s*.24,x+s*.1,y-s*.1); c.stroke();
   } else if (type==='carrot'){
     c.strokeStyle='#4f8a3c'; c.lineWidth=Math.max(1.5,s*.04); c.lineCap='round';
     for (const o of [-.12,-.04,.04,.12]){ c.beginPath(); c.moveTo(x,y-s*.02); c.quadraticCurveTo(x+o*s*1.2,y-s*.2,x+o*s*2,y-s*.32); c.stroke(); }

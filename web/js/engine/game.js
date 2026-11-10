@@ -9,6 +9,7 @@ import { SPRAY, PLANTS } from '../data/spray.js';
 
 export const G = { S:null, LV:null, CH:null, hint:null };   // hint: a tile the tutorial highlights
 const MAX_FX = 260;
+const HEAT_SLOW = .75;   // in a heat wave, uncooled defenders fire at 75% speed
 
 export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
   const LV = G.LV = LEVELS[gi]; G.CH = LV.ch; setPath(LV.pts); G.hint = null;
@@ -37,6 +38,11 @@ function makeWave(w){
 export function startWave(){
   const S=G.S; if (!S||S.active||S.mode!=='play'||S.paused) return false;
   S.wave++; S.spawnQ=makeWave(S.wave); S.spawnT=0; S.active=true; S.sel=null;
+  // Heat wave (Act 2 gardens): defenders slow down unless a Sprinkler is close enough to cool them.
+  S.heat = !!(G.CH.heat && G.CH.heat.includes(S.wave));
+  for (const t of S.towers) t.cool = !S.heat || t.type==='sprinkler' ||
+    S.towers.some(o => o.type==='sprinkler' && Math.hypot(o.x-t.x,o.y-t.y) <= rangeOf(o));
+  if (S.heat) emit('heat', S.towers.filter(t=>!t.cool).length);
   emit('waveStart', { wave:S.wave, boss:S.wave===WAVES }); emit('select', null);
   return true;
 }
@@ -70,6 +76,7 @@ export function plantAt(c,r){
   if (head) S.headStartUsed = true;
   const lv = head ? 1 : 0;
   const t={ type:S.build, c, r, x:c+.5, y:r+.5, lv, cd:0, hop:1, look:1, spent:cost };
+  t.cool = !S.heat || t.type==='sprinkler' || S.towers.some(o => o.type==='sprinkler' && Math.hypot(o.x-t.x,o.y-t.y) <= rangeOf(o));
   S.towers.push(t); emit('plant', t); return { ok:true, tower:t };
 }
 export function upgrade(t){
@@ -84,18 +91,20 @@ export function sell(t){
 
 // ---------- the Pesticide Sprayer ----------
 export const sprayStats = () => { const p=G.S.perks;
-  return { damage:SPRAY.damage*p.sprayDmg, radius:SPRAY.radius*p.sprayRadius, recharge:SPRAY.recharge*p.sprayRecharge, wilt:SPRAY.wilt*p.sprayWilt }; };
+  return { damage:SPRAY.power*p.sprayDmg, radius:SPRAY.radius*p.sprayRadius, recharge:SPRAY.recharge*p.sprayRecharge, wilt:SPRAY.wilt*p.sprayWilt }; };
 export const sprayReady = () => G.S.sprayOn && G.S.sprayCd<=0 && G.S.mode==='play';
 // Spray a circle centred on tile coordinates (x, y). Returns how many pests and plants it hit.
 export function spray(x, y){
   const S=G.S; if (!sprayReady()) return null;
-  const st=sprayStats(), dmg=Math.round(st.damage*(1-G.LV.resist));
+  // The spray takes a share of each pest's own health: all of it for ordinary pests (they die),
+  // less for big pests and bosses, and less again where pests resist it.
+  const st=sprayStats(), share = p => (ENEMY[p.type].boss ? SPRAY.bossShare : ENEMY[p.type].hp>=SPRAY.toughHp ? SPRAY.toughShare : 1) * st.damage * (1-G.LV.resist);
   let pests=0, plants=0;
   for (const e of S.enemies){
     if (e.dead || (e.under && !SPRAY.hitsUnderground) || e.dist<=0.3) continue;
     if (Math.hypot(e.x-x, e.y-y) > st.radius) continue;
     pests++;
-    e.hp-=dmg; e.hit=.2;                                // spray soaks through armor
+    e.hp-=Math.ceil(e.max*Math.min(1, share(e))); e.hit=.2;      // soaks through armor
     if (e.hp<=0){ e.hp=1; damage(e, 999); }              // reuse the normal squash (seeds, puffs, events)
   }
   for (const t of S.towers) if (PLANTS.includes(t.type) && Math.hypot(t.x-x, t.y-y) <= st.radius*SPRAY.drift){ t.wilt=st.wilt; plants++; }
@@ -168,7 +177,7 @@ export function update(dt){
 
   if (S.sprayCd>0 && S.active) S.sprayCd=Math.max(0, S.sprayCd-dt);   // recharges during waves
   for (const t of S.towers){
-    const T=TYPES[t.type]; t.cd-=dt; t.hop=Math.max(0,t.hop-dt*4);
+    const T=TYPES[t.type]; t.cd-=dt*(S.heat && !t.cool ? HEAT_SLOW : 1); t.hop=Math.max(0,t.hop-dt*4);
     if (t.wilt>0){ t.wilt=Math.max(0, t.wilt-dt); continue; }          // wilted by the spray
     if (t.type==='sunflower') continue;
     const R=rangeOf(t);
@@ -209,7 +218,7 @@ export function update(dt){
   S.fx=S.fx.filter(f=>f.life>0);
 
   if (S.active && !S.spawnQ.length && !S.enemies.length && S.mode==='play'){
-    S.active=false;
+    S.active=false; S.heat=false;
     if (S.wave>=WAVES){
       const lost=S.maxLives-S.lives, stars=lost<=4?3:lost<=10?2:1;
       S.mode='won'; emit('win', { stars, lives:S.lives, maxLives:S.maxLives, lost, gi:G.LV.gi }); return;

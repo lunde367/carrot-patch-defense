@@ -17,6 +17,7 @@ import { drawCrop } from '../render/art-common.js';
 import { cellAt, tileAt, resize } from '../render/board.js';
 import { startTutorial, stopTutorial, tutorialActive } from './tutorial.js';
 import { ACHIEVEMENTS } from '../data/achievements.js';
+import { DIARY, diaryEntry } from '../data/diary.js';
 import { achievementCount, progressOf } from './achievements.js';
 
 const msg = t => { $('msg').textContent = t; };
@@ -33,8 +34,9 @@ function drawIcon(canvas, key, size){
 }
 
 // ---------- start / restart ----------
-export function play(gi, bonusSeeds=0){
-  stopTutorial();
+let quietStart = false;
+export function play(gi, bonusSeeds=0, { quiet=false }={}){
+  stopTutorial(); quietStart = quiet;
   startLevel(gi, Save.data.settings.speed, bonusSeeds, perkValues(Save.data.perks));
 }
 on('levelStart', LV => {
@@ -42,11 +44,34 @@ on('levelStart', LV => {
   $('board').classList.toggle('spray-left', path.exitCol >= 5);   // keep the button off the path's end
   setHome(false); hideOverlay(); disarmRestart(); resize(); renderBar(); renderInfo(); dirty();
   msg(`${LV.ch.name} ${LV.li+1}: ${LV.name}. ${LV.intro}${G.S.fence?` Your fence will stop the first ${G.S.fence} pests that get through.`:''}`);
-  const fresh = TRAY.filter(k => towerOpen(k) && TYPES[k].unlock>0 && !Save.data.seen[k]);
-  if (LV.gi===0 && !Save.data.tutorialDone) startTutorial();          // the tutorial comes first
-  else if (fresh.length && !devMode) showNewDefender(fresh[0]);
-  else if (G.S.sprayOn && !Save.data.seen.spray && !devMode) showSprayIntro();
+  if (quietStart){ quietStart=false; return; }                         // started silently behind the menu
+  if (LV.gi===0 && !Save.data.tutorialDone){ startTutorial(); return; }   // the tutorial comes first
+  // Cards to show before play, one after another: a diary page, new defenders, a new tool.
+  intro = [];
+  const page = LV.li===0 && diaryEntry(`start-${LV.ch.id}`);
+  if (page && !Save.data.diary[page.key]) intro.push(['diary', page.key]);
+  if (!devMode){
+    for (const k of TRAY) if (towerOpen(k) && TYPES[k].unlock>0 && !Save.data.seen[k]) intro.push(['defender', k]);
+    if (G.S.sprayOn && !Save.data.seen.spray) intro.push(['spray']);
+  }
+  nextIntro();
 });
+let intro = [], afterDiary = null;
+function nextIntro(){
+  const card = intro.shift();
+  if (!card){ if (G.S && G.S.mode==='play'){ G.S.paused=false; hideOverlay(); dirty(); } return; }
+  if (card[0]==='diary') showDiaryPage(card[1]);
+  else if (card[0]==='defender') showNewDefender(card[1]);
+  else showSprayIntro();
+}
+// A diary page, shown on a sheet of lined paper. Marked as read once shown.
+function showDiaryPage(key, cont='Continue'){
+  const d=diaryEntry(key); Save.data.diary[key]=true; Save.commit();
+  if (G.S) G.S.paused=true;
+  overlay(`<div class="diary-page"><span class="diary-tag">From the garden diary</span><h3>${d.title}</h3><p>${d.text}</p></div>
+    <div class="row"><button class="btn main" data-go="diary-ok">${cont}</button></div>`);
+  Audio.play('page');
+}
 
 // ---------- overlays ----------
 function overlay(html){ const o=$('over'); o.innerHTML=html; o.hidden=false; o.scrollTop=0; }
@@ -96,7 +121,8 @@ export function showMenu(){
     ${html}${devMode?'<p class="devnote">Test mode is on: every level and defender is unlocked. Tap the title 7 times to turn it off.</p>':''}
     <div class="home-tools">
       <button class="tool-btn" data-go="achievements">${ICON.trophy}<span>Achievements</span><b>${achievementCount()}/${ACHIEVEMENTS.length}</b></button>
-      <button class="tool-btn" data-go="settings">${ICON.gear}<span>Settings</span></button>
+      <button class="tool-btn" data-go="diary">${ICON.book}<span>Diary</span></button>
+      <button class="tool-btn icon-only" data-go="settings" aria-label="Settings">${ICON.gear}</button>
     </div>`);
   for (const c2 of $('home').querySelectorAll('canvas[data-crop]')){ const c=c2.getContext('2d'); c.setTransform(2,0,0,2,0,0); drawCrop(c,c2.dataset.crop,20,22,32); }
 }
@@ -141,6 +167,14 @@ function showAchievements(){
     <div class="achs">${rows}</div>`);
 }
 
+// ---------- Diary ----------
+function showDiary(){
+  const read = DIARY.filter(d => Save.data.diary[d.key]);
+  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button><h2>Garden diary</h2></div>
+    ${read.length ? `<div class="diary-list">${read.map(d=>`<div class="diary-page"><h3>${d.title}</h3><p>${d.text}</p></div>`).join('')}</div>`
+      : '<p class="home-note">Your diary is empty. Finish your first garden to write the first page.</p>'}`);
+}
+
 // ---------- Settings ----------
 function showSettings(){
   const s=Save.data.settings;
@@ -163,9 +197,22 @@ function showSettings(){
     <p class="version">Carrot Patch Defense · version 0.3</p>`);
 }
 
-on('win', ({ stars, lives, maxLives, lost, gi }) => {
+on('win', w => {
+  const LV=G.LV, page = LV.li===LV.ch.levels.length-1 && diaryEntry(`after-${LV.ch.id}`);
+  if (page && !Save.data.diary[page.key]){ recordWin(w); afterDiary = () => showWin(w, true); showDiaryPage(page.key, 'See your stars'); return; }
+  showWin(w);
+});
+function recordWin({ stars, gi }){
+  if (recordWin.done===gi) return; recordWin.done=gi;
   const before=Save.data.stars[gi]||0;
+  recordWin.before=before;
   Save.data.stars[gi]=Math.max(before, stars); Save.data.stats.wins++; Save.commit();
+}
+on('levelStart', () => { recordWin.done=null; });
+function showWin(w, recorded=false){
+  const { stars, lives, maxLives, gi } = w;
+  if (!recorded) recordWin(w);
+  const before=recordWin.before;
   Audio.play('win');
   const next=LEVELS[gi+1], LV=G.LV, gained=Math.max(0, stars-before);
   const unlocks = next ? TRAY.filter(k => TYPES[k].unlock===next.gi) : [];
@@ -178,7 +225,7 @@ on('win', ({ stars, lives, maxLives, lost, gi }) => {
     <button class="btn ghost" data-go="retry">Play again</button><button class="btn ghost" data-go="menu">All gardens</button></div>
     ${next?'':'<p>That’s every garden for now. More are coming!</p>'}`);
   dirty();
-});
+}
 on('lose', ({ wave }) => {
   stopTutorial();
   Save.data.stats.losses++; Save.commit(); Audio.play('lose');
@@ -236,14 +283,14 @@ async function onOverlayClick(ev){
       return;
     }
     case 'spray-ok': { Save.data.seen.spray=true; Save.commit(); G.S.paused=false; hideOverlay(); dirty();
-      msg('Save the Sprayer for when pests get close to your crops.'); return; }
+      msg('Save the Sprayer for when pests get close to your crops.'); return nextIntro(); }
+    case 'diary-ok': { if (afterDiary){ const f=afterDiary; afterDiary=null; return f(); } return nextIntro(); }
+    case 'diary': return showDiary();
     case 'gotit': {
       const key=b.dataset.key; Save.data.seen[key]=true; Save.commit();
       G.S.paused=false; hideOverlay(); G.S.build=key; renderBar(); dirty();
       msg(`${TYPES[key].name} selected. Tap the grass to plant it.`);
-      const more = TRAY.find(k => towerOpen(k) && TYPES[k].unlock>0 && !Save.data.seen[k]);
-      if (more) showNewDefender(more);
-      else if (G.S.sprayOn && !Save.data.seen.spray && !devMode) showSprayIntro();   // then the Sprayer, if it's new too
+      if (intro.length){ G.S.paused=true; nextIntro(); }
       return;
     }
     case 'adretry': { b.disabled=true; const ok=await Ads.showRewarded('retry_bonus'); if (ok) play(gi, REWARDS.retrySeeds); else b.disabled=false; return; }
@@ -398,7 +445,8 @@ export function initUI(){
   });
   paintSound();
 
-  on('waveStart', ({ wave, boss }) => { if (!tutorialActive()) msg(boss ? `Final wave! The ${ENEMY[G.LV.boss].name} is coming!` : wave===WAVES-1 ? 'One more wave before the boss.' : 'Here they come…'); });
+  on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat) msg(boss ? `Final wave! The ${ENEMY[G.LV.boss].name} is coming!` : wave===WAVES-1 ? 'One more wave before the boss.' : 'Here they come…'); });
+  on('heat', hot => msg(hot ? `Heat wave! ${hot} defender${hot>1?'s are':' is'} overheating. Defenders near a Sprinkler stay cool.` : 'Heat wave! Your Sprinklers are keeping everyone cool.'));
   on('fence', left => msg(left ? `Your Sturdy Fence stopped a pest! It can stop ${left} more this level.` : 'Your Sturdy Fence stopped a pest! That was its last one this level.'));
   on('waveClear', () => { if (G.S) { G.S.aiming=false; G.aim=null; } });
   on('waveClear', ({ wave, seeds, fromFlowers }) => msg(`Wave ${wave} cleared. +${seeds} seeds${fromFlowers?` (${fromFlowers} from sunflowers)`:''}.`));

@@ -4,12 +4,14 @@ const reduced = () => window.matchMedia && window.matchMedia('(prefers-reduced-m
 
 // ---------- toast: a small message that slides in at the top and leaves on its own ----------
 let toastBox = null;
-export function toast(html, { kind = 'info', ms = 2800 } = {}){
+export function toast(html, { kind = 'info', ms = 4500 } = {}){
   if (!toastBox){ toastBox = document.createElement('div'); toastBox.className = 'toasts'; toastBox.setAttribute('aria-live','polite'); document.body.append(toastBox); }
   const el = document.createElement('div');
   el.className = `toast toast-${kind}`; el.innerHTML = html;
   toastBox.append(el);
-  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 350); }, ms);
+  const close = () => { if (el.classList.contains('out')) return; el.classList.add('out'); setTimeout(() => el.remove(), 350); };
+  el.addEventListener('pointerdown', close);          // tap to dismiss early
+  setTimeout(close, ms);
 }
 
 // ---------- confetti: a short burst of paper bits over the whole screen ----------

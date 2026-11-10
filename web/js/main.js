@@ -2,7 +2,7 @@
 import { MARKUP } from './ui/markup.js';
 import { G, update } from './engine/game.js';
 import { Save, starsLeft } from './save.js';
-import { SHOT_SOUND } from './sounds.js';
+import { SHOT_SOUND, MUSIC } from './sounds.js';
 import { on } from '../kit/js/events.js';
 import { Audio } from '../kit/js/audio.js';
 import { shake, confetti } from '../kit/js/fx.js';
@@ -25,6 +25,8 @@ on('cocoon', () => Audio.play('cocoon'));
 on('grow', () => Audio.play('grow'));
 on('leak', () => Audio.play('leak'));
 on('fence', () => Audio.play('fence'));
+on('heat', () => { Audio.play('heat'); shake(document.getElementById('board'), .5); });
+on('levelStart', LV => Audio.setMusic(MUSIC[LV.ch.mood] || MUSIC.cozy));
 on('spray', ({ plants }) => { Audio.play('spray'); if (plants) setTimeout(() => Audio.play('wilt'), 350); shake(document.getElementById('board'), .7); });
 
 // Screen shake and confetti on the big moments
@@ -60,7 +62,7 @@ async function boot(){
   initBoard(document.getElementById('cv'), document.getElementById('board'));
   initUI();
   initAchievements();
-  play(lastOpenLevel());
+  play(lastOpenLevel(), 0, { quiet:true });   // a board ready behind the menu; no cards yet
   showMenu();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);
 

@@ -18,6 +18,8 @@ Audio.register({
   grow:     [.15, ()=>{ tone(500,.12,{type:'triangle',vol:.08,to:900}); tone(700,.12,{type:'triangle',vol:.06,at:.08,to:1200}); }],
   spray:    [.5,  ()=>{ noise(.9,{freq:4200,q:.5,vol:.22,type:'highpass'}); noise(.6,{freq:900,q:.8,vol:.08,at:.1}); }],
   wilt:     [.4,  ()=>tone(520,.5,{type:'triangle',vol:.07,to:260,attack:.02})],
+  page:     [.3,  ()=>{ noise(.25,{freq:3000,q:.4,vol:.06,type:'highpass'}); noise(.18,{freq:2200,q:.4,vol:.05,type:'highpass',at:.18}); }],
+  heat:     [1,   ()=>{ tone(880,.6,{type:'sine',vol:.06,to:620,attack:.2}); noise(.8,{freq:600,q:.3,vol:.05,type:'lowpass'}); }],
   fence:    [.15, ()=>{ noise(.1,{freq:350,vol:.2}); tone(196,.18,{type:'triangle',vol:.12,to:150}); }],
   leak:     [.2,  ()=>tone(330,.35,{type:'triangle',vol:.14,to:150})],
   wave:     [.3,  ()=>{ [392,494,587].forEach((f,i)=>tone(f,.5,{type:'triangle',vol:.1,at:i*.07})); }],
@@ -25,7 +27,11 @@ Audio.register({
   bosskill: [.3,  ()=>{ noise(.4,{freq:700,vol:.12}); [392,523,659,784].forEach((f,i)=>tone(f,.3,{type:'triangle',vol:.12,at:.1+i*.07})); }],
 });
 
-// A gentle G–F–Em–D music box.
-Audio.setMusic({ bpm:84, chords:[[196,247,294],[175,220,262],[165,196,247],[147,185,220]], scale:[392,440,494,587,659,784,880] });
+// Music by act. Act 2 keeps the same tune, but one note of the scale is flat: something's off.
+export const MUSIC = {
+  cozy: { bpm:84, chords:[[196,247,294],[175,220,262],[165,196,247],[147,185,220]], scale:[392,440,494,587,659,784,880] },
+  off:  { bpm:80, chords:[[196,247,294],[175,220,262],[165,196,247],[147,185,220]], scale:[392,440,466,587,659,740,880] },
+};
+Audio.setMusic(MUSIC.cozy);
 
 export const SHOT_SOUND = { bunny:'throw', rose:'thorn', squirrel:'acorn', sprinkler:'splash', pine:'throw', owl:'hoot' };

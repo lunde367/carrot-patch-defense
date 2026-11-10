@@ -45,6 +45,22 @@ export const CHAPTERS = [
       pool:[['vole',1,2.5],['mole',1,2],['gopher',3,1.5]],
       intro:'Gophers are the toughest diggers yet, and the Grumpy Gopher leads them.' },
   ]},
+  // ---- Act 2: Something's Off ----
+  { id:'tomato', name:'Tomato Greenhouse', crop:'tomato', cropPlural:'tomatoes', pests:'Whiteflies & stink bugs', grass:['#c3cb88','#b9c17e'],
+    act:2, mood:'off', greenhouse:true, heat:[3,6], levels:[
+    { name:'Hothouse', season:'spring', boss:'sapsucker',
+      pts:[[2.5,-0.6],[2.5,2.5],[6.5,2.5],[6.5,5.5],[2.5,5.5],[2.5,8.5],[6.5,8.5],[6.5,11.5],[3.5,11.5],[3.5,13.2]],
+      pool:[['whitenymph',1,3,.5],['stinknymph',2,2,.6],['whitefly',4,1.5]],
+      intro:'It’s too hot outside, so the tomatoes moved into the greenhouse. Whitefly nymphs hatch into fliers halfway down.' },
+    { name:'Vine Rows', season:'summer', boss:'shieldbug',
+      pts:[[7.5,-0.6],[7.5,3.5],[4.5,3.5],[4.5,1.5],[1.5,1.5],[1.5,6.5],[7.5,6.5],[7.5,10.5],[1.5,10.5],[1.5,13.2]],
+      pool:[['whitefly',1,3],['stinknymph',1,2,.5],['stinkbug',3,2]],
+      intro:'Stink bugs wear tough shells. Watch for heat waves: only defenders near a Sprinkler stay cool.' },
+    { name:'Red Harvest', season:'late summer', boss:'baron',
+      pts:[[5.5,-0.6],[5.5,1.5],[1.5,1.5],[1.5,4.5],[7.5,4.5],[7.5,7.5],[4.5,7.5],[4.5,10.5],[7.5,10.5],[7.5,13.2]],
+      pool:[['whitefly',1,2.5],['stinkbug',1,2],['bigstink',3,2]],
+      intro:'The biggest stink bugs shrug off the spray. The Stink Bug Baron is coming for the harvest.' },
+  ]},
 ];
 
 // Pest toughness per level, in play order (1 = base health). Tuned with the balance check
@@ -52,7 +68,7 @@ export const CHAPTERS = [
 // three-star rate slopes down from about 90% early to about 25% on Big Dig even for a player who
 // never sprays. The Pesticide Sprayer then makes levels easier, a shortcut, never a requirement.
 // Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
-const TOUGHNESS = [1.15, 2.35, 1.5,   3.8, 2.4, 1.95,   4.45, 2.38, 2.65];
+const TOUGHNESS = [1.15, 2.35, 1.5,   3.8, 2.4, 1.95,   4.45, 2.38, 2.65,   6.6, 4.85, 4.8];
 
 // Flat list of every level in play order, each linked back to its chapter.
 export const LEVELS = [];
@@ -62,5 +78,5 @@ CHAPTERS.forEach((ch,ci) => ch.levels.forEach((lv,li) => {
 LEVELS.forEach(l => { l.hpMul = TOUGHNESS[l.gi] ?? 1+l.gi*.14; });
 // How much less spray damage pests take on each level (0 = none, 0.3 = 30% less). Grows through
 // the story, the same for every player: rising in Act 2, high in Act 3, fading in Act 4.
-const SPRAY_RESIST = [0, 0, 0,   0, 0, 0,   0, 0, 0];   // Act 1 (gardens 1-3): the spray works like magic
+const SPRAY_RESIST = [0, 0, 0,   0, 0, 0,   0, 0, 0,   .4, .65, .75];   // Act 1 (gardens 1-3): the spray works like magic; Act 2 resistance begins
 LEVELS.forEach(l => { l.resist = SPRAY_RESIST[l.gi] ?? 0; });
