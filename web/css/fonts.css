@@ -1,0 +1,5 @@
+/* Fonts bundled with the app so it works offline. Run `npm run fonts` once to download the
+   .woff2 files into web/fonts/. Until then the game falls back to the phone's rounded system font. */
+@font-face{ font-family:'Sniglet'; font-weight:400; font-display:swap; src:url('../fonts/sniglet-400.woff2') format('woff2') }
+@font-face{ font-family:'Sniglet'; font-weight:800; font-display:swap; src:url('../fonts/sniglet-800.woff2') format('woff2') }
+@font-face{ font-family:'Nunito'; font-weight:500 800; font-display:swap; src:url('../fonts/nunito-variable.woff2') format('woff2') }

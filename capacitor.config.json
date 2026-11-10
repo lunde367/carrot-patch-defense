@@ -1,0 +1,8 @@
+{
+  "appId": "com.example.carrotpatch",
+  "appName": "Carrot Patch Defense",
+  "webDir": "web",
+  "backgroundColor": "#edf2e3",
+  "ios": { "contentInset": "never" },
+  "android": { "backgroundColor": "#edf2e3" }
+}
