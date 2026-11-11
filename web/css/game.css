@@ -200,3 +200,6 @@ canvas{ display:block }
   background:var(--berry); color:#fff; border-radius:var(--r-pill); padding:1px 7px }
 
 .chip-crop{ width:20px; height:20px; flex:none; margin:-2px 0 }
+
+/* tutorial: defenders the current step isn't about */
+.card.tut-off{ opacity:.35; filter:grayscale(.6) }

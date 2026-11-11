@@ -16,7 +16,7 @@ import { $, starStr, ICON } from '../../kit/js/ui.js';
 import { DRAW } from '../render/art-towers.js';
 import { drawCrop } from '../render/art-common.js';
 import { cellAt, tileAt, resize } from '../render/board.js';
-import { startTutorial, stopTutorial, tutorialActive } from './tutorial.js';
+import { startTutorial, stopTutorial, tutorialActive, tutorialAllows, onTutorialAllow } from './tutorial.js';
 import { ACHIEVEMENTS } from '../data/achievements.js';
 import { DIARY, diaryEntry } from '../data/diary.js';
 import { achievementCount, progressOf } from './achievements.js';
@@ -105,7 +105,8 @@ function showNewDefender(key){
   Audio.play('sparkle');
 }
 
-const sprayUnlocked = () => devMode || highest() >= SPRAY.unlock;
+// Spray upgrades appear in the Shed only once the Sprayer has been introduced in a level.
+const sprayUnlocked = () => devMode || !!Save.data.seen.spray;
 function showSprayIntro(){
   G.S.paused=true;
   overlay(`<div class="panel newdef"><span class="tag">New tool</span><div class="spray-art">${$('spray').querySelector('svg').outerHTML}</div>
@@ -395,11 +396,12 @@ async function onOverlayClick(ev){
 }
 
 // ---------- defender tray & info panel ----------
+onTutorialAllow(() => { if (G.S) renderBar(); });
 export function renderBar(){
   const S=G.S, bar=$('bar'); bar.innerHTML='';
   for (const key of TRAY){
     const T=TYPES[key], open=towerOpen(key), b=document.createElement('button'), cost=S?costOf(key):T.cost;
-    b.className='card'+(open?'':' locked'); b.id='card-'+key; b.setAttribute('aria-pressed', !!(S&&S.build===key));
+    b.className='card'+(open?'':' locked')+(open&&!tutorialAllows(key)?' tut-off':''); b.id='card-'+key; b.setAttribute('aria-pressed', !!(S&&S.build===key));
     b.title = open ? `${T.name} · ${cost} seeds` : `${T.name} · unlocks at ${unlockLevelName(key)}`;
     b.setAttribute('aria-label', b.title);
     const ic=document.createElement('canvas'); drawIcon(ic, key, 44);
@@ -409,6 +411,7 @@ export function renderBar(){
     b.onclick=()=>{
       if (!G.S||G.S.mode!=='play'||G.S.paused) return;
       if (!open){ Audio.play('denied'); msg(`The ${T.name} unlocks when you reach ${unlockLevelName(key)}.`); return; }
+      if (!tutorialAllows(key)){ Audio.play('denied'); return; }      // the tutorial step is about a different defender
       Audio.play('tap');
       G.S.build=G.S.build===key?null:key; G.S.sel=null; renderInfo(); renderBar();
       if (G.S.build){ msg(`${T.name}: ${T.desc} Tap the grass to plant.`); emit('pickTower', key); }
