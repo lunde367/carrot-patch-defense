@@ -19,7 +19,7 @@ import { cellAt, tileAt, resize } from '../render/board.js';
 import { startTutorial, stopTutorial, tutorialActive, tutorialAllows, onTutorialAllow, startShedTour, stopShedTour } from './tutorial.js';
 import { ACHIEVEMENTS } from '../data/achievements.js';
 import { DIARY, diaryEntry } from '../data/diary.js';
-import { achievementCount, progressOf } from './achievements.js';
+import { achievementCount, progressOf, niceDate } from './achievements.js';
 
 const msg = t => { $('msg').textContent = t; };
 const highest = () => { let gi=0; while (gi+1<LEVELS.length && (Save.data.stars[gi]||0)>0) gi++; return gi; };
@@ -38,11 +38,13 @@ function drawIcon(canvas, key, size){
 let quietStart = false;
 export function play(gi, bonusSeeds=0, { quiet=false }={}){
   stopTutorial(); quietStart = quiet;
-  startLevel(gi, Save.data.settings.speed, bonusSeeds, perkValues(Save.data.perks));
+  // Test mode plays with every Garden Shed upgrade owned.
+  const owned = devMode ? Object.fromEntries(PERKS.map(p => [p.id, p.costs.length])) : Save.data.perks;
+  startLevel(gi, Save.data.settings.speed, bonusSeeds, perkValues(owned));
 }
 on('levelStart', (...a) => { drawLivesIcon(); return onLevelStart(...a); });
 const onLevelStart = (LV => {
-  if (devMode) G.S.sprayOn = true;
+  if (devMode && !LV.ch.noSpray) G.S.sprayOn = true;
   $('board').classList.toggle('spray-left', path.exitCol >= 5);   // keep the button off the path's end
   setHome(false); hideOverlay(); disarmRestart(); resize(); renderBar(); renderInfo(); dirty();
   msg(`${LV.ch.name} ${LV.li+1}: ${LV.name}. ${LV.intro}${G.S.fence?` Your fence will stop the first ${G.S.fence} pests that get through.`:''}`);
@@ -238,6 +240,7 @@ function showShed(){
   home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button>
       <h2>Garden Shed</h2><span class="star-count">★ ${left}</span></div>
     <p class="home-note">Spend stars on upgrades that help in every level. Earn more stars by beating levels with more crops left.</p>
+    ${devMode?'<p class="devnote">Test mode: you play with every upgrade already owned, whatever you buy here.</p>':''}
     <div class="perks">${rows}</div>
     ${sprayUnlocked()?'':`<p class="home-note">More upgrades unlock in ${LEVELS[SPRAY.unlock].ch.name}.</p>`}
     <div class="shed-foot"><button class="btn main" data-go="menu">Back to gardens</button>
@@ -257,7 +260,7 @@ function showAchievements(){
     return `<div class="ach${got?' got':''}"><span class="ach-icon" aria-hidden="true">${got?'★':ICON.lock}</span>
       <span class="ach-text"><b>${a.name}</b><small>${a.desc}</small>
       ${!got && prog!=null ? `<span class="ach-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${a.goal}" aria-valuenow="${prog}"><i style="width:${prog/a.goal*100}%"></i></span><small class="ach-num">${prog.toLocaleString()} / ${a.goal.toLocaleString()}</small>` : ''}
-      </span>${got?`<span class="ach-date">${got}</span>`:''}</div>`;
+      </span>${got?`<span class="ach-date">${niceDate(got)}</span>`:''}</div>`;
   }).join('');
   home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button>
       <h2>Achievements</h2><span class="star-count">${achievementCount()}/${ACHIEVEMENTS.length}</span></div>
@@ -402,7 +405,9 @@ async function onOverlayClick(ev){
 onTutorialAllow(() => { if (G.S) renderBar(); });
 export function renderBar(){
   const S=G.S, bar=$('bar'); bar.innerHTML='';
+  const nextLocked = TRAY.find(k => !towerOpen(k));
   for (const key of TRAY){
+    if (!towerOpen(key) && key!==nextLocked) continue;      // only tease the next defender to unlock
     const T=TYPES[key], open=towerOpen(key), b=document.createElement('button'), cost=S?costOf(key):T.cost;
     b.className='card'+(open?'':' locked')+(open&&!tutorialAllows(key)?' tut-off':''); b.id='card-'+key; b.setAttribute('aria-pressed', !!(S&&S.build===key));
     b.title = open ? `${T.name} · ${cost} seeds` : `${T.name} · unlocks at ${unlockLevelName(key)}`;
@@ -577,7 +582,8 @@ export function initUI(){
   });
   paintSound();
 
-  on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat && !swarmAt(wave) && !pestQueue.length) msg(boss ? `Final wave! The ${ENEMY[G.LV.boss].name} is coming!` : wave===G.LV.waves-1 ? 'One more wave before the boss.' : 'Here they come…'); });
+  on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat && !G.S.rain && !swarmAt(wave) && !pestQueue.length) msg(boss ? `Final wave! The ${ENEMY[G.LV.boss].name} is coming!` : wave===G.LV.waves-1 ? 'One more wave before the boss.' : 'Here they come…'); });
+  on('rain', () => msg('Rain! Pests slow down in the wet, and every plant gets a drink.'));
   on('swarm', () => msg('Aphid boom! A huge swarm is hatching. Splash defenders and the spray shine here.'));
   on('heat', hot => msg(hot ? `Heat wave! ${hot} defender${hot>1?'s are':' is'} overheating. Defenders near a Sprinkler stay cool.` : 'Heat wave! Your Sprinklers are keeping everyone cool.'));
   on('fence', left => msg(left ? `Your Sturdy Fence stopped a pest! It can stop ${left} more this level.` : 'Your Sturdy Fence stopped a pest! That was its last one this level.'));

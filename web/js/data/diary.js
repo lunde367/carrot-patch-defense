@@ -12,5 +12,15 @@ export const DIARY = [
   { key:'after-apple',      title:'After the Apple Orchard', text:'The apples came in small and few. Without the bees, the blossoms just fell. The aphids didn’t mind.' },
   { key:'start-corn',       title:'The corn field',          text:'No rain since spring. The ground has cracked open like an old plate. I’m saving every drop for the sprinklers.' },
   { key:'after-corn',       title:'After the Corn Field',    text:'The spray barely slows them now. Every year the bugs come back tougher, and every year we spray more. Something has to change.' },
+  { key:'start-dust',       title:'The dust bowl',           text:'The wind took the topsoil. I’m saving water in barrels. I haven’t heard a bird in weeks.' },
+  { key:'after-dust',       title:'After the Dust Bowl',     text:'We saved some wheat. Not much. The city folks say there’s a garden on a rooftop downtown. I’m going to see.' },
+  { key:'start-rooftop',    title:'The rooftop',             text:'You can’t see the sun through the smog. Up here, between the chimneys, a few peppers are still growing.' },
+  { key:'start-vault',      title:'The seed vault',          text:'This is the last seed vault. Somebody packed these seeds years ago, back when there were gardens everywhere.' },
+  { key:'after-vault',      title:'After the Last Seed Vault', text:'I kept the seeds. That’s all there is now. Seeds, and hope.' },
+  { key:'start-rain',       title:'Rain',                    text:'It rained. It actually rained. Something green came up by the fence this morning. I put the sprayer away in the shed. I don’t think we’ll need it again.' },
+  { key:'after-rain',       title:'After the Rain Garden',   text:'The creek is running again. The frogs are singing at night. I’d forgotten how loud a healthy garden is.' },
+  { key:'start-meadow',     title:'The meadow',              text:'Clover, bees, ladybugs. The meadow came back on its own once we stopped fighting it.' },
+  { key:'start-newgarden',  title:'The new garden',          text:'Today we planted the seeds from the vault. Pumpkins, beans, flowers. A garden that works with nature, not against it.' },
+  { key:'after-newgarden',  title:'After The New Garden',    text:'Bees on the clover, frogs in the pond, the creek running again. We didn’t fight nature this time. We gave it room.' },
 ];
 export const diaryEntry = key => DIARY.find(d => d.key === key);

@@ -100,6 +100,78 @@ export const CHAPTERS = [
       pool:[['locust',1,3],['cornbeetle',1,1.5],['rootworm',2,2]],
       intro:'The sky goes dark with locusts. The spray barely slows them now. The Locust King is coming.' },
   ]},
+  { id:'dust', name:'Dust Bowl Farm', crop:'wheat', cropPlural:'wheat', pests:'Dust beetles & sand fleas', grass:['#cdb88c','#c3ae82'],
+    act:3, mood:'withered', drought:true, levels:[
+    { name:'Topsoil', season:'spring', boss:'dustdevil', mirrorOf:9,
+      pool:[['sandflea',1,3],['dustgrub',2,2,.5]],
+      intro:'The wind took the topsoil. Plant defenders need water: a Rain Barrel keeps every plant near it watered.' },
+    { name:'Dry Wind', season:'summer', boss:'dustdevil', mirrorOf:10,
+      pool:[['sandflea',1,2.5],['dustgrub',1,2,.5],['dustbeetle',3,2]],
+      intro:'Sand fleas hop in clouds, and dust beetles wear thick shells.' },
+    { name:'Dust Storm', season:'late summer', boss:'dustdevil', waves:10, mirrorOf:11,
+      pool:[['sandflea',1,2],['dustbeetle',1,2.5],['dustgrub',2,2,.45]],
+      intro:'The sky has gone brown. Something is spinning across the fields: the Dust Devil.' },
+  ]},
+  { id:'rooftop', name:'Rooftop Garden', crop:'pepper', cropPlural:'peppers', pests:'Rats, pigeons & smog moths', grass:['#aeb29c','#a4a892'],
+    act:3, mood:'withered', smog:true, levels:[
+    { name:'Gray Morning', season:'spring', boss:'ratking', mirrorOf:12,
+      pool:[['rat',1,3],['pigeon',3,1.5]],
+      intro:'The last green in the city is up on the roof. The smog hides fliers: defenders only spot them up close.' },
+    { name:'Heavy Air', season:'summer', boss:'bigpidge', mirrorOf:13,
+      pool:[['rat',1,2.5],['pigeon',1,2],['smogworm',2,2,.5]],
+      intro:'Pigeons with dull, dusty feathers circle the chimneys. Smog worms grow into smog moths.' },
+    { name:'The Smog Moth', season:'late summer', boss:'smogqueen', waves:10, mirrorOf:14,
+      pool:[['smogworm',1,2.5,.45],['pigeon',1,2],['rat',2,2],['smogmoth',3,1.5]],
+      intro:'The air is thick and yellow. Out of it comes the biggest moth anyone has ever seen.' },
+  ]},
+  { id:'vault', name:'The Last Seed Vault', crop:'seed', cropPlural:'seed packets', pests:'Glowing mutants', grass:['#9c958a','#928b80'],
+    act:3, mood:'withered', dark:true, levels:[
+    { name:'Ashes', season:'spring', boss:'mutantmole', mirrorOf:15,
+      pool:[['glowslug',1,3],['glowmole',3,1.5]],
+      intro:'Nothing grows out here anymore. These are the last seeds. The pests that are left glow in the dark.' },
+    { name:'Last Light', season:'summer', boss:'palequeen', mirrorOf:16,
+      pool:[['glowslug',1,2],['glowworm',1,2,.5],['glowsnail',3,1.5]],
+      intro:'Glowing caterpillars turn into pale moths. Even the snails shine.' },
+    { name:'The Blight', season:'late summer', boss:'blight', waves:12, mirrorOf:17,
+      pool:[['glowslug',1,2],['glowworm',1,2,.45],['glowsnail',2,1.5],['glowmole',3,1.5]],
+      intro:'The Blight is everything the spray left behind. Protect the last seeds. If they make it, the garden can come back.' },
+  ]},
+  { id:'rain', name:'Rain Garden', crop:'radish', cropPlural:'radishes', pests:'Flood frogs & mud snails', grass:['#9fcc86','#95c27c'],
+    act:4, mood:'regrow', rain:[2,4,6], levels:[
+    { name:'First Rain', season:'spring', boss:'bullfrog', mirrorOf:1,
+      pool:[['puddleslug',1,3],['frog',2,2]],
+      intro:'It rained. It actually rained! Pests slow down in the rain, and every plant gets a drink. The sprayer stays in the shed now: the bees are back.' },
+    { name:'Puddles', season:'summer', boss:'mudcrab', mirrorOf:2,
+      pool:[['puddleslug',1,2.5],['frog',1,2],['mudsnail',3,1.5]],
+      intro:'Mud snails have come up out of the puddles, and a Mud Crab is crawling up the creek.' },
+    { name:'The Flood', season:'late summer', boss:'snapper', waves:10, rain:[2,4,6,8], mirrorOf:3,
+      pool:[['frog',1,2.5],['mudsnail',1,2],['puddleslug',1,2]],
+      intro:'The creek has burst its banks. An old snapping turtle rides the flood straight for the radishes.' },
+  ]},
+  { id:'meadow', name:'Wildflower Meadow', crop:'bloom', cropPlural:'wildflowers', pests:'Old pests, back again', grass:['#a6d888','#9cce7e'],
+    act:4, mood:'regrow', levels:[
+    { name:'Clover', season:'spring', boss:'chunkycat', mirrorOf:4,
+      pool:[['slug',1,2.5],['caterpillar',1,2,.5],['aphid',2,2]],
+      intro:'Clover and wildflowers everywhere. The old pests are back, just ordinary ones now. Ladybugs love aphids.' },
+    { name:'Bees Again', season:'summer', boss:'mothqueen', mirrorOf:5,
+      pool:[['caterpillar',1,2,.5],['mouse',1,2],['snail',3,1.5]],
+      intro:'The meadow hums with bees. Put a Bee Hive near your defenders and they’ll work faster.' },
+    { name:'Old Friends', season:'late summer', boss:'whiskers', waves:10, mirrorOf:6,
+      pool:[['mouse',1,2],['moth',1,2],['snail',2,1.5],['slug',1,2]],
+      intro:'Someone you know is coming back for one more try at the garden: Old Whiskers.' },
+  ]},
+  { id:'newgarden', name:'The New Garden', crop:'pumpkin', cropPlural:'pumpkins', pests:'The Blight’s last remnants', grass:['#9cd68a','#92cc80'],
+    act:4, mood:'regrow', levels:[
+    { name:'Seedlings Again', season:'spring', boss:'beetleking', mirrorOf:7,
+      pool:[['beetle',1,2],['puddleslug',1,2],['glowslug',3,1.5]],
+      intro:'The seeds from the vault are in the ground. A few glowing pests are still out there.' },
+    { name:'Wild and Green', season:'summer', boss:'giantsnail', mirrorOf:8,
+      pool:[['caterpillar',1,2,.5],['jbeetle',1,1.5],['glowworm',2,1.5,.5],['frog',1,1.5]],
+      intro:'The garden grows wilder than before: tall grass, a pond, bees on the clover.' },
+    { name:'The New Garden', season:'late summer', boss:'blightweak', waves:12, mirrorOf:13,
+      pool:[['glowslug',1,2],['glowsnail',2,1.5],['mudsnail',1,1.5],['wingaphid',2,1.5],['frog',1,1.5]],
+      intro:'The Blight is weak, but it’s coming one last time. Hold on, and the garden is yours for good.' },
+  ]},
 ];
 
 // Pest toughness per level, in play order (1 = base health). Tuned with the balance check
@@ -107,19 +179,23 @@ export const CHAPTERS = [
 // three-star rate slopes down from about 90% early to about 25% on Big Dig even for a player who
 // never sprays. The Pesticide Sprayer then makes levels easier, a shortcut, never a requirement.
 // Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
-const TOUGHNESS = [1.15, 2.4, 2.32,   5.2, 2.55, 2.0,   4.8, 2.2, 3.22,   6.45, 5.15, 4.75,   3.95, 5.45, 5.75,   5.35, 4.45, 4.65];
+const TOUGHNESS = [1.15, 2.4, 2.32,   5.2, 2.55, 2.0,   4.8, 2.2, 3.22,   6.45, 5.15, 4.75,   3.95, 5.45, 5.75,   5.35, 4.45, 4.65,
+                   5.7, 5.9, 1.7,   3.25, 3.1, 2.85,   5.6, 6.7, 5.9,   13.6, 11.3, 16,   13.8, 8.1, 10.2,   8.05, 5.7, 16.5];
 
 // Flat list of every level in play order, each linked back to its chapter.
 export const LEVELS = [];
 CHAPTERS.forEach((ch,ci) => ch.levels.forEach((lv,li) => {
   LEVELS.push(Object.assign(lv, { ch, ci, li, gi:LEVELS.length }));
 }));
-CHAPTERS.forEach(ch => { ch.act = ch.act || 1; });
+CHAPTERS.forEach(ch => { ch.act = ch.act || 1; if (ch.act===4) ch.noSpray = true; });   // no Sprayer in Part 4
+// Some later levels reuse an earlier level's path, flipped left to right.
+LEVELS.forEach(l => { if (l.mirrorOf!=null && !l.pts) l.pts = LEVELS[l.mirrorOf].pts.map(([x,y]) => [9-x, y]); });
 LEVELS.forEach(l => { l.waves = l.waves || WAVES; });
 // Crops to protect: 20 in the cozy first part, 10 from Part 2 on, when things get serious.
 LEVELS.forEach(l => { l.lives = l.lives || (l.ch.act>=2 ? 10 : 20); });
 LEVELS.forEach(l => { l.hpMul = TOUGHNESS[l.gi] ?? 1+l.gi*.14; });
 // How much less spray damage pests take on each level (0 = none, 0.3 = 30% less). Grows through
 // the story, the same for every player: rising in Act 2, high in Act 3, fading in Act 4.
-const SPRAY_RESIST = [0, 0, 0,   0, 0, 0,   0, 0, 0,   .4, .65, .75,   .6, .7, .75,   .75, .8, .85];   // Act 1 (gardens 1-3): the spray works like magic; Act 2 resistance begins
+const SPRAY_RESIST = [0, 0, 0,   0, 0, 0,   0, 0, 0,   .4, .65, .75,   .6, .7, .75,   .75, .8, .85,
+                      .85, .88, .9,   .9, .9, .92,   .92, .94, .95,   .6, .55, .5,   .4, .35, .3,   .25, .2, .2];   // Act 1 (gardens 1-3): the spray works like magic; Act 2 resistance begins
 LEVELS.forEach(l => { l.resist = SPRAY_RESIST[l.gi] ?? 0; });

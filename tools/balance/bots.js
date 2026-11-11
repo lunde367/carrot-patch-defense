@@ -7,7 +7,7 @@ import { HILL } from '../../web/js/engine/game.js';
 import { TYPES } from '../../web/js/data/towers.js';
 import { COLS, ROWS } from '../../web/js/data/levels.js';
 
-const ATTACKERS = ['bunny','rose','squirrel','sprinkler','pine','owl'];
+const ATTACKERS = ['bunny','rose','squirrel','sprinkler','pine','owl','ladybug'];
 
 // Points along the path, used to judge how much of it a spot can reach.
 let samples = [];
@@ -31,6 +31,13 @@ function bestCell(type, rnd=null){
   const cells=freeCells(); if (!cells.length) return null;
   if (type==='sunflower'){ const sunny=cells.find(([c,r])=>bonusAt(c,r)==='sunny'); if (sunny) return sunny;
     let best=null, bs=Infinity; for (const [c,r] of cells){ const s=coverage(c,r,2.5); if (s<bs){ bs=s; best=[c,r]; } } return best; }
+  // helpers go where they reach the most of what they help
+  if (type==='hive' || type==='barrel'){
+    const want = type==='hive' ? (t=>t.type!=='sunflower'&&t.type!=='hive'&&t.type!=='barrel') : (t=>['rose','sunflower','pine'].includes(t.type));
+    const R=TYPES[type].range[0]*G.S.perks.rangeMul; let best=null, bs=-1;
+    for (const [c,r] of cells){ const n=G.S.towers.filter(t=>want(t)&&Math.hypot(t.x-(c+.5),t.y-(r+.5))<=R).length; if (n>bs){ bs=n; best=[c,r]; } }
+    return best;
+  }
   const range=TYPES[type].range[0]*G.S.perks.rangeMul;
   const scored=cells.map(([c,r])=>({c,r,s:coverage(c,r,range)})).sort((a,b)=>b.s-a.s);
   const pick = rnd ? scored[Math.floor(rnd()*Math.min(8,scored.length))] : scored[0];
@@ -61,8 +68,10 @@ export const STRATEGIES = {
     for (let guard=0; guard<40; guard++){
       if (avail.includes('sunflower') && wave<=2 && count('sunflower')===0 && place('sunflower')) continue;
       if (avail.includes('scarecrow') && wave>=2 && count('scarecrow')<Math.min(3, 1+Math.floor(wave/3)) && place('scarecrow')) continue;
+      if (avail.includes('barrel') && G.CH.drought && wave>=2 && count('barrel')<Math.min(3, Math.floor(wave/2)) && place('barrel')) continue;
+      if (avail.includes('hive') && wave>=3 && count('hive')<Math.min(2, Math.floor(wave/3)) && place('hive')) continue;
       const want = 3 + Math.floor(wave*.8);
-      const n = G.S.towers.filter(t=>t.type!=='sunflower').length;
+      const n = G.S.towers.filter(t=>t.type!=='sunflower' && !TYPES[t.type].support).length;
       if (n < want){
         const next = atk.slice().sort((a,b)=>count(a)-count(b))[0];
         if (place(next)) continue;

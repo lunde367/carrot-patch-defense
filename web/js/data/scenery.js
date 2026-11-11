@@ -11,6 +11,12 @@ export const SCENERY = {
   tomato:     { small:['pot','crate'],       big:{ kind:'table',    w:2, h:1 } },
   apple:      { small:['skep','applecrate'], big:{ kind:'cart',     w:2, h:1 } },
   corn:       { small:['shock','bucket'],    big:{ kind:'trough',   w:2, h:1 } },
+  dust:       { small:['rock','bucket'],     big:{ kind:'trough',   w:2, h:1 } },
+  rooftop:    { small:['crate','pot'],       big:{ kind:'table',    w:2, h:1 } },
+  vault:      { small:['rock','crate'],      big:{ kind:'log',      w:2, h:1 } },
+  rain:       { small:['bush','rock'],       big:{ kind:'pond',     w:2, h:2 } },
+  meadow:     { small:['bush','skep'],       big:{ kind:'haystack', w:2, h:2 } },
+  newgarden:  { small:['bush','basket'],     big:{ kind:'pond',     w:2, h:2 } },
 };
 // How many small pieces each level in a garden gets (level 1, 2, 3), and whether it gets the big one.
 const SMALL = [4, 5, 6], BIG = [false, true, true];

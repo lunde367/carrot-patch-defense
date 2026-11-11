@@ -27,6 +27,7 @@ on('grow', () => Audio.play('grow'));
 on('leak', () => Audio.play('leak'));
 on('fence', () => Audio.play('fence'));
 on('scare', () => Audio.play('scare'));
+on('rain', () => Audio.play('rain'));
 on('swarm', () => { Audio.play('swarm'); shake(document.getElementById('board'), .5); });
 on('heat', () => { Audio.play('heat'); shake(document.getElementById('board'), .5); });
 on('levelStart', LV => Audio.setMusic(MUSIC[LV.ch.mood] || MUSIC.cozy));

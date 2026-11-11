@@ -15,6 +15,12 @@ export const TYPES = {
     desc:'Long-range feather strike on the toughest pest, flying or not.'},
   scarecrow:{name:'Scarecrow',unlock:15,cost:65,up:[65,105],range:[2,2.3,2.6],rate:[.5,.6,.7],push:[.9,1.2,1.5],
     desc:'Scares flying pests back up the path. Doesn’t hurt anything, so pair it with defenders that do.'},
+  barrel:{name:'Rain Barrel',unlock:18,cost:45,up:[45,70],range:[2.2,2.6,3],support:true,
+    desc:'Waters every plant defender in reach, so drought and heat can’t slow them. Doesn’t fight.'},
+  hive:{name:'Bee Hive',unlock:27,cost:80,up:[80,120],range:[1.8,2.1,2.4],boost:[1.2,1.3,1.4],support:true,
+    desc:'The bees are back! Defenders near the hive work faster. The hive itself doesn’t fight.'},
+  ladybug:{name:'Ladybug Nest',unlock:30,cost:60,up:[60,95],range:[2.4,2.6,2.8],rate:[2.2,2.6,3],dmg:[3,5,8],
+    desc:'Sends out ladybugs that nip pests fast, twice as hard on small ones like aphids. Hits fliers too.'},
   sunflower:{name:'Sunflower',unlock:2,cost:60,up:[70,110],income:[10,18,28],
     desc:'Drops extra seeds after every wave you clear.'}
 };
@@ -26,6 +32,9 @@ export function statsText(t, perks){
   const T=TYPES[t.type], l=t.lv, R=v=>+(v*(perks?perks.rangeMul:1)).toFixed(1);
   switch (t.type){
     case 'sunflower': return `+${T.income[l]} seeds after each wave`;
+    case 'barrel': return `Waters plants in reach · Range ${R(T.range[l])}`;
+    case 'hive': return `Defenders in reach work ${Math.round((T.boost[l]-1)*100)}% faster · Range ${R(T.range[l])}`;
+    case 'ladybug': return `Damage ${T.dmg[l]} (×2 on small pests) · ${T.rate[l]}/s · Range ${R(T.range[l])}`;
     case 'scarecrow': return `Scares fliers back ${T.push[l]} tiles · Range ${R(T.range[l])} · every ${+(1/T.rate[l]).toFixed(1)}s`;
     case 'rose': return `Damage ${T.dmg[l]} · Hits ${T.multi[l]} pests · Range ${R(T.range[l])}`;
     case 'pine': return `Area damage ${T.dmg[l]} · Range ${R(T.range[l])} · ${T.rate[l]} per sec`;

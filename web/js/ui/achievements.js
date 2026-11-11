@@ -12,7 +12,8 @@ export const achievementCount = () => ACHIEVEMENTS.filter(a => Save.data.ach[a.i
 export const progressOf = a => a.stat ? Math.min(a.goal, Save.data.stats[a.stat]||0) : null;
 
 function unlock(a){
-  Save.data.ach[a.id] = new Date().toISOString().slice(0,10);
+  const d = new Date();   // the player's own calendar day, not UTC
+  Save.data.ach[a.id] = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   Save.commit();
   Audio.play('sparkle');
   toast(`${TROPHY}<span><small>Achievement unlocked</small><b>${a.name}</b></span>`, { kind:'ach', ms:7000 });
@@ -36,4 +37,11 @@ export function initAchievements(){
   // win runs after the UI has saved the new stars, so garden-wide checks see them
   on('win', w => setTimeout(() => evaluate({ type:'win', lost:w.lost, speed:G.S.speed }), 600));
   on('lose', () => Save.commit());
+}
+
+// "2026-11-10" → "Nov 10, 2026", in the player's language.
+export function niceDate(iso){
+  const [y,m,d] = String(iso).split('-').map(Number);
+  if (!y || !m || !d) return '';
+  return new Date(y, m-1, d).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
 }

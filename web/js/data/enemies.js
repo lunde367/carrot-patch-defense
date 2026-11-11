@@ -55,4 +55,36 @@ export const ENEMY = {
   grandhopper:{voice:'chirp',name:'Grand Hopper',boss:true,hp:320,spd:.55,reward:50,size:.46,hopper:true,shape:'hopper',col:'#8fa83a',dk:'#4a5e1a'},
   rootking:{voice:'rumble',name:'Root King',boss:true,hp:400,armor:3,spd:.5,reward:60,size:.46,burrow:true,shape:'grub',col:'#f2e6c4',col2:'#e6d6a8',dk:'#9a8858'},
   locustking:{voice:'buzz',name:'Locust King',boss:true,hp:520,armor:3,spd:.55,reward:75,size:.52,fly:true,shape:'hopper',col:'#8a6a2a',dk:'#4a3410',wings:true},
+  // ---- Dust Bowl Farm (Part 3) ----
+  sandflea:{name:'Sand Flea',hp:7,spd:1.1,reward:2,size:.14,gap:.3,hopper:true,shape:'hopper',col:'#d8c08a',dk:'#8a7440'},
+  dustgrub:{name:'Dust Grub',hp:18,spd:.7,reward:4,size:.2,gap:.6,burrow:true,shape:'grub',col:'#e9dcc0',col2:'#ddcfb0',dk:'#9a8a60',adult:'dustbeetle'},
+  dustbeetle:{name:'Dust Beetle',hp:30,armor:2,spd:.8,reward:6,size:.27,gap:.7,shape:'beetle',col:'#c2a46a',dk:'#6e5a30'},
+  dustdevil:{voice:'whoosh',name:'Dust Devil',boss:true,hp:420,armor:3,spd:.6,reward:60,size:.52,fly:true,shape:'swirl',col:'#c9ae78',dk:'#7a6438'},
+  // ---- Rooftop Garden (Part 3) ----
+  rat:{name:'City Rat',hp:16,spd:1.2,reward:4,size:.25,gap:.5,shape:'mouse',fur:'#7a736c'},
+  pigeon:{name:'Smoggy Pigeon',hp:22,armor:1,spd:1.1,reward:5,size:.26,gap:.6,fly:true,shape:'bird',col:'#8a8f9a',dk:'#4a4f5a',neck:'#6f9a8a'},
+  smogworm:{name:'Smog Worm',hp:18,spd:.8,reward:4,size:.24,gap:.6,shape:'cat',a:'#8a8a6a',b:'#7a7a5a',dk:'#4a4a30',adult:'smogmoth'},
+  smogmoth:{name:'Smog Moth',hp:16,spd:1.3,reward:5,size:.26,gap:.55,fly:true,shape:'moth',wing:'#a39a84',body:'#5a5244',dk:'#3a3428'},
+  ratking:{voice:'squeak',name:'Rat King',boss:true,hp:340,spd:.8,reward:55,size:.46,shape:'mouse',fur:'#5e5852'},
+  bigpidge:{voice:'coo',name:'Big Pidge',boss:true,hp:380,armor:2,spd:.6,reward:60,size:.5,fly:true,shape:'bird',col:'#7a7f8a',dk:'#3a3f4a',neck:'#7a5a9a'},
+  smogqueen:{voice:'buzz',name:'The Smog Moth',boss:true,hp:500,armor:2,spd:.55,reward:70,size:.56,fly:true,shape:'moth',wing:'#9a8f6a',body:'#4a4230',dk:'#2a2418'},
+  // ---- The Last Seed Vault (Part 3): glowing mutants ----
+  glowslug:{name:'Glowing Slug',hp:26,spd:.6,reward:5,size:.27,gap:.7,shape:'slug',col:'#6a8a4a',dk:'#34481f',spots:true,glow:'#c6ff5a'},
+  glowworm:{name:'Glowing Caterpillar',hp:22,spd:.8,reward:5,size:.26,gap:.6,shape:'cat',a:'#7aa04a',b:'#6a903a',dk:'#3a5a1a',glow:'#c6ff5a',adult:'glowmoth'},
+  glowmoth:{name:'Pale Moth',hp:20,spd:1.35,reward:6,size:.27,gap:.55,fly:true,shape:'moth',wing:'#d8e8a0',body:'#4a5a2a',dk:'#2a3a12',glow:'#c6ff5a'},
+  glowsnail:{name:'Glowing Snail',hp:40,armor:3,spd:.5,reward:8,size:.3,gap:.9,shape:'snail',shell:'#5a6a3a',sdk:'#2e3a1a',glow:'#c6ff5a'},
+  glowmole:{name:'Mutant Mole',hp:48,spd:.75,reward:8,size:.31,gap:.9,burrow:true,shape:'mole',fur:'#4a4a3a',glow:'#c6ff5a'},
+  mutantmole:{voice:'rumble',name:'Mother Mutant',boss:true,hp:420,spd:.5,reward:60,size:.48,burrow:true,shape:'mole',fur:'#3a3a2a',glow:'#c6ff5a'},
+  palequeen:{voice:'buzz',name:'Pale Queen',boss:true,hp:460,spd:.6,reward:65,size:.52,fly:true,shape:'moth',wing:'#e8f0b8',body:'#3a4a1a',dk:'#1e2a0a',glow:'#c6ff5a',spawns:{type:'glowmoth',every:3.2}},
+  blight:{voice:'slurp',name:'The Blight',boss:true,hp:640,armor:4,spd:.4,reward:90,size:.6,shape:'slug',col:'#4a5a2a',dk:'#1e2a0a',spots:true,glow:'#c6ff5a',spawns:{type:'glowslug',every:3}},
+  // ---- Rain Garden (Part 4) ----
+  puddleslug:{name:'Puddle Slug',hp:12,spd:.7,reward:3,size:.22,gap:.6,shape:'slug',col:'#b0a070',dk:'#706036'},
+  frog:{name:'Flood Frog',hp:20,spd:.9,reward:4,size:.26,gap:.6,hopper:true,shape:'frog',col:'#6aa85a',dk:'#2f5e2a'},
+  mudsnail:{name:'Mud Snail',hp:30,armor:2,spd:.55,reward:6,size:.29,gap:.9,shape:'snail',shell:'#8a6a4a',sdk:'#4a3420'},
+  bullfrog:{voice:'croak',name:'Bullfrog',boss:true,hp:340,spd:.55,reward:50,size:.5,hopper:true,shape:'frog',col:'#5a8a4a',dk:'#2a4a1e'},
+  mudcrab:{voice:'click',name:'Mud Crab',boss:true,hp:420,armor:5,spd:.45,reward:60,size:.5,shape:'shield',col:'#a8603a',dk:'#5a2a14'},
+  snapper:{voice:'click',name:'Old Snapper',boss:true,hp:560,armor:6,spd:.4,reward:75,size:.54,shape:'shield',col:'#5a7a4a',dk:'#2a3a1e',spots:true},
+  // ---- Wildflower Meadow & The New Garden (Part 4) ----
+  whiskers:{voice:'squeak',name:'Old Whiskers',boss:true,hp:420,spd:.9,reward:70,size:.48,shape:'mouse',fur:'#b0a69c'},
+  blightweak:{voice:'slurp',name:'The Blight, weakened',boss:true,hp:620,armor:3,spd:.42,reward:100,size:.58,shape:'slug',col:'#6a7a3a',dk:'#2e3a14',spots:true,glow:'#e4ff9a',spawns:{type:'puddleslug',every:3}},
 };

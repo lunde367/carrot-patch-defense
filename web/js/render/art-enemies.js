@@ -17,7 +17,38 @@ export function drawEnemy(c,e,s){
   if (e.under){ mound(c,r,e); return; }
   if (e.fly){ ell(c,0,r*.9,r*.8,r*.22,'rgba(40,40,20,.18)'); c.translate(0,-s*.28+Math.sin(e.ph*.8)*s*.05); }
   else { ell(c,0,r*.85,r*1.1,r*.3,'rgba(40,40,20,.22)'); if (D.hopper&&e.jump) c.translate(0,-Math.abs(Math.sin(e.ph*1.8))*r*1.2); }
+  if (D.glow){ const pulse=.55+.25*Math.sin(e.ph*.7); c.save(); c.globalAlpha=pulse*.45; ell(c,0,0,r*1.7,r*1.25,D.glow); c.globalAlpha=pulse*.6; ell(c,0,0,r*1.25,r*.95,D.glow); c.restore(); }
   switch (D.shape){
+  case 'swirl': {
+    // a spinning column of dust with grit flying around it
+    const sp=e.ph*2.5;
+    for (let k=0;k<5;k++){ const y=(k-2)*r*.32, rw=r*(0.45+k*.18);
+      c.save(); c.translate(Math.sin(sp+k)*r*.12,y); c.rotate(Math.sin(sp*.5+k)*.08);
+      ell(c,0,0,rw,r*.16,k%2?D.col:'#d9c294',D.dk,1.2); c.restore(); }
+    for (let k=0;k<6;k++){ const a=sp+k*1.05; ell(c,Math.cos(a)*r*1.1,Math.sin(a)*r*.5,r*.06,r*.06,D.dk); }
+    if (D.boss) crown(c,0,-r*1.05,r*.32);
+    break; }
+  case 'bird': {
+    // a pigeon from above: flapping wings, round body, little head and beak
+    const fl=Math.sin(e.ph*3)*.5+.5;
+    for (const sy of [-1,1]){ c.beginPath(); c.moveTo(-r*.2,0); c.quadraticCurveTo(-r*.3,sy*r*(1+fl*.5),-r*.9,sy*r*(.7+fl*.6)); c.quadraticCurveTo(-r*.6,sy*r*.3,-r*.2,0);
+      c.fillStyle=D.col; c.fill(); c.strokeStyle=D.dk; c.lineWidth=1.2; c.stroke(); }
+    c.beginPath(); c.moveTo(-r*.7,0); c.lineTo(-r*1.25,-r*.25); c.lineTo(-r*1.25,r*.25); c.closePath(); c.fillStyle=D.dk; c.fill();
+    ell(c,0,0,r*.75,r*.45,D.col,D.dk,1.4); ell(c,r*.55,0,r*.32,r*.3,D.neck||D.col,D.dk,1.2);
+    ell(c,r*.65,-r*.13,r*.06,r*.06,'#f2a03a'); ell(c,r*.65,r*.13,r*.06,r*.06,'#f2a03a');
+    c.beginPath(); c.moveTo(r*.85,-r*.06); c.lineTo(r*1.05,0); c.lineTo(r*.85,r*.06); c.closePath(); c.fillStyle='#e8b04a'; c.fill();
+    if (D.boss) crown(c,r*.4,-r*.45,r*.28);
+    break; }
+  case 'frog': {
+    // a frog from above: bent back legs, wide body, big eyes
+    c.strokeStyle=D.dk; c.lineWidth=Math.max(1.5,r*.18); c.lineCap='round';
+    for (const sy of [-1,1]){ c.beginPath(); c.moveTo(-r*.3,sy*r*.4); c.lineTo(-r*.95,sy*r*.9); c.lineTo(-r*.5,sy*r*1.05); c.stroke();
+      c.beginPath(); c.moveTo(r*.35,sy*r*.4); c.lineTo(r*.75,sy*r*.85); c.stroke(); }
+    ell(c,0,0,r*.85,r*.7,D.col,D.dk,Math.max(1.2,r*.08));
+    ell(c,-r*.2,0,r*.4,r*.35,'rgba(255,255,255,.18)');
+    for (const sy of [-1,1]){ ell(c,r*.5,sy*r*.38,r*.2,r*.2,D.col,D.dk,1.2); ell(c,r*.55,sy*r*.38,r*.1,r*.1,'#2b2018'); }
+    if (D.boss) crown(c,-r*.1,-r*.55,r*.32);
+    break; }
   case 'slug': {
     const st=1+Math.sin(e.ph*.5)*.07;
     ell(c,0,r*.1,r*1.5*st,r*.6,D.col,D.dk,Math.max(1.2,r*.08));

@@ -92,7 +92,35 @@ function scarecrow(c,s,t,lv,anim){
   c.restore();
 }
 
-export const DRAW = { bunny, rose, squirrel, sprinkler, pine, owl, sunflower, scarecrow };
+function barrel(c,s,t,lv){
+  ell(c,0,s*.3,s*.24,s*.07,'rgba(40,60,20,.25)');
+  c.beginPath(); c.moveTo(-s*.2,-s*.2); c.quadraticCurveTo(-s*.26,s*.05,-s*.2,s*.28); c.lineTo(s*.2,s*.28); c.quadraticCurveTo(s*.26,s*.05,s*.2,-s*.2); c.closePath();
+  c.fillStyle='#9a6b3c'; c.fill(); c.strokeStyle='#5e3d20'; c.lineWidth=s*.02; c.stroke();
+  c.strokeStyle='#6f7a82'; c.lineWidth=s*.035; for (const y of [-.1,.17]){ c.beginPath(); c.moveTo(-s*.23,y*s); c.lineTo(s*.23,y*s); c.stroke(); }
+  ell(c,0,-s*.2,s*.2,s*.06,'#5aa0c8','#3a6a8a',s*.015);
+  const ripple=(Date.now()/600)%1; ell(c,0,-s*.2,s*.12*ripple,s*.035*ripple,null,'rgba(255,255,255,.7)',1);
+  if (lv>=1){ c.strokeStyle='#6f7a82'; c.lineWidth=s*.03; c.beginPath(); c.moveTo(s*.2,0); c.lineTo(s*.3,0); c.lineTo(s*.3,s*.08); c.stroke(); }
+  if (lv>=2) ell(c,s*.3,s*.12,s*.03,s*.04,'#5aa0c8');
+}
+function hive(c,s,t,lv,anim){
+  ell(c,0,s*.3,s*.24,s*.07,'rgba(40,60,20,.25)');
+  c.strokeStyle='#6b4423'; c.lineWidth=s*.04; c.beginPath(); c.moveTo(0,s*.3); c.lineTo(0,s*.1); c.stroke();
+  for (let k=0;k<4;k++){ const w=s*(.24-k*.04), y=s*(.06-k*.1); ell(c,0,y,w,s*.07,'#e8b84a','#a8782a',s*.015); }
+  ell(c,0,s*.02,s*.04,s*.03,'#3a2614');
+  for (let k=0;k<2+lv;k++){ const a=anim*3+k*2.1; const bx=Math.cos(a)*s*.32, by=Math.sin(a*1.3)*s*.2-s*.1;
+    ell(c,bx,by,s*.035,s*.025,'#f2c94a','#3a2614',1); c.fillStyle='rgba(255,255,255,.8)'; ell(c,bx,by-s*.025,s*.025,s*.015,'rgba(255,255,255,.85)'); }
+}
+function ladybug(c,s,t,lv,anim){
+  ell(c,0,s*.3,s*.24,s*.07,'rgba(40,60,20,.25)');
+  // a little wooden nest box with ladybugs on it
+  c.beginPath(); c.roundRect(-s*.18,-s*.12,s*.36,s*.4,s*.04); c.fillStyle='#b5824e'; c.fill(); c.strokeStyle='#6b4a2b'; c.lineWidth=s*.02; c.stroke();
+  c.beginPath(); c.moveTo(-s*.24,-s*.1); c.lineTo(0,-s*.3); c.lineTo(s*.24,-s*.1); c.closePath(); c.fillStyle='#c2456b'; c.fill(); c.stroke();
+  for (const [x,y] of [[-.07,0],[.07,.06],[0,.15]]) ell(c,x*s,y*s,s*.025,s*.018,'#3a2614');
+  const n=1+lv; for (let k=0;k<n;k++){ const a=anim*2+k*2.4; const bx=Math.cos(a)*s*.28, by=-s*.1+Math.sin(a)*s*.14;
+    ell(c,bx,by,s*.05,s*.045,'#e23a3a','#3a1a1a',1); c.fillStyle='#222'; ell(c,bx+s*.03,by,s*.02,s*.025,'#222'); ell(c,bx-s*.01,by-s*.015,s*.012,s*.012,'#222'); }
+}
+
+export const DRAW = { bunny, rose, squirrel, sprinkler, pine, owl, sunflower, scarecrow, barrel, hive, ladybug };
 export function drawPips(c,s,lv){ for (let i=0;i<=lv;i++) ell(c,(i-lv/2)*s*.12,s*.4,s*.04,s*.04,'#f7b267','#9c5a1a',s*.015); }
 
 export function drawShot(g,sh,s){
@@ -104,5 +132,6 @@ export function drawShot(g,sh,s){
     ell(g,0,s*.3,s*.07,s*.025,'rgba(30,30,10,.25)'); g.translate(0,-h); g.rotate(sh.spin*.5);
     ell(g,0,0,s*.07,s*.1,'#9a6b3c','#5e3d20',1.2); g.strokeStyle='#5e3d20'; g.lineWidth=1;
     for (const y of [-.04,0,.04]){ g.beginPath(); g.moveTo(-s*.06,y*s); g.lineTo(s*.06,y*s); g.stroke(); } }
+  else if (sh.k==='lady'){ ell(g,0,0,s*.05,s*.045,'#e23a3a','#3a1a1a',1); ell(g,s*.03,0,s*.02,s*.025,'#222'); }
   else { g.rotate(sh.a); ell(g,0,0,s*.14,s*.045,'#efe4d0','#8a6a48',1.2); g.beginPath(); g.moveTo(-s*.14,0); g.lineTo(s*.12,0); g.strokeStyle='#8a6a48'; g.stroke(); }
 }

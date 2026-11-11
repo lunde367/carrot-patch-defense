@@ -27,6 +27,11 @@ Audio.register({
   leak:     [.2,  ()=>{ noise(.05,{freq:2400,q:.7,vol:.22}); noise(.06,{freq:1500,q:.8,vol:.2,at:.06}); noise(.05,{freq:2000,q:.7,vol:.16,at:.13});
                         tone(160,.08,{type:'triangle',vol:.12,to:90}); }],
   // boss voices, picked to match each boss
+  buzzlet:  [.12, ()=>tone(520,.06,{type:'sawtooth',vol:.02,to:560})],
+  rain:     [2,   ()=>{ noise(1.8,{freq:5000,q:.3,vol:.07,type:'highpass',attack:.4}); }],
+  'boss-whoosh':[.5, ()=>{ noise(1,{freq:600,q:.7,vol:.2,attack:.3}); noise(.8,{freq:1400,q:1,vol:.1,at:.25}); }],
+  'boss-coo':   [.5, ()=>{ tone(330,.25,{type:'sine',vol:.12,to:300}); tone(300,.35,{type:'sine',vol:.12,at:.3,to:260}); tone(280,.3,{type:'sine',vol:.1,at:.7,to:250}); }],
+  'boss-croak': [.5, ()=>{ for (let i=0;i<3;i++){ tone(95,.18,{type:'sawtooth',vol:.12,at:i*.25,to:75}); noise(.15,{freq:400,q:3,vol:.08,at:i*.25}); } }],
   'boss-slurp': [.5, ()=>{ tone(180,.35,{type:'sine',vol:.14,to:420,attack:.03}); tone(420,.3,{type:'sine',vol:.1,at:.3,to:160});
                         noise(.5,{freq:500,q:3,vol:.07,at:.05,type:'bandpass'}); tone(90,.6,{type:'triangle',vol:.09,at:.1,to:70}); }],
   'boss-buzz':  [.5, ()=>{ tone(150,.9,{type:'sawtooth',vol:.06,to:170,attack:.05}); tone(156,.9,{type:'sawtooth',vol:.05,to:176,attack:.05});
@@ -48,7 +53,11 @@ Audio.register({
 export const MUSIC = {
   cozy: { bpm:84, chords:[[196,247,294],[175,220,262],[165,196,247],[147,185,220]], scale:[392,440,494,587,659,784,880] },
   off:  { bpm:80, chords:[[196,247,294],[175,220,262],[165,196,247],[147,185,220]], scale:[392,440,466,587,659,740,880] },
+  // Part 3: slow, minor and sparse
+  withered: { bpm:62, chords:[[220,262,330],[196,233,294],[175,220,262],[165,196,247]], scale:[440,494,523,659,698] },
+  // Part 4: brighter than ever
+  regrow:   { bpm:96, chords:[[262,330,392],[220,262,330],[175,220,262],[196,247,294]], scale:[523,587,659,784,880,988,1047] },
 };
 Audio.setMusic(MUSIC.cozy);
 
-export const SHOT_SOUND = { bunny:'throw', rose:'thorn', squirrel:'acorn', sprinkler:'splash', pine:'throw', owl:'hoot' };
+export const SHOT_SOUND = { bunny:'throw', rose:'thorn', squirrel:'acorn', sprinkler:'splash', pine:'throw', owl:'hoot', ladybug:'buzzlet' };

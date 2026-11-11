@@ -161,7 +161,7 @@ export function draw(clock){
       if (t.dry){ const d=(clockReal()*.8+t.x)%1; g.save(); g.translate(s*.24,-s*.24); g.rotate(.6+d*.4); ell(g,0,0,s*.06,s*.03,`rgba(190,140,60,${1-d*.5})`,'#8a6a2a',1); g.restore(); }
       if (S.heat && !t.cool){ const d=(clockReal()*1.4+t.x)%1; ell(g,s*.24,-s*.28+d*s*.18,s*.035,s*.05,`rgba(120,190,240,${1-d})`); }
       drawPips(g,s,t.lv); }
-    else { const e=it.e; g.translate(e.x*s,e.y*s); g.save(); if (e.face<0) g.scale(-1,1); drawEnemy(g,e,s); g.restore();
+    else { const e=it.e; g.translate(e.x*s,e.y*s); g.save(); if (e.face<0) g.scale(-1,1); if (G.CH.smog && e.fly) g.globalAlpha=.55; drawEnemy(g,e,s); g.restore();
       if (G.LV.resist>0 && !e.under && !e.cocoon){ const hue=(clockReal()*90+e.ph*40)%360, ly=e.fly?-s*.28:0;   // chemical sheen = spray resistant
         g.beginPath(); g.ellipse(0,ly-e.size*s*.15,e.size*s*.7,e.size*s*.3,0,3.4,6.0); g.strokeStyle=`hsla(${hue},80%,70%,.55)`; g.lineWidth=2; g.stroke(); }
       const lift=e.fly?s*.28:0;
@@ -172,6 +172,18 @@ export function draw(clock){
     g.restore();
   }
   for (const sh of S.shots){ g.save(); g.translate(sh.x*s,sh.y*s); drawShot(g,sh,s); g.restore(); }
+  const H=(ROWS-1)*s, tt=clockReal();
+  if (G.CH.smog){   // drifting yellow-gray smog
+    for (let i=0;i<4;i++){ const x=((tt*12+i*W/2.3)%(W*1.6))-W*.3, y=H*(.15+i*.22);
+      const gr=g.createRadialGradient(x,y,0,x,y,W*.45); gr.addColorStop(0,'rgba(170,160,120,.32)'); gr.addColorStop(1,'rgba(170,160,120,0)');
+      g.fillStyle=gr; g.fillRect(0,0,W,H); } }
+  if (S.rain){   // falling rain
+    g.strokeStyle='rgba(200,225,245,.6)'; g.lineWidth=1.2;
+    for (let i=0;i<70;i++){ const x=((i*53.7)%W + tt*20)%W, y=((i*97.3 + tt*420)%(H+30))-15; g.beginPath(); g.moveTo(x,y); g.lineTo(x-3,y+12); g.stroke(); }
+    g.fillStyle='rgba(90,130,170,.08)'; g.fillRect(0,0,W,H); }
+  if (G.CH.dark){   // the vault: dim edges, light in the middle
+    const gr=g.createRadialGradient(W/2,H*.55,W*.25,W/2,H*.55,W*1.05); gr.addColorStop(0,'rgba(20,18,12,0)'); gr.addColorStop(1,'rgba(20,18,12,.55)');
+    g.fillStyle=gr; g.fillRect(0,0,W,H+s); }
   for (const f of S.fx){ const a=Math.max(0,f.life/f.max);
     if (f.k==='puff'){ g.globalAlpha=a; ell(g,f.x*s,f.y*s,s*.07*(1.5-a),s*.07*(1.5-a),'#fffbe8'); g.globalAlpha=1; }
     if (f.k==='txt'){ g.globalAlpha=a; g.font=`800 ${Math.round(s*.36)}px Sniglet, Nunito, ui-rounded, sans-serif`; g.textAlign='center';
