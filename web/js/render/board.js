@@ -1,7 +1,7 @@
 // Draws the garden board. Sizes itself to fit any phone, tablet or desktop window.
 import { G, towerAt, rangeOf } from '../engine/game.js';
 import { path, buildable } from '../engine/path.js';
-import { drawScenery } from './art-scenery.js';
+import { drawScenery, drawBonus } from './art-scenery.js';
 import { COLS, ROWS } from '../data/levels.js';
 import { TYPES } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
@@ -61,7 +61,7 @@ export function rebuild(){
   b.strokeStyle='#76502f'; b.lineWidth=2; for (let i=1;i<3;i++){ b.beginPath(); b.moveTo(0,gy+i*s/3); b.lineTo(W,gy+i*s/3); b.stroke(); }
   const R=rng(7+LV.gi*13);
   for (let r=0;r<ROWS-1;r++) for (let c=0;c<COLS;c++){
-    if (path.cells.has(c+','+r)||path.blocked.has(c+','+r)||R()>.22) continue;
+    if (path.cells.has(c+','+r)||path.blocked.has(c+','+r)||path.bonus.has(c+','+r)||R()>.22) continue;
     const x=c*s+s*(.2+R()*.6), y=r*s+s*(.2+R()*.6);
     if (R()<.5){ b.strokeStyle='#7fb064'; b.lineWidth=1.5; b.beginPath();
       for (const o of [-.06,0,.06]){ b.moveTo(x,y); b.lineTo(x+o*s*1.5,y-s*.13); } b.stroke(); }
@@ -75,6 +75,13 @@ export function rebuild(){
   const R2=rng(31);
   for (const sg of path.segs){ const n=Math.floor(sg.len*3); for (let i=0;i<n;i++){ const k=R2();
     ell(b,(sg.x1+(sg.x2-sg.x1)*k+(R2()-.5)*.45)*s,(sg.y1+(sg.y2-sg.y1)*k+(R2()-.5)*.45)*s,s*.035,s*.025,'#c4a271'); } }
+  if (CH.drought){
+    // cracked, dry ground: thin dark crack lines scattered over the grass
+    const RC=rng(91+LV.gi*7); b.strokeStyle='rgba(110,85,40,.45)'; b.lineWidth=1.2; b.lineCap='round';
+    for (let i=0;i<26;i++){ let x=RC()*W, y=RC()*gy; if (path.cells.has(Math.floor(x/s)+','+Math.floor(y/s))) continue;
+      b.beginPath(); b.moveTo(x,y); for (let k=0;k<3;k++){ x+=(RC()-.5)*s*.7; y+=(RC()-.5)*s*.7; b.lineTo(x,y); } b.stroke(); }
+  }
+  for (const [k,kind] of path.bonus){ const [c,r]=k.split(',').map(Number); drawBonus(b, {c,r,kind}, s); }
   for (const o of path.scenery) drawScenery(b, o, s);
   if (LV.season!=='summer'){ b.fillStyle=LV.season==='spring'?'rgba(200,245,210,.10)':'rgba(235,165,50,.14)'; b.fillRect(0,0,W,gy); }
   if (CH.greenhouse){
@@ -112,6 +119,7 @@ export function draw(clock){
 
   for (const f of S.fx){ const p=1-f.life/f.max;
     if (f.k==='ring'){ g.beginPath(); g.arc(f.x*s,f.y*s,f.r*s*p,0,6.28); g.strokeStyle=`rgba(150,210,240,${1-p})`; g.lineWidth=3; g.stroke(); }
+    if (f.k==='scare'){ g.beginPath(); g.arc(f.x*s,f.y*s,f.r*s*(.3+.7*p),0,6.28); g.strokeStyle=`rgba(194,69,107,${.7*(1-p)})`; g.lineWidth=2.5; g.setLineDash([4,5]); g.stroke(); g.setLineDash([]); }
     if (f.k==='thud') ell(g,f.x*s,f.y*s,f.r*s*(.4+.6*p),f.r*s*(.25+.4*p),`rgba(120,80,40,${.35*(1-p)})`,`rgba(94,61,32,${1-p})`,2); }
   // spray mist: a yellow-green cloud that billows out and fades
   for (const f of S.fx) if (f.k==='spray'){ const p=1-f.life/f.max, R=f.r*s*(.55+.45*Math.min(1,p*2.2)), a=.42*(1-p);
@@ -140,6 +148,7 @@ export function draw(clock){
       if (t.wilt>0){ g.globalAlpha=.5; g.save(); g.translate(s*.06,s*.06); g.rotate(.22); DRAW[t.type](g,s,0,t.lv,0,t.look||1); g.restore(); g.globalAlpha=1;
         ell(g,s*.22,-s*.3,s*.07,s*.07,'#c4d65c','#7d8f2a',1); g.fillStyle='#4a5a14'; g.font=`800 ${Math.round(s*.13)}px Nunito, sans-serif`; g.textAlign='center'; g.fillText('!',s*.22,-s*.255); }
       else { g.save(); DRAW[t.type](g,s,t.hop,t.lv,clock+t.x,t.look||1); g.restore(); }
+      if (t.dry){ const d=(clockReal()*.8+t.x)%1; g.save(); g.translate(s*.24,-s*.24); g.rotate(.6+d*.4); ell(g,0,0,s*.06,s*.03,`rgba(190,140,60,${1-d*.5})`,'#8a6a2a',1); g.restore(); }
       if (S.heat && !t.cool){ const d=(clockReal()*1.4+t.x)%1; ell(g,s*.24,-s*.28+d*s*.18,s*.035,s*.05,`rgba(120,190,240,${1-d})`); }
       drawPips(g,s,t.lv); }
     else { const e=it.e; g.translate(e.x*s,e.y*s); g.save(); if (e.face<0) g.scale(-1,1); drawEnemy(g,e,s); g.restore();

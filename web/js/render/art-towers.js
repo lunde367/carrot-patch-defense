@@ -72,7 +72,27 @@ function squirrel(c,s,t,lv,anim,look){
   ell(c,s*.15,s*.05,s*.045,s*.05,'#9a6b3c','#5e3d20',s*.012); ell(c,s*.15,s*.015,s*.05,s*.022,'#6b4423');
 }
 
-export const DRAW = { bunny, rose, squirrel, sprinkler, pine, owl, sunflower };
+function scarecrow(c,s,t,lv,anim){
+  ell(c,0,s*.3,s*.24,s*.07,'rgba(40,60,20,.25)');
+  const sw=Math.sin(anim*1.3)*.05+t*.25; c.save(); c.rotate(sw*.4);
+  c.strokeStyle='#7a5234'; c.lineWidth=s*.05; c.lineCap='round';
+  c.beginPath(); c.moveTo(0,s*.3); c.lineTo(0,-s*.18); c.moveTo(-s*.26,-s*.02); c.lineTo(s*.26,-s*.02); c.stroke();
+  // shirt with patches, straw hands
+  c.beginPath(); c.moveTo(-s*.24,-s*.06); c.lineTo(s*.24,-s*.06); c.lineTo(s*.13,s*.16); c.lineTo(-s*.13,s*.16); c.closePath();
+  c.fillStyle='#c2456b'; c.fill(); c.strokeStyle='#7d2440'; c.lineWidth=s*.02; c.stroke();
+  c.fillStyle='#e8c35f'; c.fillRect(-s*.05,s*.02,s*.08,s*.07); c.strokeStyle='#7d2440'; c.strokeRect(-s*.05,s*.02,s*.08,s*.07);
+  c.strokeStyle='#e0b84a'; c.lineWidth=s*.02; for (const o of [-1,1]) for (const k of [-.03,0,.03]){ c.beginPath(); c.moveTo(o*s*.25,-s*.02); c.lineTo(o*s*.32,-s*.02+k*s*1.4); c.stroke(); }
+  // head and hat
+  ell(c,0,-s*.2,s*.1,s*.1,'#f0dca8','#a88a52',s*.02);
+  ell(c,-s*.035,-s*.21,s*.015,s*.015,'#2b2018'); ell(c,s*.035,-s*.21,s*.015,s*.015,'#2b2018');
+  c.strokeStyle='#2b2018'; c.lineWidth=s*.012; c.beginPath(); c.arc(0,-s*.18,s*.035,.3,2.8); c.stroke();
+  ell(c,0,-s*.28,s*.17,s*.035,'#9a6b3c','#5e3d20',s*.015);
+  c.beginPath(); c.moveTo(-s*.09,-s*.29); c.lineTo(-s*.07,-s*.4); c.lineTo(s*.07,-s*.4); c.lineTo(s*.09,-s*.29); c.closePath(); c.fillStyle='#9a6b3c'; c.fill(); c.strokeStyle='#5e3d20'; c.stroke();
+  if (lv>=1){ c.fillStyle='#e8c35f'; c.fillRect(-s*.09,-s*.33,s*.18,s*.03); }
+  c.restore();
+}
+
+export const DRAW = { bunny, rose, squirrel, sprinkler, pine, owl, sunflower, scarecrow };
 export function drawPips(c,s,lv){ for (let i=0;i<=lv;i++) ell(c,(i-lv/2)*s*.12,s*.4,s*.04,s*.04,'#f7b267','#9c5a1a',s*.015); }
 
 export function drawShot(g,sh,s){

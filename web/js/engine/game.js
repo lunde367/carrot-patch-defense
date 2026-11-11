@@ -2,8 +2,8 @@
 import { TYPES } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
 import { LEVELS, WAVES } from '../data/levels.js';
-import { path, setPath, setScenery, sceneryAt, pointAt, buildable } from './path.js';
-import { sceneryFor } from '../data/scenery.js';
+import { path, setPath, setScenery, sceneryAt, bonusAt, pointAt, buildable } from './path.js';
+import { sceneryFor, bonusFor } from '../data/scenery.js';
 import { emit } from '../../kit/js/events.js';
 import { NO_PERKS } from '../data/perks.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
@@ -11,10 +11,13 @@ import { SPRAY, PLANTS } from '../data/spray.js';
 export const G = { S:null, LV:null, CH:null, hint:null };   // hint: a tile the tutorial highlights
 const MAX_FX = 260;
 const HEAT_SLOW = .75;   // in a heat wave, uncooled defenders fire at 75% speed
+const DRY_SLOW = .75;    // in a drought, plant defenders with no Sprinkler nearby fire at 75% speed
+export const HILL = 1.2, SUNNY_RATE = 1.15, SUNNY_SEEDS = 1.5;   // helpful tiles: +20% range; 15% faster; +50% sunflower seeds
 
 export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
   const LV = G.LV = LEVELS[gi]; G.CH = LV.ch; setPath(LV.pts); G.hint = null;
-  setScenery(sceneryFor(LV, (c,r)=>path.cells.has(c+','+r), LV.gi===0 ? [[2,1],[4,3]] : []));
+  const onPath=(c,r)=>path.cells.has(c+','+r), scen=sceneryFor(LV, onPath, LV.gi===0 ? [[2,1],[4,3]] : []);
+  setScenery(scen, bonusFor(LV, onPath, scen));
   newShots = [];                                   // drop shots left over from a game that ended mid-wave
   const maxLives = 20;
   G.S = { mode:'play', paused:false, seeds:120+gi*15+bonusSeeds+perks.seeds, lives:maxLives, maxLives, perks, wave:0,
@@ -34,6 +37,8 @@ function makeWave(w){
     for (const x of pool){ r-=x[2]; if (r<=0){ p=x; break; } }
     q.push({t:p[0], m:p[3]});
   }
+  // Aphid boom (Apple Orchard): a big extra burst of the garden's smallest pest.
+  if (G.CH.swarm && G.CH.swarm.includes(w)){ const small=pool[0]; for (let i=0;i<Math.floor(n*.9);i++) q.splice(Math.floor(Math.random()*q.length), 0, {t:small[0], m:small[3]}); }
   if (w===WAVES) q.push({t:G.LV.boss});
   return q;
 }
@@ -45,15 +50,18 @@ export function startWave(){
   for (const t of S.towers) t.cool = !S.heat || t.type==='sprinkler' ||
     S.towers.some(o => o.type==='sprinkler' && Math.hypot(o.x-t.x,o.y-t.y) <= rangeOf(o));
   if (S.heat) emit('heat', S.towers.filter(t=>!t.cool).length);
+  if (G.CH.swarm && G.CH.swarm.includes(S.wave)) emit('swarm');
   emit('waveStart', { wave:S.wave, boss:S.wave===WAVES }); emit('select', null);
   return true;
 }
 function spawnEnemy(type, dist, morph){
   const S=G.S, d=ENEMY[type], sc=d.boss?G.LV.hpMul:hpScale(Math.max(1,S.wave));
   const hp=Math.round(d.hp*sc), [x,y]=pointAt(dist);
-  S.enemies.push({ type, hp, max:hp, spd:d.spd, reward:d.reward+Math.floor(G.LV.gi/2), size:d.size, armor:d.armor||0,
-    dist, x, y, face:1, slow:0, hit:0, ph:Math.random()*6, bt:0, fly:!!d.fly, morphAt:morph?path.total*morph:null, cocoon:0 });
+  const e={ type, hp, max:hp, spd:d.spd, reward:d.reward+Math.floor(G.LV.gi/2), size:d.size, armor:d.armor||0,
+    dist, x, y, face:1, slow:0, hit:0, ph:Math.random()*6, bt:0, fly:!!d.fly, morphAt:morph?path.total*morph:null, cocoon:0, scared:0, st:0 };
+  S.enemies.push(e);
   if (d.boss) emit('boss', type);
+  return e;
 }
 function grow(e){
   const S=G.S, ad=ENEMY[e.type].adult, d=ENEMY[ad], frac=e.hp/e.max, mx=Math.round(d.hp*hpScale(S.wave));
@@ -66,7 +74,9 @@ function grow(e){
 // Prices and reach after Garden Shed perks.
 export const costOf = type => Math.round(TYPES[type].cost*G.S.perks.costMul);
 export const upCostOf = t => Math.round(TYPES[t.type].up[t.lv]*G.S.perks.costMul);
-export const rangeOf = t => TYPES[t.type].range[t.lv]*G.S.perks.rangeMul;
+export const rangeOf = t => TYPES[t.type].range[t.lv]*G.S.perks.rangeMul*(t.tile==='hill'?HILL:1);
+// Plant defenders need water in a drought: a Sprinkler close enough to reach them.
+const watered = t => t.type==='sprinkler' || G.S.towers.some(o => o.type==='sprinkler' && Math.hypot(o.x-t.x,o.y-t.y) <= rangeOf(o));
 export const towerAt = (c,r) => G.S.towers.find(t=>t.c===c&&t.r===r);
 export function plantAt(c,r){
   const S=G.S, T=TYPES[S.build], cost=costOf(S.build);
@@ -77,7 +87,7 @@ export function plantAt(c,r){
   const head = S.build==='bunny' && S.perks.headStart && !S.headStartUsed;
   if (head) S.headStartUsed = true;
   const lv = head ? 1 : 0;
-  const t={ type:S.build, c, r, x:c+.5, y:r+.5, lv, cd:0, hop:1, look:1, spent:cost };
+  const t={ type:S.build, c, r, x:c+.5, y:r+.5, lv, cd:0, hop:1, look:1, spent:cost, tile:bonusAt(c,r) };
   t.cool = !S.heat || t.type==='sprinkler' || S.towers.some(o => o.type==='sprinkler' && Math.hypot(o.x-t.x,o.y-t.y) <= rangeOf(o));
   S.towers.push(t); emit('plant', t); return { ok:true, tower:t };
 }
@@ -160,7 +170,9 @@ export function update(dt){
   for (const e of S.enemies){
     if (e.dead) continue;
     const D=ENEMY[e.type];
-    e.slow=Math.max(0,e.slow-dt); e.hit=Math.max(0,e.hit-dt); e.ph+=dt*6;
+    e.slow=Math.max(0,e.slow-dt); e.hit=Math.max(0,e.hit-dt); e.ph+=dt*6; e.scared=Math.max(0,e.scared-dt);
+    if (D.spawns && !e.under && e.dist>0.5){ e.st+=dt;                     // mothers hatch babies as they go
+      if (e.st>=D.spawns.every){ e.st=0; spawnEnemy(D.spawns.type, Math.max(0.3, e.dist-0.25)); puffs(e.x,e.y,4,.8); } }
     if (e.cocoon>0){ e.cocoon-=dt; if (e.cocoon<=0) grow(e); continue; }
     if (e.morphAt!=null && e.dist>=e.morphAt){ e.morphAt=null; e.cocoon=1.3; floatText(e.x,e.y-.35,'growing!','#8a5fb0',1); emit('cocoon'); continue; }
     if (D.burrow){ e.bt+=dt; e.under = e.bt>1 && (e.bt%4.5)>3; }
@@ -179,10 +191,24 @@ export function update(dt){
 
   if (S.sprayCd>0 && S.active) S.sprayCd=Math.max(0, S.sprayCd-dt);   // recharges during waves
   for (const t of S.towers){
-    const T=TYPES[t.type]; t.cd-=dt*(S.heat && !t.cool ? HEAT_SLOW : 1); t.hop=Math.max(0,t.hop-dt*4);
+    const T=TYPES[t.type];
+    t.dry = !!(G.CH.drought && PLANTS.includes(t.type) && !watered(t));
+    t.cd-=dt*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1); t.hop=Math.max(0,t.hop-dt*4);
     if (t.wilt>0){ t.wilt=Math.max(0, t.wilt-dt); continue; }          // wilted by the spray
     if (t.type==='sunflower') continue;
     const R=rangeOf(t);
+    if (t.type==='scarecrow'){
+      // Scares every flier in reach back up the path. Bosses only flinch half as far. A scared pest
+      // can't be scared again for a moment, so several scarecrows can't hold one forever.
+      if (t.cd>0) continue;
+      const near=S.enemies.filter(e=>targetable(e)&&e.fly&&e.scared<=0&&Math.hypot(e.x-t.x,e.y-t.y)<=R);
+      if (!near.length) continue;
+      t.cd=1/T.rate[t.lv]; t.hop=1;
+      for (const e of near){ e.dist=Math.max(0.35, e.dist-T.push[t.lv]*(ENEMY[e.type].boss?.5:1)); e.scared=2.6;
+        const [x,y]=pointAt(e.dist); e.x=x; e.y=y; }
+      S.fx.push({k:'scare',x:t.x,y:t.y,r:R,life:.6,max:.6}); emit('scare', near.length);
+      continue;
+    }
     const inR=S.enemies.filter(e=>targetable(e)&&!(T.ground&&e.fly)&&Math.hypot(e.x-t.x,e.y-t.y)<=R);
     if (!inR.length||t.cd>0) continue;
     t.cd=1/T.rate[t.lv]; t.hop=1;
@@ -226,7 +252,7 @@ export function update(dt){
       S.mode='won'; emit('win', { stars, lives:S.lives, maxLives:S.maxLives, lost, gi:G.LV.gi }); return;
     }
     const bonus=8+S.wave*2; let inc=0;
-    for (const t of S.towers) if (t.type==='sunflower'){ const v=TYPES.sunflower.income[t.lv]; inc+=v; floatText(t.x,t.y-.5,'+'+v,'#c98a12',1.3); t.hop=1; }
+    for (const t of S.towers) if (t.type==='sunflower'){ const v=Math.round(TYPES.sunflower.income[t.lv]*(t.tile==='sunny'?SUNNY_SEEDS:1)*(t.dry?.7:1)); inc+=v; floatText(t.x,t.y-.5,'+'+v,'#c98a12',1.3); t.hop=1; }
     S.seeds+=bonus+inc;
     emit('waveClear', { wave:S.wave, seeds:bonus+inc, fromFlowers:inc });
   }

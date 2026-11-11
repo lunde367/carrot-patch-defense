@@ -21,6 +21,8 @@ Audio.register({
   page:     [.3,  ()=>{ noise(.25,{freq:3000,q:.4,vol:.06,type:'highpass'}); noise(.18,{freq:2200,q:.4,vol:.05,type:'highpass',at:.18}); }],
   heat:     [1,   ()=>{ tone(880,.6,{type:'sine',vol:.06,to:620,attack:.2}); noise(.8,{freq:600,q:.3,vol:.05,type:'lowpass'}); }],
   fence:    [.15, ()=>{ noise(.1,{freq:350,vol:.2}); tone(196,.18,{type:'triangle',vol:.12,to:150}); }],
+  scare:    [.5,  ()=>{ noise(.18,{freq:1800,q:1.2,vol:.08}); tone(660,.12,{type:'square',vol:.04,to:440}); }],
+  swarm:    [1,   ()=>{ noise(1.2,{freq:240,q:4,vol:.09,attack:.3}); noise(1,{freq:310,q:5,vol:.06,at:.2}); }],
   leak:     [.2,  ()=>tone(330,.35,{type:'triangle',vol:.14,to:150})],
   wave:     [.3,  ()=>{ [392,494,587].forEach((f,i)=>tone(f,.5,{type:'triangle',vol:.1,at:i*.07})); }],
   boss:     [.5,  ()=>{ tone(110,.7,{type:'sawtooth',vol:.07,to:90,attack:.05}); tone(165,.7,{type:'triangle',vol:.08,at:.15,to:130}); }],

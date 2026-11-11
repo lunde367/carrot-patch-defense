@@ -2,7 +2,8 @@
 // person would, using only what the game allows (seeds, unlocked defenders, open grass).
 import { G, plantAt, upgrade, costOf, upCostOf, towerAt, spray, sprayReady, sprayStats } from '../../web/js/engine/game.js';
 import { PLANTS, SPRAY } from '../../web/js/data/spray.js';
-import { path, pointAt, buildable } from '../../web/js/engine/path.js';
+import { path, pointAt, buildable, bonusAt } from '../../web/js/engine/path.js';
+import { HILL } from '../../web/js/engine/game.js';
 import { TYPES } from '../../web/js/data/towers.js';
 import { COLS, ROWS } from '../../web/js/data/levels.js';
 
@@ -14,10 +15,11 @@ export function preparePath(){
   samples = [];
   for (let d=0.6; d<path.total; d+=0.25){ const [x,y]=pointAt(d); samples.push({x,y,w:.6+.8*d/path.total}); }
 }
-function coverage(c, r, range){
+function coverage(c, r, range, fliersOnly=false){
   const x=c+.5, y=r+.5; let s=0;
+  if (bonusAt(c,r)==='hill') range*=HILL;                      // hills reach farther
   for (const p of samples) if (Math.hypot(p.x-x,p.y-y)<=range) s+=p.w;
-  return s;
+  return bonusAt(c,r)==='sunny' ? s*1.1 : s;                    // sunny spots work faster
 }
 function freeCells(){
   const out=[];
@@ -27,7 +29,8 @@ function freeCells(){
 // Best open spot for a defender; sunflowers go wherever no defender would want to stand.
 function bestCell(type, rnd=null){
   const cells=freeCells(); if (!cells.length) return null;
-  if (type==='sunflower'){ let best=null, bs=Infinity; for (const [c,r] of cells){ const s=coverage(c,r,2.5); if (s<bs){ bs=s; best=[c,r]; } } return best; }
+  if (type==='sunflower'){ const sunny=cells.find(([c,r])=>bonusAt(c,r)==='sunny'); if (sunny) return sunny;
+    let best=null, bs=Infinity; for (const [c,r] of cells){ const s=coverage(c,r,2.5); if (s<bs){ bs=s; best=[c,r]; } } return best; }
   const range=TYPES[type].range[0]*G.S.perks.rangeMul;
   const scored=cells.map(([c,r])=>({c,r,s:coverage(c,r,range)})).sort((a,b)=>b.s-a.s);
   const pick = rnd ? scored[Math.floor(rnd()*Math.min(8,scored.length))] : scored[0];
@@ -57,6 +60,7 @@ export const STRATEGIES = {
     const atk=attackers(avail);
     for (let guard=0; guard<40; guard++){
       if (avail.includes('sunflower') && wave<=2 && count('sunflower')===0 && place('sunflower')) continue;
+      if (avail.includes('scarecrow') && wave>=2 && count('scarecrow')<Math.min(3, 1+Math.floor(wave/3)) && place('scarecrow')) continue;
       const want = 3 + Math.floor(wave*.8);
       const n = G.S.towers.filter(t=>t.type!=='sunflower').length;
       if (n < want){

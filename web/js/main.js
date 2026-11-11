@@ -25,6 +25,8 @@ on('cocoon', () => Audio.play('cocoon'));
 on('grow', () => Audio.play('grow'));
 on('leak', () => Audio.play('leak'));
 on('fence', () => Audio.play('fence'));
+on('scare', () => Audio.play('scare'));
+on('swarm', () => { Audio.play('swarm'); shake(document.getElementById('board'), .5); });
 on('heat', () => { Audio.play('heat'); shake(document.getElementById('board'), .5); });
 on('levelStart', LV => Audio.setMusic(MUSIC[LV.ch.mood] || MUSIC.cozy));
 on('spray', ({ plants }) => { Audio.play('spray'); if (plants) setTimeout(() => Audio.play('wilt'), 350); shake(document.getElementById('board'), .7); });

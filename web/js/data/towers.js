@@ -13,6 +13,8 @@ export const TYPES = {
     desc:'Lobs pine cones that bonk every crawling pest in an area. Great against armor. Can’t hit fliers.'},
   owl:{name:'Night Owl',unlock:5,cost:90,up:[90,140],range:[3.8,4.2,4.7],rate:[.55,.65,.8],dmg:[32,52,85],
     desc:'Long-range feather strike on the toughest pest, flying or not.'},
+  scarecrow:{name:'Scarecrow',unlock:15,cost:65,up:[65,105],range:[2,2.3,2.6],rate:[.5,.6,.7],push:[.9,1.2,1.5],
+    desc:'Scares flying pests back up the path. Doesn’t hurt anything, so pair it with defenders that do.'},
   sunflower:{name:'Sunflower',unlock:2,cost:60,up:[70,110],income:[10,18,28],
     desc:'Drops extra seeds after every wave you clear.'}
 };
@@ -24,6 +26,7 @@ export function statsText(t, perks){
   const T=TYPES[t.type], l=t.lv, R=v=>+(v*(perks?perks.rangeMul:1)).toFixed(1);
   switch (t.type){
     case 'sunflower': return `+${T.income[l]} seeds after each wave`;
+    case 'scarecrow': return `Scares fliers back ${T.push[l]} tiles · Range ${R(T.range[l])} · every ${+(1/T.rate[l]).toFixed(1)}s`;
     case 'rose': return `Damage ${T.dmg[l]} · Hits ${T.multi[l]} pests · Range ${R(T.range[l])}`;
     case 'pine': return `Area damage ${T.dmg[l]} · Range ${R(T.range[l])} · ${T.rate[l]} per sec`;
     case 'squirrel': return `Damage ${T.dmg[l]} · ${T.rate[l]} per sec · Bounces ${T.bounce[l]}×`;

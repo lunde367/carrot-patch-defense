@@ -9,6 +9,8 @@ export const SCENERY = {
   strawberry: { small:['haybale','basket'],  big:{ kind:'haystack', w:2, h:2 } },
   carrot:     { small:['stump','molehill'],  big:{ kind:'log',      w:2, h:1 } },
   tomato:     { small:['pot','crate'],       big:{ kind:'table',    w:2, h:1 } },
+  apple:      { small:['skep','applecrate'], big:{ kind:'cart',     w:2, h:1 } },
+  corn:       { small:['shock','bucket'],    big:{ kind:'trough',   w:2, h:1 } },
 };
 // How many small pieces each level in a garden gets (level 1, 2, 3), and whether it gets the big one.
 const SMALL = [4, 5, 6], BIG = [false, true, true];
@@ -49,5 +51,24 @@ export function sceneryFor(LV, onPath, keep=[]){
       take(x.c, x.r, 1, 1, set.small[Math.floor(R()*set.small.length)]); placed++;
     }
   }
+  return out;
+}
+
+// Helpful tiles: a hill (+range) on a good spot beside the path, and a sunny patch (Sunflowers
+// make more seeds there; other defenders work a little faster) somewhere quieter.
+// None in the tutorial level. The third level of a garden gets a second hill.
+export function bonusFor(LV, onPath, scenery){
+  if (LV.gi===0) return [];
+  const R = rng(55 + LV.gi*331), blocked = new Set(), out = [];
+  for (const o of scenery) for (let y=o.r;y<o.r+o.h;y++) for (let x=o.c;x<o.c+o.w;x++) blocked.add(x+','+y);
+  const free = (c,r) => c>=0 && c<COLS && r>=0 && r<ROWS-1 && !onPath(c,r) && !blocked.has(c+','+r);
+  const near = (c,r) => { let n=0; for (let y=r-2;y<=r+2;y++) for (let x=c-2;x<=c+2;x++) if (Math.hypot(x-c,y-r)<=1.5 && onPath(x,y)) n++; return n; };
+  const cells = [];
+  for (let r=0;r<ROWS-1;r++) for (let c=0;c<COLS;c++) if (free(c,r)) cells.push({ c, r, s:near(c,r), k:R() });
+  const apart = x => out.every(o => Math.abs(o.c-x.c)+Math.abs(o.r-x.r) >= 4);
+  const pick = (list, kind) => { const x = list.find(apart); if (x){ out.push({ c:x.c, r:x.r, kind }); blocked.add(x.c+','+x.r); } };
+  const hills = cells.filter(x => x.s>=3).sort((a,b) => a.k-b.k);
+  pick(hills, 'hill'); if (LV.li===2) pick(hills.filter(x => !blocked.has(x.c+','+x.r)), 'hill');
+  pick(cells.filter(x => x.s<=2 && !blocked.has(x.c+','+x.r)).sort((a,b) => a.k-b.k), 'sunny');
   return out;
 }

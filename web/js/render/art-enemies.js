@@ -41,12 +41,38 @@ export function drawEnemy(c,e,s){
     ell(c,r*.85,0,r*.38,r*.36,D.dk); ell(c,0,0,r,r*.78,D.col,D.dk,Math.max(1.5,r*.08));
     c.beginPath(); c.moveTo(-r,0); c.lineTo(r*.7,0); c.strokeStyle=D.dk; c.stroke();
     ell(c,-r*.3,-r*.4,r*.25,r*.12,'rgba(255,255,255,.35)');
+    if (D.copper){ c.save(); c.beginPath(); c.ellipse(0,0,r*.98,r*.76,0,0,6.283); c.clip(); c.fillStyle='rgba(205,125,60,.75)'; c.fillRect(-r,-r,r*1.05,r*2); c.restore();
+      c.beginPath(); c.moveTo(-r,0); c.lineTo(r*.7,0); c.strokeStyle=D.dk; c.lineWidth=1.5; c.stroke(); }
+    if (D.stripes){ c.strokeStyle=D.dk; c.lineWidth=Math.max(1.2,r*.12); for (const y of [-.35,.35]){ c.beginPath(); c.moveTo(-r*.85,y*r); c.lineTo(r*.6,y*r*.9); c.stroke(); } }
+    if (D.spots) for (const [x,y] of [[-.55,-.35],[-.15,.4],[.25,-.4],[-.5,.3],[.3,.35]]) ell(c,x*r,y*r,r*.09,r*.08,'#f2f2ea');
+    if (D.horns){ c.strokeStyle=D.dk; c.lineWidth=1.3; for (const sy of [-1,1]){ c.beginPath(); c.moveTo(r*1.05,sy*r*.15); c.quadraticCurveTo(r*1.2,sy*r*1.2,-r*.2,sy*r*1.35); c.stroke(); } }
     if (D.armor>=3){ c.strokeStyle='rgba(255,255,255,.35)'; c.lineWidth=1.2; c.beginPath(); c.arc(0,0,r*.6,-2.6,-.5); c.stroke(); }
     if (D.boss){ c.strokeStyle=D.dk; c.lineWidth=3; c.beginPath(); c.moveTo(r*1.1,-r*.1); c.quadraticCurveTo(r*1.6,-r*.4,r*1.5,-r*.8); c.stroke(); crown(c,0,-r*.6,r*.35); }
     break;
+  case 'aphid': {
+    // a soft pear-shaped body with little legs and two back tubes
+    c.strokeStyle=D.dk; c.lineWidth=1; for (const o of [-.3,.1,.45]) for (const sy of [-1,1]){ c.beginPath(); c.moveTo(o*r,sy*r*.4); c.lineTo(o*r+w*r*.4*sy,sy*r*.95); c.stroke(); }
+    c.beginPath(); c.moveTo(-r*.6,-r*.25); c.lineTo(-r*1.05,-r*.45); c.moveTo(-r*.6,r*.25); c.lineTo(-r*1.05,r*.45); c.stroke();
+    ell(c,-r*.15,0,r*.95,r*.72,D.col,D.dk,Math.max(1.2,r*.08)); ell(c,r*.75,0,r*.36,r*.34,D.col,D.dk,1.2);
+    ell(c,-r*.35,-r*.3,r*.35,r*.15,'rgba(255,255,255,.35)'); ell(c,r*.9,-r*.12,r*.08,r*.08,'#3a2a1a');
+    c.beginPath(); c.moveTo(r*1.05,-r*.1); c.quadraticCurveTo(r*1.4,-r*.5,r*1.2,-r*.85); c.stroke();
+    if (D.boss){ for (const [x,y] of [[-.7,.55],[-.4,.7]]) ell(c,x*r,y*r,r*.18,r*.14,D.col,D.dk,1); crown(c,-r*.1,-r*.6,r*.35); }
+    break; }
+  case 'hopper': {
+    // grasshopper / locust from above: long body, big folded back legs, wings when grown
+    c.strokeStyle=D.dk; c.lineWidth=Math.max(1.2,r*.12);
+    for (const sy of [-1,1]){ c.beginPath(); c.moveTo(-r*.1,sy*r*.3); c.lineTo(-r*.9,sy*r*.85); c.lineTo(-r*1.25,sy*r*.4); c.stroke();
+      c.lineWidth=1.2; c.beginPath(); c.moveTo(r*.3,sy*r*.25); c.lineTo(r*.5+w*r*.3,sy*r*.7); c.stroke(); c.lineWidth=Math.max(1.2,r*.12); }
+    if (D.wings){ const fl=e.fly?Math.abs(Math.sin(e.ph*4)):0;
+      for (const sy of [-1,1]) ell(c,-r*.45,sy*r*(.2+.45*fl),r*.85,r*(.22+.3*fl),'rgba(236,226,190,.8)',D.dk,1); }
+    ell(c,-r*.2,0,r*1.05,r*.36,D.col,D.dk,Math.max(1.2,r*.08));
+    ell(c,r*.85,0,r*.32,r*.3,D.col,D.dk,1.2); ell(c,r*.95,-r*.17,r*.08,r*.09,'#2b2018'); ell(c,r*.95,r*.17,r*.08,r*.09,'#2b2018');
+    c.lineWidth=1; c.beginPath(); c.moveTo(r*1.1,-r*.1); c.quadraticCurveTo(r*1.6,-r*.4,r*1.7,-r*.7); c.moveTo(r*1.1,r*.1); c.quadraticCurveTo(r*1.6,r*.4,r*1.7,r*.7); c.stroke();
+    if (D.boss) crown(c,-r*.1,-r*.45,r*.32);
+    break; }
   case 'grub':
     ell(c,-r*.6,Math.sin(e.ph)*r*.1,r*.6,r*.55,D.col2||'#e9dfb6',D.dk||'#a89a66',1); ell(c,r*.2,0,r*.75,r*.68,D.col||'#f1e8c2',D.dk||'#a89a66',1);
-    ell(c,r*.65,-r*.1,r*.3,r*.3,'#b07a3c'); ell(c,r*.75,-r*.15,r*.08,r*.08,'#222'); break;
+    ell(c,r*.65,-r*.1,r*.3,r*.3,'#b07a3c'); ell(c,r*.75,-r*.15,r*.08,r*.08,'#222'); if (D.boss) crown(c,0,-r*.55,r*.32); break;
   case 'inch': {
     const hump=(.5+Math.abs(Math.sin(e.ph*.8))*.9)*r;
     c.strokeStyle='#8fcb52'; c.lineWidth=r*.55; c.lineCap='round';

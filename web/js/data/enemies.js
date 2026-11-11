@@ -39,4 +39,20 @@ export const ENEMY = {
   sapsucker:{name:'Sap Sucker',boss:true,hp:300,spd:.6,reward:50,size:.46,fly:true,shape:'moth',wing:'#f4f6e8',body:'#c9d29a',dk:'#7d8660'},
   shieldbug:{name:'Shield Bug',boss:true,hp:360,armor:4,spd:.45,reward:55,size:.48,shape:'shield',col:'#6f8a3e',dk:'#33461a'},
   baron:{name:'Stink Bug Baron',boss:true,hp:520,armor:5,spd:.42,reward:70,size:.52,shape:'shield',col:'#6b4a2e',dk:'#33210f',spots:true},
+  // ---- Apple Orchard: aphids & invasive beetles (Act 2) ----
+  aphid:{name:'Aphid',hp:5,spd:.85,reward:1,size:.13,gap:.22,shape:'aphid',col:'#9ccf5a',dk:'#5a8a2a',adult:'wingaphid'},
+  wingaphid:{name:'Winged Aphid',hp:9,spd:1.5,reward:2,size:.17,gap:.3,fly:true,shape:'moth',wing:'#eef6e0',body:'#8fc25a',dk:'#557a2c'},
+  jbeetle:{name:'Japanese Beetle',hp:24,armor:2,spd:.9,reward:5,size:.25,gap:.6,shape:'beetle',col:'#3f9a6a',dk:'#1d5a3a',copper:true},
+  longhorn:{name:'Longhorn Beetle',hp:55,armor:3,spd:.6,reward:9,size:.32,gap:1,shape:'beetle',col:'#2e2e36',dk:'#121216',spots:true,horns:true},
+  aphidmother:{name:'Aphid Mother',boss:true,hp:280,spd:.42,reward:50,size:.46,shape:'aphid',col:'#7fb848',dk:'#46752a',spawns:{type:'aphid',every:2.4}},
+  copperking:{name:'Copper Beetle',boss:true,hp:380,armor:5,spd:.45,reward:55,size:.48,shape:'beetle',col:'#c07a3e',dk:'#6a3a14',copper:true},
+  theswarm:{name:'The Swarm',boss:true,hp:480,spd:.5,reward:70,size:.5,fly:true,shape:'moth',wing:'#dfeccc',body:'#6f9e3e',dk:'#3e5e1e',spawns:{type:'wingaphid',every:2.8}},
+  // ---- Corn Field: locusts & rootworms (Act 2) ----
+  hopperling:{name:'Grasshopper Nymph',hp:8,spd:.9,reward:2,size:.17,gap:.38,hopper:true,shape:'hopper',col:'#b7c46a',dk:'#6e7a30',adult:'locust'},
+  locust:{name:'Locust',hp:16,spd:1.7,reward:4,size:.24,gap:.4,fly:true,shape:'hopper',col:'#b0924e',dk:'#5e4a20',wings:true},
+  rootworm:{name:'Rootworm',hp:20,spd:.75,reward:4,size:.2,gap:.6,burrow:true,shape:'grub',col:'#efe7cf',col2:'#e2d8b8',dk:'#a89a70',adult:'cornbeetle'},
+  cornbeetle:{name:'Corn Beetle',hp:34,armor:2,spd:.9,reward:6,size:.26,gap:.7,shape:'beetle',col:'#c9c24a',dk:'#6a6420',stripes:true},
+  grandhopper:{name:'Grand Hopper',boss:true,hp:320,spd:.55,reward:50,size:.46,hopper:true,shape:'hopper',col:'#8fa83a',dk:'#4a5e1a'},
+  rootking:{name:'Root King',boss:true,hp:400,armor:3,spd:.5,reward:60,size:.46,burrow:true,shape:'grub',col:'#f2e6c4',col2:'#e6d6a8',dk:'#9a8858'},
+  locustking:{name:'Locust King',boss:true,hp:520,armor:3,spd:.55,reward:75,size:.52,fly:true,shape:'hopper',col:'#8a6a2a',dk:'#4a3410',wings:true},
 };

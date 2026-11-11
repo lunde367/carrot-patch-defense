@@ -320,10 +320,18 @@ export function renderBar(){
   }
   dirty();
 }
+// What a helpful tile (or a drought) does for this defender, in one line.
+function tileNote(t){
+  const name=TYPES[t.type].name;
+  if (t.tile==='hill') return t.type==='sunflower' ? `${name} on a hill. Hills give defenders more reach; Sunflowers like sunny patches.` : `${name} on a hill: 20% more range!`;
+  if (t.tile==='sunny') return t.type==='sunflower' ? `${name} in a sunny patch: 50% more seeds!` : `${name} in a sunny patch: works 15% faster!`;
+  return '';
+}
 export function renderInfo(){
   const t=G.S&&G.S.sel; $('info').hidden=!t; dirty(); if (!t) return;
   const T=TYPES[t.type];
-  $('iName').innerHTML=`${T.name}<em>Level ${t.lv+1}</em>`; $('iDesc').textContent=T.desc; $('iStats').textContent=statsText(t, G.S.perks);
+  const extra=[tileNote(t).replace(/^.*?: /,'').replace(/^.*\. Hills.*$/,''), t.dry?'Thirsty: needs a Sprinkler nearby':''].filter(Boolean).join(' · ');
+  $('iName').innerHTML=`${T.name}<em>Level ${t.lv+1}</em>`; $('iDesc').textContent=T.desc; $('iStats').textContent=statsText(t, G.S.perks)+(extra?` · ${extra}`:'');
 }
 on('select', renderInfo);
 
@@ -413,7 +421,7 @@ function onBoardTap(ev){
   if (t){ S.sel=t; S.build=null; renderBar(); renderInfo(); Audio.play('tap'); emit('select', t); return; }
   if (S.build){
     const res=plantAt(c,r);
-    if (res.ok){ if (!tutorialActive()) msg(S.wave===0&&S.towers.length===1?'Nice. Plant more, or tap Start wave when ready.':`${TYPES[res.tower.type].name} planted.`); dirty(); return; }
+    if (res.ok){ if (!tutorialActive()) msg(tileNote(res.tower) || (S.wave===0&&S.towers.length===1?'Nice. Plant more, or tap Start wave when ready.':`${TYPES[res.tower.type].name} planted.`)); dirty(); return; }
     Audio.play('denied');
     if (res.reason==='seeds') msg(`Not enough seeds. ${res.name} costs ${res.cost}.`);
     else if (res.reason==='scenery') msg('Something’s already there. Plant on open grass.');
@@ -446,7 +454,8 @@ export function initUI(){
   });
   paintSound();
 
-  on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat) msg(boss ? `Final wave! The ${ENEMY[G.LV.boss].name} is coming!` : wave===WAVES-1 ? 'One more wave before the boss.' : 'Here they come…'); });
+  on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat && !(G.CH.swarm && G.CH.swarm.includes(wave))) msg(boss ? `Final wave! The ${ENEMY[G.LV.boss].name} is coming!` : wave===WAVES-1 ? 'One more wave before the boss.' : 'Here they come…'); });
+  on('swarm', () => msg('Aphid boom! A huge swarm is hatching. Splash defenders and the spray shine here.'));
   on('heat', hot => msg(hot ? `Heat wave! ${hot} defender${hot>1?'s are':' is'} overheating. Defenders near a Sprinkler stay cool.` : 'Heat wave! Your Sprinklers are keeping everyone cool.'));
   on('fence', left => msg(left ? `Your Sturdy Fence stopped a pest! It can stop ${left} more this level.` : 'Your Sturdy Fence stopped a pest! That was its last one this level.'));
   on('waveClear', () => { if (G.S) { G.S.aiming=false; G.aim=null; } });

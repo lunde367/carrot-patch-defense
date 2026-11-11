@@ -61,6 +61,36 @@ export const CHAPTERS = [
       pool:[['whitefly',1,2.5],['stinkbug',1,2],['bigstink',3,2]],
       intro:'The biggest stink bugs shrug off the spray. The Stink Bug Baron is coming for the harvest.' },
   ]},
+  { id:'apple', name:'Apple Orchard', crop:'apple', cropPlural:'apples', pests:'Aphids & invasive beetles', grass:['#b2c67c','#a8bc72'],
+    act:2, mood:'off', swarm:[4,7], levels:[
+    { name:'Blossom Time', season:'spring', boss:'aphidmother',
+      pts:[[6.5,-0.6],[6.5,1.5],[1.5,1.5],[1.5,4.5],[5.5,4.5],[5.5,7.5],[2.5,7.5],[2.5,10.5],[6.5,10.5],[6.5,13.2]],
+      pool:[['aphid',1,4,.5],['jbeetle',3,1.5]],
+      intro:'The trees are in bloom, but there isn’t a bee in sight. Aphids come in booms: watch for swarms on waves 4 and 7.' },
+    { name:'Green Apples', season:'summer', boss:'copperking',
+      pts:[[2.5,-0.6],[2.5,2.5],[7.5,2.5],[7.5,5.5],[4.5,5.5],[4.5,8.5],[1.5,8.5],[1.5,11.5],[5.5,11.5],[5.5,13.2]],
+      pool:[['aphid',1,3,.5],['jbeetle',1,2],['longhorn',4,1.2]],
+      intro:'Beetles from far away have found the orchard. Their shiny shells shrug off small hits.' },
+    { name:'Small Harvest', season:'late summer', boss:'theswarm',
+      pts:[[4.5,-0.6],[4.5,1.5],[7.5,1.5],[7.5,4.5],[1.5,4.5],[1.5,7.5],[7.5,7.5],[7.5,10.5],[2.5,10.5],[2.5,13.2]],
+      pool:[['aphid',1,3,.4],['wingaphid',2,2],['longhorn',2,1.5],['jbeetle',1,1.5]],
+      intro:'The apples came in small this year. Something huge is buzzing over the hill: The Swarm.' },
+  ]},
+  { id:'corn', name:'Corn Field', crop:'corn', cropPlural:'corn', pests:'Locusts & rootworms', grass:['#c9c486','#bfba7c'],
+    act:2, mood:'off', drought:true, levels:[
+    { name:'Knee High', season:'spring', boss:'grandhopper',
+      pts:[[7.5,-0.6],[7.5,2.5],[3.5,2.5],[3.5,5.5],[7.5,5.5],[7.5,8.5],[1.5,8.5],[1.5,11.5],[4.5,11.5],[4.5,13.2]],
+      pool:[['hopperling',1,3,.55],['rootworm',2,2]],
+      intro:'No rain for weeks. Plant defenders (Roses, Sunflowers, Pine Trees) need a Sprinkler nearby or they wilt in the drought.' },
+    { name:'Dry Spell', season:'summer', boss:'rootking',
+      pts:[[1.5,-0.6],[1.5,4.5],[4.5,4.5],[4.5,1.5],[7.5,1.5],[7.5,7.5],[3.5,7.5],[3.5,10.5],[6.5,10.5],[6.5,13.2]],
+      pool:[['rootworm',1,3,.5],['locust',2,2],['hopperling',1,1.5,.5]],
+      intro:'Rootworms tunnel under the cracked ground and come up as beetles. Locusts are on the wing.' },
+    { name:'Dust and Tassels', season:'late summer', boss:'locustking',
+      pts:[[5.5,-0.6],[5.5,1.5],[1.5,1.5],[1.5,5.5],[6.5,5.5],[6.5,8.5],[2.5,8.5],[2.5,11.5],[7.5,11.5],[7.5,13.2]],
+      pool:[['locust',1,3],['cornbeetle',1,1.5],['rootworm',2,2]],
+      intro:'The sky goes dark with locusts. The spray barely slows them now. The Locust King is coming.' },
+  ]},
 ];
 
 // Pest toughness per level, in play order (1 = base health). Tuned with the balance check
@@ -68,7 +98,7 @@ export const CHAPTERS = [
 // three-star rate slopes down from about 90% early to about 25% on Big Dig even for a player who
 // never sprays. The Pesticide Sprayer then makes levels easier, a shortcut, never a requirement.
 // Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
-const TOUGHNESS = [1.15, 2.35, 1.5,   3.8, 2.4, 1.95,   4.45, 1.95, 2.65,   6.6, 4.85, 4.6];
+const TOUGHNESS = [1.15, 2.8, 2.34,   5.2, 2.55, 1.9,   4.8, 2.2, 3.1,   6.95, 5.4, 5.1,   3.95, 5.8, 5.9,   5.5, 4.9, 5.1];
 
 // Flat list of every level in play order, each linked back to its chapter.
 export const LEVELS = [];
@@ -78,5 +108,5 @@ CHAPTERS.forEach((ch,ci) => ch.levels.forEach((lv,li) => {
 LEVELS.forEach(l => { l.hpMul = TOUGHNESS[l.gi] ?? 1+l.gi*.14; });
 // How much less spray damage pests take on each level (0 = none, 0.3 = 30% less). Grows through
 // the story, the same for every player: rising in Act 2, high in Act 3, fading in Act 4.
-const SPRAY_RESIST = [0, 0, 0,   0, 0, 0,   0, 0, 0,   .4, .65, .75];   // Act 1 (gardens 1-3): the spray works like magic; Act 2 resistance begins
+const SPRAY_RESIST = [0, 0, 0,   0, 0, 0,   0, 0, 0,   .4, .65, .75,   .6, .7, .75,   .75, .8, .85];   // Act 1 (gardens 1-3): the spray works like magic; Act 2 resistance begins
 LEVELS.forEach(l => { l.resist = SPRAY_RESIST[l.gi] ?? 0; });

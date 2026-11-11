@@ -12,7 +12,69 @@ export function drawScenery(c, o, s){
   c.restore();
 }
 
+// Helpful tiles, drawn flat under whatever stands on them.
+export function drawBonus(c, b, s){
+  const x=b.c*s, y=b.r*s, cx=x+s/2, cy=y+s/2;
+  c.save();
+  if (b.kind==='hill'){
+    ell(c, cx, cy+s*.12, s*.5, s*.34, 'rgba(60,90,30,.28)');
+    ell(c, cx, cy+s*.06, s*.46, s*.32, '#b4d77e', '#7fa84f', 1.5);
+    ell(c, cx-s*.06, cy-s*.02, s*.28, s*.17, '#c7e494');
+    c.strokeStyle='#6f9a45'; c.lineWidth=1.2; c.lineCap='round';
+    for (const [dx,dy] of [[-.28,.18],[.26,.2],[.05,.3]]){ const px=cx+dx*s, py=cy+dy*s; c.beginPath(); c.moveTo(px,py); c.lineTo(px-s*.04,py-s*.08); c.moveTo(px,py); c.lineTo(px+s*.03,py-s*.09); c.stroke(); }
+  } else if (b.kind==='sunny'){
+    const gr=c.createRadialGradient(cx,cy,s*.05,cx,cy,s*.55);
+    gr.addColorStop(0,'rgba(255,236,140,.85)'); gr.addColorStop(.6,'rgba(255,214,90,.45)'); gr.addColorStop(1,'rgba(255,214,90,0)');
+    c.fillStyle=gr; c.fillRect(x-s*.1,y-s*.1,s*1.2,s*1.2);
+    c.strokeStyle='rgba(235,170,40,.75)'; c.lineWidth=1.5; c.lineCap='round';
+    for (let k=0;k<8;k++){ const a=k*.785+.2; c.beginPath(); c.moveTo(cx+Math.cos(a)*s*.3,cy+Math.sin(a)*s*.3); c.lineTo(cx+Math.cos(a)*s*.42,cy+Math.sin(a)*s*.42); c.stroke(); }
+  }
+  c.restore();
+}
+
 const ART = {
+  skep(c, { cx, cy, s }){   // an old straw bee hive, empty
+    shadow(c, cx, cy+s*.27, s*.34, s*.08);
+    c.beginPath(); c.moveTo(cx-s*.3, cy+s*.24); c.quadraticCurveTo(cx-s*.34, cy-s*.32, cx, cy-s*.32); c.quadraticCurveTo(cx+s*.34, cy-s*.32, cx+s*.3, cy+s*.24); c.closePath();
+    c.fillStyle='#d9b45a'; c.fill(); c.strokeStyle='#8f6e24'; c.lineWidth=1.5; c.stroke();
+    c.strokeStyle='#a8842e'; c.lineWidth=1; for (const o of [-.16,-.02,.12]){ c.beginPath(); c.moveTo(cx-s*(.3-Math.abs(o)*.3), cy+o*s); c.quadraticCurveTo(cx, cy+o*s+s*.05, cx+s*(.3-Math.abs(o)*.3), cy+o*s); c.stroke(); }
+    ell(c, cx, cy+s*.17, s*.07, s*.05, '#3a2a14');
+  },
+  applecrate(c, { cx, cy, s }){
+    shadow(c, cx, cy+s*.28, s*.36, s*.08);
+    for (const [dx,dy] of [[-.14,-.2],[.02,-.22],[.16,-.18]]) ell(c, cx+dx*s, cy+dy*s, s*.09, s*.085, '#d8433a', '#8e2018', 1);
+    rr(c, cx-s*.32, cy-s*.16, s*.64, s*.42, s*.04); c.fillStyle='#c99a5f'; c.fill(); c.strokeStyle='#7d5a30'; c.lineWidth=1.5; c.stroke();
+    c.strokeStyle='#9c7544'; c.lineWidth=1; for (const o of [-.02,.12]){ c.beginPath(); c.moveTo(cx-s*.32, cy+o*s); c.lineTo(cx+s*.32, cy+o*s); c.stroke(); }
+  },
+  shock(c, { cx, cy, s }){   // a bundle of dry corn stalks
+    shadow(c, cx, cy+s*.28, s*.3, s*.08);
+    c.strokeStyle='#b39b5a'; c.lineWidth=Math.max(1.5, s*.04); c.lineCap='round';
+    for (let k=-3;k<=3;k++){ c.beginPath(); c.moveTo(cx+k*s*.06, cy+s*.27); c.lineTo(cx+k*s*.02, cy-s*.05); c.lineTo(cx+k*s*.05, cy-s*.36); c.stroke(); }
+    c.strokeStyle='#8a7238'; c.lineWidth=1; for (let k=-3;k<=3;k++){ c.beginPath(); c.moveTo(cx+k*s*.06, cy+s*.27); c.lineTo(cx+k*s*.02, cy-s*.05); c.stroke(); }
+    c.strokeStyle='#9b5a2e'; c.lineWidth=2; c.beginPath(); c.moveTo(cx-s*.12, cy-s*.04); c.lineTo(cx+s*.12, cy-s*.04); c.stroke();
+  },
+  bucket(c, { cx, cy, s }){   // an empty water bucket, tipped over
+    shadow(c, cx, cy+s*.24, s*.34, s*.08);
+    c.save(); c.translate(cx, cy+s*.06); c.rotate(-.35);
+    c.beginPath(); c.moveTo(-s*.2, -s*.16); c.lineTo(s*.2, -s*.16); c.lineTo(s*.15, s*.16); c.lineTo(-s*.15, s*.16); c.closePath();
+    c.fillStyle='#9aa6ae'; c.fill(); c.strokeStyle='#5d6870'; c.lineWidth=1.5; c.stroke();
+    ell(c, 0, -s*.16, s*.2, s*.06, '#6f7b83', '#5d6870', 1.2);
+    c.strokeStyle='#5d6870'; c.lineWidth=1.2; c.beginPath(); c.arc(0, -s*.16, s*.2, 3.3, 6.1); c.stroke();
+    c.restore();
+  },
+  cart(c, { cx, cy, w, h, s }){   // a little apple cart
+    shadow(c, cx, cy+h*.36, w*.44, h*.1);
+    c.strokeStyle='#5e3d20'; c.lineWidth=Math.max(2, s*.05); c.beginPath(); c.moveTo(cx+w*.32, cy); c.lineTo(cx+w*.48, cy-h*.2); c.stroke();
+    for (const [dx,dy] of [[-.25,-.18],[-.1,-.22],[.05,-.2],[.2,-.17],[-.17,-.3],[.0,-.32],[.13,-.28]]) ell(c, cx+dx*w, cy+dy*h, s*.1, s*.09, '#d8433a', '#8e2018', 1);
+    rr(c, cx-w*.36, cy-h*.18, w*.68, h*.36, s*.05); c.fillStyle='#b5824e'; c.fill(); c.strokeStyle='#6b4a2b'; c.lineWidth=1.5; c.stroke();
+    for (const dx of [-.22,.18]){ ell(c, cx+dx*w, cy+h*.22, s*.15, s*.15, '#8a5d3b', '#4a3018', 2); ell(c, cx+dx*w, cy+h*.22, s*.04, s*.04, '#4a3018'); }
+  },
+  trough(c, { cx, cy, w, h, s }){   // a dry water trough with cracked mud inside
+    shadow(c, cx, cy+h*.32, w*.46, h*.1);
+    rr(c, cx-w*.44, cy-h*.24, w*.88, h*.46, s*.06); c.fillStyle='#8f9aa0'; c.fill(); c.strokeStyle='#59646a'; c.lineWidth=1.5; c.stroke();
+    rr(c, cx-w*.38, cy-h*.16, w*.76, h*.26, s*.04); c.fillStyle='#a88a5c'; c.fill();
+    c.strokeStyle='#7a5e36'; c.lineWidth=1; c.beginPath(); c.moveTo(cx-w*.3, cy-h*.05); c.lineTo(cx-w*.1, cy); c.lineTo(cx+w*.05, cy-h*.1); c.lineTo(cx+w*.25, cy-h*.02); c.moveTo(cx-w*.1, cy); c.lineTo(cx-w*.12, cy+h*.08); c.stroke();
+  },
   rock(c, { cx, cy, s, R }){
     shadow(c, cx, cy+s*.24, s*.36, s*.1);
     c.beginPath(); const n = 7, rad = s*.32;
