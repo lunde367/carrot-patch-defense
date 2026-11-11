@@ -70,24 +70,26 @@ export function rebuild(){
       ell(b,x,y,s*.03,s*.03,'#e6a92e'); }
   }
   b.lineJoin='round'; b.lineCap='round';
-  const line=(w,col)=>{ b.beginPath(); path.pts.forEach(([x,y],i)=>i?b.lineTo(x*s,y*s):b.moveTo(x*s,y*s)); b.strokeStyle=col; b.lineWidth=w*s; b.stroke(); };
+  const line=(w,col)=>{ for (const L of path.lanes){ b.beginPath(); L.pts.forEach(([x,y],i)=>i?b.lineTo(x*s,y*s):b.moveTo(x*s,y*s)); b.strokeStyle=col; b.lineWidth=w*s; b.stroke(); } };
   line(.84,'#b48d5a'); line(.68,'#dcbd8b');
   const R2=rng(31);
-  for (const sg of path.segs){ const n=Math.floor(sg.len*3); for (let i=0;i<n;i++){ const k=R2();
+  for (const sg of path.lanes.flatMap(L=>L.segs)){ const n=Math.floor(sg.len*3); for (let i=0;i<n;i++){ const k=R2();
     ell(b,(sg.x1+(sg.x2-sg.x1)*k+(R2()-.5)*.45)*s,(sg.y1+(sg.y2-sg.y1)*k+(R2()-.5)*.45)*s,s*.035,s*.025,'#c4a271'); } }
   // Paved over: in later gardens part of the dirt path has become road (CH.road = [from, to] as shares of the path).
   if (CH.road){
-    const [f0,f1]=CH.road, d0=f0*path.total, d1=f1*path.total, pts=[pointAt(d0)];
-    for (const sg of path.segs){ const e=sg.start+sg.len; if (e>d0 && e<d1) pts.push([sg.x2,sg.y2]); }
-    pts.push(pointAt(d1));
+   for (let li=0; li<path.lanes.length; li++){
+    const L=path.lanes[li], [f0,f1]=CH.road, d0=f0*L.total, d1=f1*L.total, pts=[pointAt(d0,li)];
+    for (const sg of L.segs){ const e=sg.start+sg.len; if (e>d0 && e<d1) pts.push([sg.x2,sg.y2]); }
+    pts.push(pointAt(d1,li));
     const road=(w,col,dash)=>{ b.beginPath(); pts.forEach(([x,y],i)=>i?b.lineTo(x*s,y*s):b.moveTo(x*s,y*s)); b.strokeStyle=col; b.lineWidth=w; b.setLineDash(dash||[]); b.stroke(); b.setLineDash([]); };
     road(.86*s,'#4a4c4e'); road(.74*s,'#6a6c6e'); road(Math.max(1.5,s*.05),'#e8c04a',[s*.22,s*.18]);
     const RR=rng(77+LV.gi);
     for (let i=0;i<Math.floor((d1-d0)*(CH.cracked?2.2:.8));i++){
-      const [x,y]=pointAt(d0+RR()*(d1-d0)), ox=(RR()-.5)*.5, oy=(RR()-.5)*.5;
+      const [x,y]=pointAt(d0+RR()*(d1-d0),li), ox=(RR()-.5)*.5, oy=(RR()-.5)*.5;
       b.strokeStyle='#3e4042'; b.lineWidth=1.1; b.beginPath(); b.moveTo((x+ox)*s,(y+oy)*s); b.lineTo((x+ox+(RR()-.5)*.3)*s,(y+oy+(RR()-.5)*.3)*s); b.lineTo((x+ox+(RR()-.5)*.4)*s,(y+oy+(RR()-.5)*.4)*s); b.stroke();
       if (CH.cracked && RR()<.4){ b.strokeStyle='#6f9a45'; b.lineWidth=1.2; b.beginPath(); b.moveTo((x+ox)*s,(y+oy)*s); b.lineTo((x+ox-.04)*s,(y+oy-.1)*s); b.moveTo((x+ox)*s,(y+oy)*s); b.lineTo((x+ox+.05)*s,(y+oy-.09)*s); b.stroke(); }
     }
+  }
   }
   if (CH.drought){
     // cracked, dry ground: thin dark crack lines scattered over the grass
@@ -108,7 +110,7 @@ export function rebuild(){
     b.fillStyle='rgba(255,236,190,.07)'; b.fillRect(0,0,W,gy);
   }
   b.fillStyle='#f3ead8'; b.strokeStyle='#b9ab8f'; b.lineWidth=1;
-  for (let c=0;c<COLS;c++){ if (c===path.exitCol) continue; for (const o of [.22,.62]){ const x=c*s+o*s;
+  for (let c=0;c<COLS;c++){ if (path.exitCols.has(c)) continue; for (const o of [.22,.62]){ const x=c*s+o*s;
     b.beginPath(); b.moveTo(x,gy+s*.02); b.lineTo(x+s*.08,gy-s*.12); b.lineTo(x+s*.16,gy+s*.02); b.lineTo(x+s*.16,gy+s*.2); b.lineTo(x,gy+s*.2); b.closePath(); b.fill(); b.stroke(); } }
 }
 
@@ -123,7 +125,7 @@ export function draw(clock){
     for (let i=0;i<5;i++){ const y=((clockReal()*30+i*60)%((ROWS-1)*s)); g.beginPath();
       for (let x=0;x<=W;x+=12) g.lineTo(x, y+Math.sin(x/18+clockReal()*3+i)*3); g.stroke(); } }
   const show=Math.ceil(S.lives/S.maxLives*(COLS-1)); let k=0;
-  for (let c=0;c<COLS;c++){ if (c===path.exitCol) continue; if (k++>=show) continue; drawCrop(g,G.CH.crop,(c+.5)*s,(ROWS-.45)*s,s); }
+  for (let c=0;c<COLS;c++){ if (path.exitCols.has(c)) continue; if (k++>=show) continue; drawCrop(g,G.CH.crop,(c+.5)*s,(ROWS-.45)*s,s); }
 
   if (S.build && S.mode==='play'){ g.fillStyle='rgba(255,255,255,.28)';
     for (let r=0;r<ROWS-1;r++) for (let c=0;c<COLS;c++) if (buildable(c,r)&&!towerAt(c,r)){ g.beginPath(); g.arc((c+.5)*s,(r+.5)*s,s*.1,0,6.28); g.fill(); } }

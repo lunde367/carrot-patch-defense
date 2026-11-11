@@ -44,7 +44,8 @@ export function sceneryFor(LV, onPath, keep=[]){
     }
     if (spots.length){ const [c,r] = spots[Math.floor(R()*spots.length)]; take(c,r,b.w,b.h,b.kind); }
   }
-  const n = LV.gi===0 ? 3 : SMALL[LV.li], nNear = LV.gi===0 ? 0 : Math.round(n*NEAR);
+  const area = COLS*ROWS/(9*14);                       // bigger boards get more scenery
+  const n = LV.gi===0 ? 3 : Math.round(SMALL[LV.li]*area), nNear = LV.gi===0 ? 0 : Math.round(n*NEAR);
   const cells = [];
   for (let r=0;r<ROWS-1;r++) for (let c=0;c<COLS;c++) if (free(c,r)) cells.push({ c, r, s:near(c,r), k:R() });
   const best = cells.filter(x => x.s>=3).sort((a,b) => b.s-a.s || a.k-b.k);

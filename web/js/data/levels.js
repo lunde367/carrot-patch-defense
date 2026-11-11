@@ -1,6 +1,10 @@
 // Board size in tiles, waves per level, and every chapter/level.
 // pool entries: [pest, first wave it appears, weight, optional "grows up at this fraction of the path"]
-export const COLS = 9, ROWS = 14, WAVES = 8;   // WAVES is the standard level length; a level can set its own `waves`
+// The board grid. Most levels are 9 × 14; a bigger level sets its own `cols`/`rows` and gets
+// smaller tiles in the same space. COLS/ROWS are live: setGrid() changes them for the level being played.
+export let COLS = 9, ROWS = 14;
+export function setGrid(c=9, r=14){ COLS = c; ROWS = r; }
+export const WAVES = 8;   // the standard level length; a level can set its own `waves`
 
 // The story's four parts. A part's name stays hidden until the player reaches it, so the turn
 // in the story is discovered, not announced. `tint` colors its heading on the home screen.
@@ -32,7 +36,7 @@ export const CHAPTERS = [
       pool:[['inchworm',1,3],['caterpillar',2,2]],
       intro:'Inchworms and caterpillars are munching the blossoms.' },
     { name:'Ripening', season:'summer', boss:'hornworm',
-      pts:[[1.5,-0.6],[1.5,1.5],[4.5,1.5],[4.5,4.5],[7.5,4.5],[7.5,8.5],[1.5,8.5],[1.5,11.5],[5.5,11.5],[5.5,13.2]],
+      pts:[[4.5,-0.6],[4.5,6.5],[1.5,6.5],[1.5,3.5],[7.5,3.5],[7.5,9.5],[2.5,9.5],[2.5,13.2]],
       pool:[['inchworm',1,1.5],['caterpillar',1,3,.55],['fuzzy',2,2]],
       intro:'Fuzzy caterpillars are armored by their hair. Others spin cocoons and fly out as moths!' },
     { name:'Berry Picking', waves:10, season:'late summer', boss:'mothqueen',
@@ -62,7 +66,8 @@ export const CHAPTERS = [
       pool:[['whitenymph',1,3,.5],['stinknymph',2,2,.6],['whitefly',4,1.5]],
       intro:'It’s too hot outside, so the tomatoes moved into the greenhouse. Whitefly nymphs hatch into fliers halfway down.' },
     { name:'Vine Rows', season:'summer', boss:'shieldbug',
-      pts:[[7.5,-0.6],[7.5,3.5],[4.5,3.5],[4.5,1.5],[1.5,1.5],[1.5,6.5],[7.5,6.5],[7.5,10.5],[1.5,10.5],[1.5,13.2]],
+      lanes:[[[1.5,-0.6],[1.5,4.5],[4.5,4.5],[4.5,7.5],[7.5,7.5],[7.5,10.5],[1.5,10.5],[1.5,13.2]],
+             [[7.5,-0.6],[7.5,4.5],[4.5,4.5],[4.5,7.5],[7.5,7.5],[7.5,10.5],[1.5,10.5],[1.5,13.2]]],
       pool:[['whitefly',1,3],['stinknymph',1,2,.5],['stinkbug',3,2]],
       intro:'Stink bugs wear tough shells. Watch for heat waves: only defenders near a Sprinkler stay cool.' },
     { name:'Red Harvest', waves:10, heat:[3,6,9], season:'late summer', boss:'baron',
@@ -77,7 +82,7 @@ export const CHAPTERS = [
       pool:[['aphid',1,4,.5],['jbeetle',3,1.5]],
       intro:'The trees are in bloom, but there isn’t a bee in sight. Aphids come in booms: watch for swarms on waves 4 and 7.' },
     { name:'Green Apples', season:'summer', boss:'copperking',
-      pts:[[2.5,-0.6],[2.5,2.5],[7.5,2.5],[7.5,5.5],[4.5,5.5],[4.5,8.5],[1.5,8.5],[1.5,11.5],[5.5,11.5],[5.5,13.2]],
+      cols:11, rows:17, pts:[[9.5,-0.6],[9.5,2.5],[1.5,2.5],[1.5,6.5],[9.5,6.5],[9.5,10.5],[1.5,10.5],[1.5,14.5],[5.5,14.5],[5.5,16.2]],
       pool:[['aphid',1,3,.5],['jbeetle',1,2],['longhorn',4,1.2]],
       intro:'Beetles from far away have found the orchard. Their shiny shells shrug off small hits.' },
     { name:'Small Harvest', waves:10, swarm:[4,7,9], season:'late summer', boss:'theswarm',
@@ -92,7 +97,8 @@ export const CHAPTERS = [
       pool:[['hopperling',1,3,.55],['rootworm',2,2]],
       intro:'No rain for weeks. Plant defenders (Roses, Sunflowers, Pine Trees) need a Sprinkler nearby or they wilt in the drought.' },
     { name:'Dry Spell', season:'summer', boss:'rootking',
-      pts:[[1.5,-0.6],[1.5,4.5],[4.5,4.5],[4.5,1.5],[7.5,1.5],[7.5,7.5],[3.5,7.5],[3.5,10.5],[6.5,10.5],[6.5,13.2]],
+      lanes:[[[-0.6,1.5],[2.5,1.5],[2.5,6.5],[4.5,6.5],[4.5,9.5],[1.5,9.5],[1.5,11.5],[7.5,11.5],[7.5,13.2]],
+             [[9.6,3.5],[6.5,3.5],[6.5,6.5],[4.5,6.5],[4.5,9.5],[1.5,9.5],[1.5,11.5],[7.5,11.5],[7.5,13.2]]],
       pool:[['rootworm',1,3,.5],['locust',2,2],['hopperling',1,1.5,.5]],
       intro:'Rootworms tunnel under the cracked ground and come up as beetles. Locusts are on the wing.' },
     { name:'Dust and Tassels', waves:12, season:'late summer', boss:'locustking',
@@ -114,7 +120,9 @@ export const CHAPTERS = [
   ]},
   { id:'rooftop', name:'Rooftop Garden', crop:'pepper', cropPlural:'peppers', pests:'Rats, pigeons & smog moths', grass:['#aeb29c','#a4a892'],
     act:3, mood:'withered', smog:true, road:[0,1], levels:[
-    { name:'Gray Morning', season:'spring', boss:'ratking', mirrorOf:12,
+    { name:'Gray Morning', season:'spring', boss:'ratking',
+      cols:11, rows:17, lanes:[[[1.5,-0.6],[1.5,4.5],[5.5,4.5],[5.5,8.5],[2.5,8.5],[2.5,16.2]],
+             [[9.5,-0.6],[9.5,6.5],[7.5,6.5],[7.5,12.5],[9.5,12.5],[9.5,16.2]]],
       pool:[['rat',1,3],['pigeon',3,1.5]],
       intro:'The last green in the city is up on the roof. The smog hides fliers: defenders only spot them up close.' },
     { name:'Heavy Air', season:'summer', boss:'bigpidge', mirrorOf:13,
@@ -132,7 +140,8 @@ export const CHAPTERS = [
     { name:'Last Light', season:'summer', boss:'palequeen', mirrorOf:16,
       pool:[['glowslug',1,2],['glowworm',1,2,.5],['glowsnail',3,1.5]],
       intro:'Glowing caterpillars turn into pale moths. Even the snails shine.' },
-    { name:'The Blight', season:'late summer', boss:'blight', waves:12, mirrorOf:17,
+    { name:'The Blight', season:'late summer', boss:'blight', waves:12,
+      cols:11, rows:17, pts:[[5.5,-0.6],[5.5,9.5],[2.5,9.5],[2.5,4.5],[8.5,4.5],[8.5,13.5],[2.5,13.5],[2.5,16.2]],
       pool:[['glowslug',1,2],['glowworm',1,2,.45],['glowsnail',2,1.5],['glowmole',3,1.5]],
       intro:'The Blight is everything the spray left behind. Protect the last seeds. If they make it, the garden can come back.' },
   ]},
@@ -141,7 +150,8 @@ export const CHAPTERS = [
     { name:'First Rain', season:'spring', boss:'bullfrog', mirrorOf:1,
       pool:[['puddleslug',1,3],['frog',2,2]],
       intro:'The trees you planted are growing, and the rain is back! Pests slow down in the rain, and every plant gets a drink. No more spraying: the bees are back.' },
-    { name:'Puddles', season:'summer', boss:'mudcrab', mirrorOf:2,
+    { name:'Puddles', season:'summer', boss:'mudcrab',
+      pts:[[4.5,-0.6],[4.5,8.5],[7.5,8.5],[7.5,4.5],[1.5,4.5],[1.5,11.5],[6.5,11.5],[6.5,13.2]],
       pool:[['puddleslug',1,2.5],['frog',1,2],['mudsnail',3,1.5]],
       intro:'Mud snails have come up out of the puddles, and a Mud Crab is crawling up the creek.' },
     { name:'The Flood', season:'late summer', boss:'snapper', waves:10, rain:[2,4,6,8], mirrorOf:3,
@@ -156,7 +166,9 @@ export const CHAPTERS = [
     { name:'Bees Again', season:'summer', boss:'mothqueen', mirrorOf:5,
       pool:[['caterpillar',1,2,.5],['mouse',1,2],['snail',3,1.5]],
       intro:'The meadow hums with bees. Put a Bee Hive near your defenders and they’ll work faster.' },
-    { name:'Old Friends', season:'late summer', boss:'whiskers', waves:10, mirrorOf:6,
+    { name:'Old Friends', season:'late summer', boss:'whiskers', waves:10,
+      lanes:[[[1.5,-0.6],[1.5,2.5],[3.5,2.5],[3.5,6.5],[4.5,6.5],[4.5,8.5],[7.5,8.5],[7.5,11.5],[2.5,11.5],[2.5,13.2]],
+             [[7.5,-0.6],[7.5,4.5],[5.5,4.5],[5.5,6.5],[4.5,6.5],[4.5,8.5],[7.5,8.5],[7.5,11.5],[2.5,11.5],[2.5,13.2]]],
       pool:[['mouse',1,2],['moth',1,2],['snail',2,1.5],['slug',1,2]],
       intro:'Someone you know is coming back for one more try at the garden: Old Whiskers.' },
   ]},
@@ -168,7 +180,9 @@ export const CHAPTERS = [
     { name:'Wild and Green', season:'summer', boss:'giantsnail', mirrorOf:8,
       pool:[['caterpillar',1,2,.5],['jbeetle',1,1.5],['glowworm',2,1.5,.5],['frog',1,1.5]],
       intro:'The garden grows wilder than before: tall grass, a pond, bees on the clover.' },
-    { name:'The New Garden', season:'late summer', boss:'blightweak', waves:12, mirrorOf:13,
+    { name:'The New Garden', season:'late summer', boss:'blightweak', waves:12,
+      cols:11, rows:17, lanes:[[[1.5,-0.6],[1.5,5.5],[5.5,5.5],[5.5,10.5],[2.5,10.5],[2.5,7.5],[8.5,7.5],[8.5,13.5],[3.5,13.5],[3.5,16.2]],
+             [[9.5,-0.6],[9.5,3.5],[5.5,3.5],[5.5,10.5],[2.5,10.5],[2.5,7.5],[8.5,7.5],[8.5,13.5],[3.5,13.5],[3.5,16.2]]],
       pool:[['glowslug',1,2],['glowsnail',2,1.5],['mudsnail',1,1.5],['wingaphid',2,1.5],['frog',1,1.5]],
       intro:'The Blight is weak, but it’s coming one last time. Hold on, and the garden is yours for good.' },
   ]},
@@ -179,8 +193,8 @@ export const CHAPTERS = [
 // three-star rate slopes down from about 90% early to about 25% on Big Dig even for a player who
 // never sprays. The Pesticide Sprayer then makes levels easier, a shortcut, never a requirement.
 // Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
-const TOUGHNESS = [1.15, 2.4, 2.32,   5.2, 2.55, 2.0,   4.8, 2.2, 3.22,   6.45, 5.15, 4.75,   3.95, 5.45, 5.75,   5.35, 4.45, 4.65,
-                   5.7, 5.9, 1.7,   3.25, 3.1, 2.85,   5.6, 6.7, 5.9,   13.6, 11.3, 16,   13.8, 8.1, 10.2,   8.05, 5.7, 16.5];
+const TOUGHNESS = [1.15, 2.4, 2.32,   5.2, 2.85, 2,   4.8, 2.2, 3.22,   6.45, 5.46, 4.75,   3.95, 4.53, 5.75,   5.35, 4.65, 4.65,
+                   5.7, 2.62, 1.7,   1.23, 1.81, 2.85,   5.6, 5.93, 7.84,   13.6, 13.35, 16,   15.5, 8.1, 10.92,   8.05, 5.7, 14.3];
 
 // Flat list of every level in play order, each linked back to its chapter.
 export const LEVELS = [];
@@ -189,7 +203,10 @@ CHAPTERS.forEach((ch,ci) => ch.levels.forEach((lv,li) => {
 }));
 CHAPTERS.forEach(ch => { ch.act = ch.act || 1; if (ch.act===4) ch.noSpray = true; });   // no Sprayer in Part 4
 // Some later levels reuse an earlier level's path, flipped left to right.
-LEVELS.forEach(l => { if (l.mirrorOf!=null && !l.pts) l.pts = LEVELS[l.mirrorOf].pts.map(([x,y]) => [9-x, y]); });
+LEVELS.forEach(l => { if (l.mirrorOf==null || l.pts || l.lanes) return;
+  const src = LEVELS[l.mirrorOf], C = src.cols || 9, flip = pts => pts.map(([x,y]) => [C-x, y]);
+  if (src.lanes) l.lanes = src.lanes.map(flip); else l.pts = flip(src.pts);
+  if (src.cols){ l.cols = src.cols; l.rows = src.rows; } });
 LEVELS.forEach(l => { l.waves = l.waves || WAVES; });
 // Crops to protect: 20 in the cozy first part, 10 from Part 2 on, when things get serious.
 LEVELS.forEach(l => { l.lives = l.lives || (l.ch.act>=2 ? 10 : 20); });

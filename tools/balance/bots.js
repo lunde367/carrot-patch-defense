@@ -2,7 +2,7 @@
 // person would, using only what the game allows (seeds, unlocked defenders, open grass).
 import { G, plantAt, upgrade, costOf, upCostOf, towerAt, spray, sprayReady, sprayStats } from '../../web/js/engine/game.js';
 import { PLANTS, SPRAY } from '../../web/js/data/spray.js';
-import { path, pointAt, buildable, bonusAt } from '../../web/js/engine/path.js';
+import { path, pointAt, laneTotal, buildable, bonusAt } from '../../web/js/engine/path.js';
 import { HILL } from '../../web/js/engine/game.js';
 import { TYPES } from '../../web/js/data/towers.js';
 import { COLS, ROWS } from '../../web/js/data/levels.js';
@@ -13,7 +13,7 @@ const ATTACKERS = ['bunny','rose','squirrel','sprinkler','pine','owl','ladybug']
 let samples = [];
 export function preparePath(){
   samples = [];
-  for (let d=0.6; d<path.total; d+=0.25){ const [x,y]=pointAt(d); samples.push({x,y,w:.6+.8*d/path.total}); }
+  for (let li=0; li<path.lanes.length; li++){ const T=laneTotal(li); for (let d=0.6; d<T; d+=0.25){ const [x,y]=pointAt(d,li); samples.push({x,y,w:(.6+.8*d/T)/Math.sqrt(path.lanes.length)}); } }
 }
 function coverage(c, r, range, fliersOnly=false){
   const x=c+.5, y=r+.5; let s=0;
@@ -132,7 +132,7 @@ export function maybeSpray(){
   const S=G.S; if (!sprayReady() || !S.enemies.length) return false;
   const { radius } = sprayStats();
   const live = S.enemies.filter(e => !e.dead && !e.under && e.dist>0.3);
-  const danger = live.filter(e => e.dist > path.total*.72);
+  const danger = live.filter(e => e.dist > laneTotal(e.lane)*.72);
   if (!danger.length) return false;
   let best=null, bestScore=0;
   for (const c of danger){

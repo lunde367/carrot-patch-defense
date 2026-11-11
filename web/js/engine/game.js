@@ -1,8 +1,8 @@
 // Pure game simulation: no DOM, drawing, sound or ads. It reports what happens through events.
 import { TYPES } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
-import { LEVELS } from '../data/levels.js';
-import { path, setPath, setScenery, sceneryAt, bonusAt, pointAt, buildable } from './path.js';
+import { LEVELS, setGrid } from '../data/levels.js';
+import { path, setPath, setScenery, sceneryAt, bonusAt, pointAt, laneTotal, buildable } from './path.js';
 import { sceneryFor, bonusFor } from '../data/scenery.js';
 import { emit } from '../../kit/js/events.js';
 import { NO_PERKS } from '../data/perks.js';
@@ -15,7 +15,7 @@ const DRY_SLOW = .75;    // in a drought, plant defenders with no Sprinkler near
 export const HILL = 1.2, SUNNY_RATE = 1.15, SUNNY_SEEDS = 1.5;   // helpful tiles: +20% range; 15% faster; +50% sunflower seeds
 
 export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
-  const LV = G.LV = LEVELS[gi]; G.CH = LV.ch; setPath(LV.pts); G.hint = null;
+  const LV = G.LV = LEVELS[gi]; G.CH = LV.ch; setGrid(LV.cols, LV.rows); setPath(LV.lanes || LV.pts); G.hint = null;
   const onPath=(c,r)=>path.cells.has(c+','+r), scen=sceneryFor(LV, onPath, LV.gi===0 ? [[2,1],[4,3]] : []);
   setScenery(scen, bonusFor(LV, onPath, scen));
   newShots = [];                                   // drop shots left over from a game that ended mid-wave
@@ -23,7 +23,7 @@ export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
   G.S = { mode:'play', paused:false, seeds:120+gi*15+bonusSeeds+perks.seeds, lives:maxLives, maxLives, perks, wave:0,
     fence:perks.fence, headStartUsed:false,
     sprayOn: gi >= SPRAY.unlock && !G.LV.ch.noSpray, sprayCd:0, aiming:false,   // Part 4: the sprayer is put away for good
-    enemies:[], towers:[], shots:[], fx:[], spawnQ:[], spawnT:0, active:false, speed, sel:null, build:null };
+    enemies:[], towers:[], shots:[], fx:[], spawnQ:[], spawnT:0, laneNext:0, active:false, speed, sel:null, build:null };
   emit('levelStart', LV);
 }
 
@@ -65,11 +65,11 @@ export function startWave(){
   emit('waveStart', { wave:S.wave, boss:S.wave===G.LV.waves }); emit('select', null);
   return true;
 }
-function spawnEnemy(type, dist, morph){
+function spawnEnemy(type, dist, morph, lane=0){
   const S=G.S, d=ENEMY[type], sc=d.boss?G.LV.hpMul:hpScale(Math.max(1,S.wave));
-  const hp=Math.round(d.hp*sc), [x,y]=pointAt(dist);
+  const hp=Math.round(d.hp*sc), [x,y]=pointAt(dist, lane);
   const e={ type, hp, max:hp, spd:d.spd, reward:d.reward+Math.floor(G.LV.gi/2), size:d.size, armor:d.armor||0,
-    dist, x, y, face:1, slow:0, hit:0, ph:Math.random()*6, bt:0, fly:!!d.fly, morphAt:morph?path.total*morph:null, cocoon:0, scared:0, st:0 };
+    dist, x, y, face:1, slow:0, hit:0, ph:Math.random()*6, bt:0, fly:!!d.fly, lane, morphAt:morph?laneTotal(lane)*morph:null, cocoon:0, scared:0, st:0 };
   S.enemies.push(e);
   if (d.boss) emit('boss', type);
   return e;
@@ -181,22 +181,23 @@ function hitShot(s){
 export function update(dt){
   const S=G.S;
   if (S.spawnQ.length){ S.spawnT-=dt;
-    if (S.spawnT<=0){ const it=S.spawnQ.shift(); spawnEnemy(it.t,0,it.m); S.spawnT=ENEMY[it.t].gap||2; } }
+    // pests take turns at each entrance
+    if (S.spawnT<=0){ const it=S.spawnQ.shift(); spawnEnemy(it.t,0,it.m,(S.laneNext++)%path.lanes.length); S.spawnT=ENEMY[it.t].gap||2; } }
 
   for (const e of S.enemies){
     if (e.dead) continue;
     const D=ENEMY[e.type];
     e.slow=Math.max(0,e.slow-dt); e.hit=Math.max(0,e.hit-dt); e.ph+=dt*6; e.scared=Math.max(0,e.scared-dt);
     if (D.spawns && !e.under && e.dist>0.5){ e.st+=dt;                     // mothers hatch babies as they go
-      if (e.st>=D.spawns.every){ e.st=0; spawnEnemy(D.spawns.type, Math.max(0.3, e.dist-0.25)); puffs(e.x,e.y,4,.8); } }
+      if (e.st>=D.spawns.every){ e.st=0; spawnEnemy(D.spawns.type, Math.max(0.3, e.dist-0.25), null, e.lane); puffs(e.x,e.y,4,.8); } }
     if (e.cocoon>0){ e.cocoon-=dt; if (e.cocoon<=0) grow(e); continue; }
     if (e.morphAt!=null && e.dist>=e.morphAt){ e.morphAt=null; e.cocoon=1.3; floatText(e.x,e.y-.35,'growing!','#8a5fb0',1); emit('cocoon'); continue; }
     if (D.burrow){ e.bt+=dt; e.under = e.bt>1 && (e.bt%4.5)>3; }
     let mul=(e.slow>0?.5:1)*(e.under?1.3:1)*(S.rain?RAIN_SLOW:1);
     if (D.hopper){ e.jump=Math.sin(e.ph*.9)>.2; mul*=e.jump?2.2:.25; }
     e.dist+=e.spd*mul*dt;
-    const [x,y,f]=pointAt(e.dist); e.x=x; e.y=y; if (f) e.face=f;
-    if (e.dist>=path.total){
+    const [x,y,f]=pointAt(e.dist, e.lane); e.x=x; e.y=y; if (f) e.face=f;
+    if (e.dist>=laneTotal(e.lane)){
       e.dead=true;
       if (S.fence>0){ S.fence--; floatText(e.x,12.7,'Fence!','#8a6a48',1); emit('fence', S.fence); continue; }   // Sturdy Fence
       const lost=D.boss?bossBite():1; S.lives=Math.max(0,S.lives-lost);
@@ -221,14 +222,14 @@ export function update(dt){
       if (!near.length) continue;
       t.cd=1/T.rate[t.lv]; t.hop=1;
       for (const e of near){ e.dist=Math.max(0.35, e.dist-T.push[t.lv]*(ENEMY[e.type].boss?.5:1)); e.scared=2.6;
-        const [x,y]=pointAt(e.dist); e.x=x; e.y=y; }
+        const [x,y]=pointAt(e.dist, e.lane); e.x=x; e.y=y; }
       S.fx.push({k:'scare',x:t.x,y:t.y,r:R,life:.6,max:.6}); emit('scare', near.length);
       continue;
     }
     const inR=S.enemies.filter(e=>targetable(e)&&!(T.ground&&e.fly)&&seen(e));
     if (!inR.length||t.cd>0) continue;
     t.cd=1/T.rate[t.lv]; t.hop=1;
-    const lead=inR.reduce((a,b)=>b.dist>a.dist?b:a);
+    const left=e=>laneTotal(e.lane)-e.dist, lead=inR.reduce((a,b)=>left(b)<left(a)?b:a);   // the pest closest to the crops
     if (t.type==='sprinkler'){
       for (const e of inR){ damage(e,T.dmg[t.lv]); e.slow=T.slow[t.lv]; }
       S.fx.push({k:'ring',x:t.x,y:t.y,r:R,life:.5,max:.5});
