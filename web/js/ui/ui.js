@@ -181,6 +181,7 @@ function drawLivesIcon(){
   const cv=$('livesIcon'); if (!cv || !G.LV) return; const c=cv.getContext('2d');
   c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,40,40); drawCrop(c, G.LV.ch.crop, 20, 23, 78);
 }
+const highestPart = () => Math.max(...CHAPTERS.filter((ch,ci) => devMode || ci===0 || CHAPTERS[ci-1].levels.every(l => (Save.data.stars[l.gi]||0)>0)).map(c => c.act));
 export function showMenu(){
   leaveLevel(); renderInfo(); disarmRestart(); dirty();
   const chapHtml = (ch, ci) => {
@@ -206,7 +207,8 @@ export function showMenu(){
     if (!reached) return `<section class="part locked"><div class="part-head"><span class="part-n">Part ${P.n}</span>
       <b>???</b><span class="part-meta">Finish Part ${P.n-1} to find out</span>${ICON.lock}</div></section>`;
     const lv = chs.flatMap(c => c.levels), got = lv.reduce((a,l) => a+(Save.data.stars[l.gi]||0), 0);
-    const open = Save.data.fold[P.n] ?? (P.n===current);
+    // One part open at a time. It starts on the part you're in, and jumps ahead when you reach a new part.
+    const F = Save.data.fold, open = (F.cur===current && F.open!=null ? F.open : current) === P.n;
     return `<section class="part${open?' open':''}" style="--part:${P.tint}">
       <button class="part-head" data-go="fold" data-part="${P.n}" aria-expanded="${open}"><span class="part-n">Part ${P.n}</span>
         <b>${P.name}</b><span class="part-meta">★ ${got}/${lv.length*3}</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -386,8 +388,12 @@ async function onOverlayClick(ev){
       msg('Save the Sprayer for when pests get close to your crops.'); return nextIntro(); }
     case 'part-ok': return nextIntro();
     case 'pest-ok': return nextPest();
-    case 'fold': { const n=+b.dataset.part, box=b.closest('.part'), open=box.classList.toggle('open');
-      b.setAttribute('aria-expanded', open); Save.data.fold[n]=open; Save.commit(); Audio.play('pop'); return; }
+    case 'fold': {
+      // Only one part open at a time: opening one folds the others.
+      const n=+b.dataset.part, box=b.closest('.part'), open=!box.classList.contains('open');
+      for (const o of document.querySelectorAll('.part.open')){ o.classList.remove('open'); o.querySelector('.part-head').setAttribute('aria-expanded', false); }
+      box.classList.toggle('open', open); b.setAttribute('aria-expanded', open);
+      Save.data.fold = { open: open ? n : 0, cur: highestPart() }; Save.commit(); Audio.play('pop'); return; }
     case 'diary-ok': { if (afterDiary){ const f=afterDiary; afterDiary=null; return f(); } return nextIntro(); }
     case 'diary': return showDiary();
     case 'gotit': {

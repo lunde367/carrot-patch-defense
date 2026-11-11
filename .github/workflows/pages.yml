@@ -16,7 +16,10 @@ jobs:
         with: { node-version: 20 }
       - run: node scripts/fetch-fonts.mjs
       - uses: actions/configure-pages@v5
+      # The game is published at the site root. A copy also goes in web/, the address
+      # older home-screen installs still open, so those keep working with the same save.
+      - run: mkdir -p _site && cp -r web/. _site/ && mkdir -p _site/web && cp -r web/. _site/web/
       - uses: actions/upload-pages-artifact@v3
-        with: { path: web }
+        with: { path: _site }
       - id: deploy
         uses: actions/deploy-pages@v4
