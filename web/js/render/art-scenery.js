@@ -33,6 +33,26 @@ export function drawBonus(c, b, s){
 }
 
 const ART = {
+  fire(c, { cx, cy, s }){   // charred logs; the flames are drawn live on top
+    shadow(c, cx, cy+s*.2, s*.32, s*.08);
+    ell(c, cx, cy+s*.12, s*.28, s*.1, 'rgba(60,40,30,.5)');
+    for (const a of [-.4,.4]){ c.save(); c.translate(cx, cy+s*.1); c.rotate(a); c.beginPath(); c.roundRect(-s*.24,-s*.05,s*.48,s*.1,s*.05); c.fillStyle='#3a2a20'; c.fill(); c.strokeStyle='#1e1410'; c.lineWidth=1.2; c.stroke(); c.restore(); }
+    ell(c, cx, cy+s*.1, s*.08, s*.04, '#e2483a');
+  },
+  litter(c, { cx, cy, s }){   // a trash bag and crushed cans
+    shadow(c, cx, cy+s*.26, s*.34, s*.08);
+    c.beginPath(); c.moveTo(cx-s*.2, cy+s*.24); c.quadraticCurveTo(cx-s*.28, cy-s*.08, cx-s*.06, cy-s*.16); c.lineTo(cx-s*.02, cy-s*.26); c.lineTo(cx+s*.04, cy-s*.16); c.quadraticCurveTo(cx+s*.22, cy-s*.06, cx+s*.14, cy+s*.24); c.closePath();
+    c.fillStyle='#3a3e44'; c.fill(); c.strokeStyle='#1e2024'; c.lineWidth=1.4; c.stroke();
+    ell(c, cx-s*.08, cy-s*.02, s*.05, s*.08, 'rgba(255,255,255,.18)');
+    c.save(); c.translate(cx+s*.24, cy+s*.16); c.rotate(.5); c.beginPath(); c.roundRect(-s*.05,-s*.08,s*.1,s*.16,s*.02); c.fillStyle='#c23a3a'; c.fill(); c.strokeStyle='#6a1a1a'; c.lineWidth=1; c.stroke(); c.restore();
+    c.save(); c.translate(cx-s*.26, cy+s*.2); c.rotate(-1.2); c.beginPath(); c.roundRect(-s*.04,-s*.07,s*.08,s*.14,s*.02); c.fillStyle='#9aa6ae'; c.fill(); c.strokeStyle='#5d6870'; c.lineWidth=1; c.stroke(); c.restore();
+  },
+  tire(c, { cx, cy, s }){   // an old dumped tire
+    shadow(c, cx, cy+s*.24, s*.32, s*.08);
+    ell(c, cx, cy+s*.04, s*.3, s*.2, '#2e3034', '#141518', 1.5);
+    ell(c, cx, cy+s*.02, s*.14, s*.09, '#8fae6a');
+    c.strokeStyle='#45484c'; c.lineWidth=1.2; for (let k=0;k<10;k++){ const a=k*.628; c.beginPath(); c.moveTo(cx+Math.cos(a)*s*.2, cy+s*.04+Math.sin(a)*s*.13); c.lineTo(cx+Math.cos(a)*s*.28, cy+s*.04+Math.sin(a)*s*.185); c.stroke(); }
+  },
   sapling(c, { cx, cy, s }){   // a young tree you planted, staked and tied
     shadow(c, cx, cy+s*.28, s*.26, s*.07);
     c.strokeStyle='#a8845a'; c.lineWidth=Math.max(1.5,s*.03); c.beginPath(); c.moveTo(cx+s*.12, cy+s*.28); c.lineTo(cx+s*.12, cy-s*.18); c.stroke();

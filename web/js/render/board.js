@@ -1,6 +1,6 @@
 // Draws the garden board. Sizes itself to fit any phone, tablet or desktop window.
 import { G, towerAt, rangeOf, HILL } from '../engine/game.js';
-import { path, buildable } from '../engine/path.js';
+import { path, buildable, pointAt } from '../engine/path.js';
 import { drawScenery, drawBonus } from './art-scenery.js';
 import { COLS, ROWS } from '../data/levels.js';
 import { TYPES } from '../data/towers.js';
@@ -75,6 +75,20 @@ export function rebuild(){
   const R2=rng(31);
   for (const sg of path.segs){ const n=Math.floor(sg.len*3); for (let i=0;i<n;i++){ const k=R2();
     ell(b,(sg.x1+(sg.x2-sg.x1)*k+(R2()-.5)*.45)*s,(sg.y1+(sg.y2-sg.y1)*k+(R2()-.5)*.45)*s,s*.035,s*.025,'#c4a271'); } }
+  // Paved over: in later gardens part of the dirt path has become road (CH.road = [from, to] as shares of the path).
+  if (CH.road){
+    const [f0,f1]=CH.road, d0=f0*path.total, d1=f1*path.total, pts=[pointAt(d0)];
+    for (const sg of path.segs){ const e=sg.start+sg.len; if (e>d0 && e<d1) pts.push([sg.x2,sg.y2]); }
+    pts.push(pointAt(d1));
+    const road=(w,col,dash)=>{ b.beginPath(); pts.forEach(([x,y],i)=>i?b.lineTo(x*s,y*s):b.moveTo(x*s,y*s)); b.strokeStyle=col; b.lineWidth=w; b.setLineDash(dash||[]); b.stroke(); b.setLineDash([]); };
+    road(.86*s,'#4a4c4e'); road(.74*s,'#6a6c6e'); road(Math.max(1.5,s*.05),'#e8c04a',[s*.22,s*.18]);
+    const RR=rng(77+LV.gi);
+    for (let i=0;i<Math.floor((d1-d0)*(CH.cracked?2.2:.8));i++){
+      const [x,y]=pointAt(d0+RR()*(d1-d0)), ox=(RR()-.5)*.5, oy=(RR()-.5)*.5;
+      b.strokeStyle='#3e4042'; b.lineWidth=1.1; b.beginPath(); b.moveTo((x+ox)*s,(y+oy)*s); b.lineTo((x+ox+(RR()-.5)*.3)*s,(y+oy+(RR()-.5)*.3)*s); b.lineTo((x+ox+(RR()-.5)*.4)*s,(y+oy+(RR()-.5)*.4)*s); b.stroke();
+      if (CH.cracked && RR()<.4){ b.strokeStyle='#6f9a45'; b.lineWidth=1.2; b.beginPath(); b.moveTo((x+ox)*s,(y+oy)*s); b.lineTo((x+ox-.04)*s,(y+oy-.1)*s); b.moveTo((x+ox)*s,(y+oy)*s); b.lineTo((x+ox+.05)*s,(y+oy-.09)*s); b.stroke(); }
+    }
+  }
   if (CH.drought){
     // cracked, dry ground: thin dark crack lines scattered over the grass
     const RC=rng(91+LV.gi*7); b.strokeStyle='rgba(110,85,40,.45)'; b.lineWidth=1.2; b.lineCap='round';
@@ -126,6 +140,12 @@ export function draw(clock){
     g.beginPath(); g.arc(f.x*s,f.y*s,R,0,6.28); g.fillStyle=`rgba(196,214,92,${a})`; g.fill();
     g.setLineDash([5,6]); g.strokeStyle=`rgba(140,160,40,${a*1.6})`; g.lineWidth=2; g.stroke(); g.setLineDash([]);
     for (let i=0;i<9;i++){ const ang=i*.698+p*1.5, rr=R*(.35+.55*((i*37)%10)/10); ell(g,f.x*s+Math.cos(ang)*rr,f.y*s+Math.sin(ang)*rr,s*.12*(1-p*.5),s*.1*(1-p*.5),`rgba(220,232,140,${a})`); } }
+  // burning scenery flickers every frame
+  for (const o of path.scenery) if (o.kind==='fire'){ const x=(o.c+.5)*s, y=(o.r+.5)*s, t=clockReal();
+    for (let k=0;k<3;k++){ const ph=t*7+k*2.1, h=s*(.26+.06*Math.sin(ph)), w=s*(.13-.025*k), dx=(k-1)*s*.1;
+      g.beginPath(); g.moveTo(x+dx-w, y+s*.08); g.quadraticCurveTo(x+dx-w*.8, y-h*.5, x+dx+Math.sin(ph)*s*.03, y-h); g.quadraticCurveTo(x+dx+w*.8, y-h*.5, x+dx+w, y+s*.08); g.closePath();
+      g.fillStyle=k===1?'#f6c344':'#ef7a2b'; g.globalAlpha=.9; g.fill(); }
+    g.globalAlpha=.35; g.fillStyle='#8a8a8a'; const sm=(t*.4)%1; ell(g,x+Math.sin(t)*s*.05,y-s*(.35+sm*.4),s*(.08+sm*.1),s*(.06+sm*.08),'#9a9a9a'); g.globalAlpha=1; }
   // placing: a ghost of the defender's reach, green where it can go, red where it can't
   const P=G.preview;
   if (P && S.build===P.type){

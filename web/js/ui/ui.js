@@ -52,7 +52,7 @@ const onLevelStart = (LV => {
   if (LV.gi===0 && !Save.data.tutorialDone){ startTutorial(); return; }   // the tutorial comes first
   // Cards to show before play, one after another: a diary page, new defenders, a new tool.
   intro = [];
-  const page = LV.li===0 && diaryEntry(`start-${LV.ch.id}`);
+  const page = diaryEntry(LV.li===0 ? `start-${LV.ch.id}` : `start-${LV.ch.id}-${LV.li+1}`);   // a garden's first level, or a page for a later level
   const firstOfPart = LV.li===0 && CHAPTERS.find(c => c.act===LV.ch.act)===LV.ch;
   if (firstOfPart && LV.ch.act>1 && !Save.data.parts[LV.ch.act]) intro.push(['part', LV.ch.act]);
   if (page && !Save.data.diary[page.key]) intro.push(['diary', page.key]);

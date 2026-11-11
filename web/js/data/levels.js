@@ -56,7 +56,7 @@ export const CHAPTERS = [
   ]},
   // ---- Act 2: Something's Off ----
   { id:'tomato', name:'Tomato Greenhouse', crop:'tomato', cropPlural:'tomatoes', pests:'Whiteflies & stink bugs', grass:['#c3cb88','#b9c17e'],
-    act:2, mood:'off', greenhouse:true, heat:[3,6], levels:[
+    act:2, mood:'off', greenhouse:true, heat:[3,6], road:[.8,1], levels:[
     { name:'Hothouse', season:'spring', boss:'sapsucker',
       pts:[[2.5,-0.6],[2.5,2.5],[6.5,2.5],[6.5,5.5],[2.5,5.5],[2.5,8.5],[6.5,8.5],[6.5,11.5],[3.5,11.5],[3.5,13.2]],
       pool:[['whitenymph',1,3,.5],['stinknymph',2,2,.6],['whitefly',4,1.5]],
@@ -71,7 +71,7 @@ export const CHAPTERS = [
       intro:'The biggest stink bugs shrug off the spray. The Stink Bug Baron is coming for the harvest.' },
   ]},
   { id:'apple', name:'Apple Orchard', crop:'apple', cropPlural:'apples', pests:'Aphids & invasive beetles', grass:['#b2c67c','#a8bc72'],
-    act:2, mood:'off', swarm:[4,7], levels:[
+    act:2, mood:'off', swarm:[4,7], road:[.65,1], levels:[
     { name:'Blossom Time', season:'spring', boss:'aphidmother',
       pts:[[6.5,-0.6],[6.5,1.5],[1.5,1.5],[1.5,4.5],[5.5,4.5],[5.5,7.5],[2.5,7.5],[2.5,10.5],[6.5,10.5],[6.5,13.2]],
       pool:[['aphid',1,4,.5],['jbeetle',3,1.5]],
@@ -86,7 +86,7 @@ export const CHAPTERS = [
       intro:'The apples came in small this year. Something huge is buzzing over the hill: The Swarm.' },
   ]},
   { id:'corn', name:'Corn Field', crop:'corn', cropPlural:'corn', pests:'Locusts & rootworms', grass:['#c9c486','#bfba7c'],
-    act:2, mood:'off', drought:true, levels:[
+    act:2, mood:'off', drought:true, road:[.5,1], levels:[
     { name:'Knee High', season:'spring', boss:'grandhopper',
       pts:[[7.5,-0.6],[7.5,2.5],[3.5,2.5],[3.5,5.5],[7.5,5.5],[7.5,8.5],[1.5,8.5],[1.5,11.5],[4.5,11.5],[4.5,13.2]],
       pool:[['hopperling',1,3,.55],['rootworm',2,2]],
@@ -101,7 +101,7 @@ export const CHAPTERS = [
       intro:'The sky goes dark with locusts. The spray barely slows them now. The Locust King is coming.' },
   ]},
   { id:'dust', name:'Dust Bowl Farm', crop:'wheat', cropPlural:'wheat', pests:'Dust beetles & sand fleas', grass:['#cdb88c','#c3ae82'],
-    act:3, mood:'withered', drought:true, levels:[
+    act:3, mood:'withered', drought:true, road:[.35,1], levels:[
     { name:'Topsoil', season:'spring', boss:'dustdevil', mirrorOf:9,
       pool:[['sandflea',1,3],['dustgrub',2,2,.5]],
       intro:'The wind took the topsoil. Plant defenders need water: a Rain Barrel keeps every plant near it watered.' },
@@ -113,7 +113,7 @@ export const CHAPTERS = [
       intro:'The sky has gone brown. Something is spinning across the fields: the Dust Devil.' },
   ]},
   { id:'rooftop', name:'Rooftop Garden', crop:'pepper', cropPlural:'peppers', pests:'Rats, pigeons & smog moths', grass:['#aeb29c','#a4a892'],
-    act:3, mood:'withered', smog:true, levels:[
+    act:3, mood:'withered', smog:true, road:[0,1], levels:[
     { name:'Gray Morning', season:'spring', boss:'ratking', mirrorOf:12,
       pool:[['rat',1,3],['pigeon',3,1.5]],
       intro:'The last green in the city is up on the roof. The smog hides fliers: defenders only spot them up close.' },
@@ -125,7 +125,7 @@ export const CHAPTERS = [
       intro:'The air is thick and yellow. Out of it comes the biggest moth anyone has ever seen.' },
   ]},
   { id:'vault', name:'The Last Seed Vault', crop:'seed', cropPlural:'seed packets', pests:'Glowing mutants', grass:['#9c958a','#928b80'],
-    act:3, mood:'withered', dark:true, levels:[
+    act:3, mood:'withered', dark:true, road:[0,1], cracked:true, levels:[
     { name:'Ashes', season:'spring', boss:'mutantmole', mirrorOf:15,
       pool:[['glowslug',1,3],['glowmole',3,1.5]],
       intro:'Nothing grows out here anymore. These are the last seeds. The pests that are left glow in the dark.' },
