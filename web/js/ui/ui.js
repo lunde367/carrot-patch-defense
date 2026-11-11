@@ -1,10 +1,11 @@
 // Everything the player sees and taps outside the board: HUD, tray, panels and overlays.
-import { G, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats } from '../engine/game.js';
+import { G, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits } from '../engine/game.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
 import { path } from '../engine/path.js';
 import { TYPES, TRAY, statsText } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
 import { PARTS, CHAPTERS, LEVELS, WAVES, ROWS } from '../data/levels.js';
+import { drawEnemy } from '../render/art-enemies.js';
 import { PERKS, perkValues, REWARDS } from '../data/perks.js';
 import { Save, starsLeft } from '../save.js';
 import { Audio } from '../../kit/js/audio.js';
@@ -39,7 +40,8 @@ export function play(gi, bonusSeeds=0, { quiet=false }={}){
   stopTutorial(); quietStart = quiet;
   startLevel(gi, Save.data.settings.speed, bonusSeeds, perkValues(Save.data.perks));
 }
-on('levelStart', LV => {
+on('levelStart', (...a) => { drawLivesIcon(); return onLevelStart(...a); });
+const onLevelStart = (LV => {
   if (devMode) G.S.sprayOn = true;
   $('board').classList.toggle('spray-left', path.exitCol >= 5);   // keep the button off the path's end
   setHome(false); hideOverlay(); disarmRestart(); resize(); renderBar(); renderInfo(); dirty();
@@ -112,6 +114,70 @@ function showSprayIntro(){
     <div class="row"><button class="btn main" data-go="spray-ok">Got it</button></div>`);
   Audio.play('sparkle');
 }
+// ---------- New pest cards ----------
+// The first time a pest is about to show up, the wave pauses and a card says what it does.
+// Pests that grow up, or that a boss hatches, are introduced along with the pest they come from.
+let pestQueue = [];
+function pestFamily(type, out=new Set()){
+  if (out.has(type)) return out; out.add(type);
+  const D=ENEMY[type]; if (D.adult) pestFamily(D.adult, out); if (D.spawns) pestFamily(D.spawns.type, out);
+  return out;
+}
+// Players who were already playing have met the pests from levels they beat.
+function setupPestsSeen(){
+  if (Save.data.pests) return;
+  Save.data.pests = {};
+  for (const l of LEVELS) if ((Save.data.stars[l.gi]||0)>0){ for (const p of l.pool) pestFamily(p[0]).forEach(t => Save.data.pests[t]=true); pestFamily(l.boss).forEach(t => Save.data.pests[t]=true); }
+  Save.commit();
+}
+function pestTraits(type){
+  const D=ENEMY[type], out=[];
+  const ground = Object.values(TYPES).filter(T => T.ground).map(T => T.name);
+  if (D.boss) out.push('A boss: big, tough and worth lots of seeds.');
+  if (D.fly) out.push(`Flies over the path. ${ground.join(' and ')} can’t reach it.`);
+  if (D.armor) out.push(`Armor ${D.armor}: every hit does ${D.armor} less damage, so small hits barely dent it.`);
+  if (D.burrow) out.push('Tunnels underground for part of the way, where nothing can hit it.');
+  if (D.hopper) out.push('Hops along in quick jumps.');
+  if (D.spawns) out.push(`Hatches ${ENEMY[D.spawns.type].name.toLowerCase()}s as it walks.`);
+  if (D.adult) out.push(`Grows into a ${ENEMY[D.adult].name} partway down the path.`);
+  if (D.spd>=1.4) out.push('Very fast.'); else if (D.spd<=.5 && !D.boss) out.push('Slow, but takes a lot of hits.');
+  if (!out.length) out.push(D.hp<=10 ? 'Small and soft. Easy to squash, but they come in crowds.' : 'Tougher than it looks.');
+  return out;
+}
+function introducePests(){
+  setupPestsSeen();
+  const S=G.S, fresh=[];
+  for (const q of S.spawnQ) for (const t of pestFamily(q.t)) if (!Save.data.pests[t] && !fresh.includes(t)) fresh.push(t);
+  if (tutorialActive()){ fresh.forEach(t => Save.data.pests[t]=true); Save.commit(); return; }
+  // Grown-up forms and hatchlings ride along with the pest they come from.
+  const lead = fresh.filter(t => !fresh.some(o => o!==t && (ENEMY[o].adult===t || (ENEMY[o].spawns && ENEMY[o].spawns.type===t))));
+  pestQueue = lead.map(t => fresh.filter(x => x===t || pestFamily(t).has(x)));
+  if (pestQueue.length){ S.paused=true; nextPest(); }
+}
+function nextPest(){
+  const group = pestQueue.shift();
+  if (!group){ G.S.paused=false; hideOverlay(); dirty(); return; }
+  group.forEach(t => Save.data.pests[t]=true); Save.commit();
+  const main = group[0], D = ENEMY[main], rest = group.slice(1);
+  overlay(`<div class="panel newdef pestcard"><span class="tag">${D.boss?'Boss':'New pest'}</span>
+      <div class="pest-art">${group.map(t=>`<canvas data-pest="${t}" width="160" height="160"></canvas>`).join('')}</div>
+      <h3>${D.name}</h3><ul>${pestTraits(main).map(x=>`<li>${x}</li>`).join('')}</ul>
+      ${rest.map(t=>`<p class="pest-also"><b>${ENEMY[t].name}:</b> ${pestTraits(t).filter(x=>!x.startsWith('Grows')).join(' ')}</p>`).join('')}</div>
+    <div class="row"><button class="btn main" data-go="pest-ok">${pestQueue.length?'Next':'Got it'}</button></div>`);
+  for (const cv of $('over').querySelectorAll('canvas[data-pest]')){
+    // Draw every pest the same size on its card; fliers are drawn raised, so lower them to match.
+    const t=cv.dataset.pest, E=ENEMY[t], c=cv.getContext('2d'), sz=44/E.size;
+    c.translate(80, 84 + (E.fly ? sz*.28 : 0));
+    drawEnemy(c, { type:t, size:E.size, ph:1.2, fly:!!E.fly, face:1, hp:1, max:1 }, sz);
+  }
+  Audio.play(D.boss?'boss':'pop');
+}
+
+// The crops counter shows the crop this garden is protecting.
+function drawLivesIcon(){
+  const cv=$('livesIcon'); if (!cv || !G.LV) return; const c=cv.getContext('2d');
+  c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,40,40); drawCrop(c, G.LV.ch.crop, 20, 23, 78);
+}
 export function showMenu(){
   leaveLevel(); renderInfo(); disarmRestart(); dirty();
   const chapHtml = (ch, ci) => {
@@ -123,7 +189,7 @@ export function showMenu(){
         <span><b>${ch.name}</b><small>Beat all 3 ${prev.name} levels to unlock · ${done} of 3 done</small></span></header></div>`;
     }
     const lvls = ch.levels.map(l => { const ok=unlocked(l.gi), st=Save.data.stars[l.gi]||0;
-      return `<button class="lv${G.LV&&G.LV.gi===l.gi?' cur':''}" data-lv="${l.gi}" ${ok?'':'disabled'}><b>${l.li+1}. ${l.name}</b>
+      return `<button class="lv${G.LV&&G.LV.gi===l.gi?' cur':''}" data-lv="${l.gi}" ${ok?'':'disabled'}>${l.waves>WAVES?`<i class="lv-long">${l.waves} waves</i>`:''}<b>${l.li+1}. ${l.name}</b>
         ${ok?`<span class="stars">${starStr(st)}</span>`:'<span class="lv-lock">Locked</span>'}</button>`; }).join('');
     return `<div class="chap"><header><canvas data-crop="${ch.crop}" width="80" height="80"></canvas>
       <span><b>${ch.name}</b><small>${ch.pests}</small></span></header><div class="lvls">${lvls}</div></div>`;
@@ -135,7 +201,7 @@ export function showMenu(){
   const html = PARTS.map(P => {
     const chs = CHAPTERS.filter(c => c.act===P.n), reached = chs.some(opened);
     if (!reached) return `<section class="part locked"><div class="part-head"><span class="part-n">Part ${P.n}</span>
-      <b>???</b><span class="part-meta">${chs.length ? 'Keep playing to find out' : 'Coming soon'}</span>${ICON.lock}</div></section>`;
+      <b>???</b><span class="part-meta">Finish Part ${P.n-1} to find out</span>${ICON.lock}</div></section>`;
     const lv = chs.flatMap(c => c.levels), got = lv.reduce((a,l) => a+(Save.data.stars[l.gi]||0), 0);
     const open = Save.data.fold[P.n] ?? (P.n===current);
     return `<section class="part${open?' open':''}" style="--part:${P.tint}">
@@ -244,7 +310,7 @@ function showWin(w, recorded=false){
   const next=LEVELS[gi+1], LV=G.LV, gained=Math.max(0, stars-before);
   const unlocks = next ? TRAY.filter(k => TYPES[k].unlock===next.gi) : [];
   overlay(`<h2>${LV.name} saved!</h2><div class="stars">${starStr(stars)}</div>
-    <p>You beat the ${ENEMY[LV.boss].name} with ${lives} of ${maxLives} ${LV.ch.cropPlural} left.${stars<3?' Lose 4 or fewer for three stars.':''}</p>
+    <p>You beat the ${ENEMY[LV.boss].name} with ${lives} of ${maxLives} ${LV.ch.cropPlural} left.${stars<3?` Lose ${starLimits(maxLives)[0]} or fewer for three stars.`:''}</p>
     ${gained?`<p>+${gained} ★ for the Garden Shed (★ ${starsLeft()} to spend).</p>`:''}
     ${unlocks.length&&before===0?`<p>Next level unlocks the ${unlocks.map(k=>TYPES[k].name).join(' and ')}!</p>`:''}
     <div class="row">${next?`<button class="btn main" data-go="next">${next.ci!==LV.ci?`On to ${next.ch.name}`:'Next level'}</button>`:''}
@@ -258,7 +324,7 @@ on('lose', ({ wave }) => {
   Save.data.stats.losses++; Save.commit(); Audio.play('lose');
   const LV=G.LV, ad=Ads.rewardedReady('retry_bonus'), left=starsLeft();
   overlay(`<h2>The pests got the ${LV.ch.cropPlural}</h2>
-    <p>You reached wave ${wave} of ${WAVES} in ${LV.name}.</p>
+    <p>You reached wave ${wave} of ${LV.waves} in ${LV.name}.</p>
     ${left>0?`<p>You have ★ ${left} to spend in the Garden Shed. Upgrades there could help.</p>`:''}
     <div class="row"><button class="btn main" data-go="retry">Try again</button>
     ${ad?`<button class="btn ghost" data-go="adretry">Watch an ad: retry with +${REWARDS.retrySeeds} seeds</button>`:''}
@@ -271,7 +337,7 @@ export function pause(){
   const S=G.S; if (!S || S.mode!=='play' || S.paused) return;
   if (!S.active && S.wave===0) return;           // nothing to protect yet
   S.paused=true;
-  overlay(`<h2>Paused</h2><p>${G.LV.name}, wave ${S.wave} of ${WAVES}</p>
+  overlay(`<h2>Paused</h2><p>${G.LV.name}, wave ${S.wave} of ${G.LV.waves}</p>
     <div class="row"><button class="btn main" data-go="resume">Resume</button><button class="btn ghost" data-go="menu">All gardens</button></div>`);
   dirty();
 }
@@ -312,6 +378,7 @@ async function onOverlayClick(ev){
     case 'spray-ok': { Save.data.seen.spray=true; Save.commit(); G.S.paused=false; hideOverlay(); dirty();
       msg('Save the Sprayer for when pests get close to your crops.'); return nextIntro(); }
     case 'part-ok': return nextIntro();
+    case 'pest-ok': return nextPest();
     case 'fold': { const n=+b.dataset.part, box=b.closest('.part'), open=box.classList.toggle('open');
       b.setAttribute('aria-expanded', open); Save.data.fold[n]=open; Save.commit(); Audio.play('pop'); return; }
     case 'diary-ok': { if (afterDiary){ const f=afterDiary; afterDiary=null; return f(); } return nextIntro(); }
@@ -372,10 +439,10 @@ export function refresh(){
   const S=G.S; if (!S) return;
   const key=[S.seeds,S.lives,S.wave,S.active,S.mode,S.speed,S.paused,S.sel&&S.sel.lv,G.LV.gi,Math.ceil(S.sprayCd*4),S.aiming,S.sprayOn].join('|');
   if (key===lastKey) return; lastKey=key;
-  $('seeds').textContent=S.seeds; $('lives').textContent=S.lives; $('wave').textContent=`${S.wave}/${WAVES}`;
+  $('seeds').textContent=S.seeds; $('lives').textContent=S.lives; $('wave').textContent=`${S.wave}/${G.LV.waves}`;
   $('season').textContent=G.LV.season==='late summer'?'late':G.LV.season;
   const go=$('go'); go.disabled=S.active||S.mode!=='play'||S.paused;
-  go.textContent = S.mode!=='play' ? 'Pick a level' : S.active ? `Wave ${S.wave}…` : S.wave+1===WAVES ? 'Boss wave' : `Start wave ${S.wave+1}`;
+  go.textContent = S.mode!=='play' ? 'Pick a level' : S.active ? `Wave ${S.wave}…` : S.wave+1===G.LV.waves ? 'Boss wave' : `Start wave ${S.wave+1}`;
   $('spd').textContent=S.speed+'×';
   $('restart').disabled=S.mode==='menu';
   for (const k of TRAY){ const el=$('card-'+k); if (el && towerOpen(k)) el.classList.toggle('poor', S.seeds<costOf(k)); }
@@ -467,7 +534,7 @@ export function initUI(){
   $('spray').onclick=onSprayBtn;
   $('over').addEventListener('click', onOverlayClick);
   $('home').addEventListener('click', onOverlayClick);
-  $('go').onclick=()=>{ if (startWave()) disarmRestart(); };
+  $('go').onclick=()=>{ if (startWave()){ disarmRestart(); introducePests(); } };
   $('spd').onclick=()=>{ const S=G.S; if (!S) return; S.speed=S.speed===1?2:S.speed===2?3:1; Save.data.settings.speed=S.speed; Save.commit(); Audio.play('tap'); };
   $('restart').onclick=onRestart;
   $('sound').onclick=onSound;
@@ -484,7 +551,7 @@ export function initUI(){
   });
   paintSound();
 
-  on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat && !(G.CH.swarm && G.CH.swarm.includes(wave))) msg(boss ? `Final wave! The ${ENEMY[G.LV.boss].name} is coming!` : wave===WAVES-1 ? 'One more wave before the boss.' : 'Here they come…'); });
+  on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat && !swarmAt(wave) && !pestQueue.length) msg(boss ? `Final wave! The ${ENEMY[G.LV.boss].name} is coming!` : wave===G.LV.waves-1 ? 'One more wave before the boss.' : 'Here they come…'); });
   on('swarm', () => msg('Aphid boom! A huge swarm is hatching. Splash defenders and the spray shine here.'));
   on('heat', hot => msg(hot ? `Heat wave! ${hot} defender${hot>1?'s are':' is'} overheating. Defenders near a Sprinkler stay cool.` : 'Heat wave! Your Sprinklers are keeping everyone cool.'));
   on('fence', left => msg(left ? `Your Sturdy Fence stopped a pest! It can stop ${left} more this level.` : 'Your Sturdy Fence stopped a pest! That was its last one this level.'));

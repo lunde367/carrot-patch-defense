@@ -11,7 +11,7 @@
 //
 // Writes tools/balance/reports/report.html (open in a browser) and latest.json.
 import { writeFile, mkdir } from 'node:fs/promises';
-import { G, startLevel, startWave, update } from '../../web/js/engine/game.js';
+import { starsFor, G, startLevel, startWave, update } from '../../web/js/engine/game.js';
 import { TYPES } from '../../web/js/data/towers.js';
 import { ENEMY } from '../../web/js/data/enemies.js';
 import { LEVELS, WAVES } from '../../web/js/data/levels.js';
@@ -44,7 +44,7 @@ function playOne(gi, strategy, seed, perkSet=perks, useSpray=SPRAY_MODE==='on'){
   startLevel(gi, 1, 0, perkSet); preparePath();
   const S = G.S; let sprays=0, wilted=0;
   const avail = Object.keys(TYPES).filter(k => TYPES[k].unlock <= gi);
-  for (let w=0; w<WAVES; w++){
+  for (let w=0; w<LEVELS[gi].waves; w++){
     strategy(avail, w+1, rnd);
     if (!startWave()) break;
     let t=0;
@@ -53,7 +53,7 @@ function playOne(gi, strategy, seed, perkSet=perks, useSpray=SPRAY_MODE==='on'){
     if (S.mode!=='play') break;
   }
   const won = S.mode==='won', lost = S.maxLives - S.lives;
-  return { won, lost, stars: won ? (lost<=4?3:lost<=10?2:1) : 0, wave: S.wave, towers: S.towers.length, sprays };
+  return { won, lost, stars: won ? starsFor(lost, S.maxLives) : 0, wave: S.wave, towers: S.towers.length, sprays };
 }
 
 function summarize(games){

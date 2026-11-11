@@ -8,7 +8,7 @@ export const MARKUP = `
     <div class="title-row"><h1 class="k-title">Carrot Patch <span>Defense</span></h1><span class="dev-badge" id="devBadge" hidden>Test mode</span></div>
     <div class="stats">
       <button class="chip" id="seedsChip" title="Seeds" tabindex="-1"><i class="dot d-seed"></i><span id="seeds">0</span><small>seeds</small></button>
-      <div class="chip" title="Crops left"><i class="dot d-life"></i><span id="lives">0</span></div>
+      <div class="chip" title="Crops left"><canvas class="chip-crop" id="livesIcon" width="40" height="40" aria-hidden="true"></canvas><span id="lives">0</span></div>
       <div class="chip" title="Season and wave"><i class="dot d-wave"></i><small id="season">spring</small><span id="wave">0</span></div>
     </div>
   </header>

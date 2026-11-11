@@ -1,7 +1,7 @@
 // Turns balance results into flags (things worth tuning) and a readable HTML report.
 import { TYPES } from '../../web/js/data/towers.js';
 import { ENEMY } from '../../web/js/data/enemies.js';
-import { WAVES } from '../../web/js/data/levels.js';
+import { LEVELS } from '../../web/js/data/levels.js';
 
 const pct = v => v==null ? '—' : Math.round(v*100)+'%';
 const median = a => { const s=[...a].sort((x,y)=>x-y); return s.length ? s[Math.floor(s.length/2)] : 0; };
@@ -15,7 +15,7 @@ export function findFlags(results){
     if (row.gi>0 && r.winRate>=.9 && b.threeStar>=.9) add('Too easy', row, `Even random play wins ${pct(r.winRate)}, and a sensible player gets 3 stars ${pct(b.threeStar)} of the time.`);
     if (prev && prev.gi===row.gi-1 && prev.bots.balanced.winRate-b.winRate>.35)
       add('Spike', row, `Win rate drops from ${pct(prev.bots.balanced.winRate)} to ${pct(b.winRate)} compared with the level before.`);
-    if (b.winRate<.85 && b.lossWave===WAVES) add('Boss', row, `Most losses happen on the boss wave. The ${ENEMY[row.boss].name} may be too tough.`);
+    if (b.winRate<.85 && b.lossWave===LEVELS[row.gi].waves) add('Boss', row, `Most losses happen on the boss wave. The ${ENEMY[row.boss].name} may be too tough.`);
     const monos=Object.entries(row.mono).sort((a,b)=>b[1].winRate-a[1].winRate);
     if (monos.length>=3 && monos[0][1].winRate>=.85 && monos[1][1].winRate<=.4)
       add('Dominant', row, `${TYPES[monos[0][0]].name} alone wins ${pct(monos[0][1].winRate)}; the next best single defender wins ${pct(monos[1][1].winRate)}.`);

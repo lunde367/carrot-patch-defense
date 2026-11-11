@@ -186,3 +186,17 @@ canvas{ display:block }
   letter-spacing:.05em; border-radius:var(--r-pill); padding:1px 5px }
 @media (min-width:600px){ .bar{ gap:8px } .card{ padding:6px 2px 7px; border-radius:var(--r-lg) } .card canvas{ width:40px; height:40px } .card b{ display:block } }
 @media (max-height:520px) and (orientation:landscape){ .k-title{ font-size:1.15rem } .card b{ display:none } }
+
+/* new pest cards */
+.pestcard ul{ text-align:left; margin:2px 0 0; padding-left:1.1em; line-height:1.35; font-size:.86rem }
+.pestcard h3{ margin:2px 0 0 }
+.pestcard li + li{ margin-top:3px }
+.pest-art{ display:flex; justify-content:center; gap:6px }
+.pest-art canvas{ width:64px; height:64px; border-radius:12px; background:#a9cf7d }
+.pest-also{ margin:6px 0 0; font-size:.84rem; line-height:1.35; text-align:left }
+/* long levels on the home screen */
+.lv{ position:relative }
+.lv-long{ position:absolute; top:-8px; right:6px; font-style:normal; font-size:.62rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+  background:var(--berry); color:#fff; border-radius:var(--r-pill); padding:1px 7px }
+
+.chip-crop{ width:20px; height:20px; flex:none; margin:-2px 0 }

@@ -1,7 +1,7 @@
 // Pure game simulation: no DOM, drawing, sound or ads. It reports what happens through events.
 import { TYPES } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
-import { LEVELS, WAVES } from '../data/levels.js';
+import { LEVELS } from '../data/levels.js';
 import { path, setPath, setScenery, sceneryAt, bonusAt, pointAt, buildable } from './path.js';
 import { sceneryFor, bonusFor } from '../data/scenery.js';
 import { emit } from '../../kit/js/events.js';
@@ -19,7 +19,7 @@ export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
   const onPath=(c,r)=>path.cells.has(c+','+r), scen=sceneryFor(LV, onPath, LV.gi===0 ? [[2,1],[4,3]] : []);
   setScenery(scen, bonusFor(LV, onPath, scen));
   newShots = [];                                   // drop shots left over from a game that ended mid-wave
-  const maxLives = 20;
+  const maxLives = G.LV.lives;
   G.S = { mode:'play', paused:false, seeds:120+gi*15+bonusSeeds+perks.seeds, lives:maxLives, maxLives, perks, wave:0,
     fence:perks.fence, headStartUsed:false,
     sprayOn: gi >= SPRAY.unlock, sprayCd:0, aiming:false,
@@ -28,6 +28,15 @@ export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
 }
 
 // ---------- waves ----------
+// A level's heat waves and aphid booms: its own list if it has one, else its garden's.
+// Stars: lose a fifth of your crops or fewer for 3 stars, half or fewer for 2.
+// With 20 crops that's 4 and 10; with 10 crops it's 2 and 5.
+export const starLimits = max => [Math.floor(max*.2), Math.floor(max*.5)];
+export const starsFor = (lost, max) => { const [a,b]=starLimits(max); return lost<=a?3:lost<=b?2:1; };
+// A boss that gets through eats a quarter of the crops (5 of 20, 3 of 10).
+const bossBite = () => Math.max(3, Math.round(G.S.maxLives*.25));
+export const heatAt = w => (G.LV.heat || G.CH.heat || []).includes(w);
+export const swarmAt = w => (G.LV.swarm || G.CH.swarm || []).includes(w);
 const hpScale = w => (1+.2*(w-1)+.015*(w-1)*(w-1))*G.LV.hpMul;
 function makeWave(w){
   const pool=G.LV.pool.filter(p=>p[1]<=w), sum=pool.reduce((a,p)=>a+p[2],0);
@@ -38,20 +47,20 @@ function makeWave(w){
     q.push({t:p[0], m:p[3]});
   }
   // Aphid boom (Apple Orchard): a big extra burst of the garden's smallest pest.
-  if (G.CH.swarm && G.CH.swarm.includes(w)){ const small=pool[0]; for (let i=0;i<Math.floor(n*.9);i++) q.splice(Math.floor(Math.random()*q.length), 0, {t:small[0], m:small[3]}); }
-  if (w===WAVES) q.push({t:G.LV.boss});
+  if (swarmAt(w)){ const small=pool[0]; for (let i=0;i<Math.floor(n*.9);i++) q.splice(Math.floor(Math.random()*q.length), 0, {t:small[0], m:small[3]}); }
+  if (w===G.LV.waves) q.push({t:G.LV.boss});
   return q;
 }
 export function startWave(){
   const S=G.S; if (!S||S.active||S.mode!=='play'||S.paused) return false;
   S.wave++; S.spawnQ=makeWave(S.wave); S.spawnT=0; S.active=true; S.sel=null;
   // Heat wave (Act 2 gardens): defenders slow down unless a Sprinkler is close enough to cool them.
-  S.heat = !!(G.CH.heat && G.CH.heat.includes(S.wave));
+  S.heat = heatAt(S.wave);
   for (const t of S.towers) t.cool = !S.heat || t.type==='sprinkler' ||
     S.towers.some(o => o.type==='sprinkler' && Math.hypot(o.x-t.x,o.y-t.y) <= rangeOf(o));
   if (S.heat) emit('heat', S.towers.filter(t=>!t.cool).length);
-  if (G.CH.swarm && G.CH.swarm.includes(S.wave)) emit('swarm');
-  emit('waveStart', { wave:S.wave, boss:S.wave===WAVES }); emit('select', null);
+  if (swarmAt(S.wave)) emit('swarm');
+  emit('waveStart', { wave:S.wave, boss:S.wave===G.LV.waves }); emit('select', null);
   return true;
 }
 function spawnEnemy(type, dist, morph){
@@ -183,7 +192,7 @@ export function update(dt){
     if (e.dist>=path.total){
       e.dead=true;
       if (S.fence>0){ S.fence--; floatText(e.x,12.7,'Fence!','#8a6a48',1); emit('fence', S.fence); continue; }   // Sturdy Fence
-      const lost=D.boss?5:1; S.lives=Math.max(0,S.lives-lost);
+      const lost=D.boss?bossBite():1; S.lives=Math.max(0,S.lives-lost);
       floatText(e.x,12.9,'−'+lost,'#c2456b',1); emit('leak', lost);
       if (S.lives<=0){ S.mode='lost'; S.active=false; emit('lose', { wave:S.wave }); return; }
     }
@@ -247,8 +256,8 @@ export function update(dt){
 
   if (S.active && !S.spawnQ.length && !S.enemies.length && S.mode==='play'){
     S.active=false; S.heat=false;
-    if (S.wave>=WAVES){
-      const lost=S.maxLives-S.lives, stars=lost<=4?3:lost<=10?2:1;
+    if (S.wave>=G.LV.waves){
+      const lost=S.maxLives-S.lives, stars=starsFor(lost, S.maxLives);
       S.mode='won'; emit('win', { stars, lives:S.lives, maxLives:S.maxLives, lost, gi:G.LV.gi }); return;
     }
     const bonus=8+S.wave*2; let inc=0;
