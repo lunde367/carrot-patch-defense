@@ -194,7 +194,7 @@ export const CHAPTERS = [
 // never sprays. The Pesticide Sprayer then makes levels easier, a shortcut, never a requirement.
 // Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
 const TOUGHNESS = [1.15, 2.4, 2.32,   5.2, 2.85, 2,   4.8, 2.2, 3.22,   6.45, 5.46, 4.75,   3.95, 4.3, 5.75,   4.2, 5, 4.42,
-                   5.75, 7.14, 6.1,   1, 1.81, 2.85,   5.6, 5.93, 7.84,   13.6, 13.35, 16.14,   15.5, 8.1, 10.92,   8.05, 5.7, 14.3];
+                   5.75, 7.14, 6.1,   1, 1.81, 2.85,   5.6, 5.93, 7.84,   13.6, 13.35, 13.5,   15.5, 8.1, 10.92,   8.05, 5.7, 14.3];
 
 // Flat list of every level in play order, each linked back to its chapter.
 export const LEVELS = [];
