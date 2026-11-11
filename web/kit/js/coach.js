@@ -37,6 +37,8 @@ export function createCoach({ onFinish = () => {}, skipLabel = 'Skip tutorial' }
     btn.hidden = !s.button; btn.textContent = s.button || '';
     target = resolve(s.target);
     if (target && !String(s.place).startsWith('over')) target.classList.add('coach-target');
+    // bring a target that's off screen into view so the bubble can point at it
+    if (target){ const r = target.getBoundingClientRect(); if (r.bottom > window.innerHeight - 140 || r.top < 0) target.scrollIntoView({ block:'center' }); }
     if (s.until) off = on(s.until, d => { if (!s.when || s.when(d)) next(); });
     el.hidden = false; position();
   }

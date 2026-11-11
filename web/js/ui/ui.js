@@ -16,7 +16,7 @@ import { $, starStr, ICON } from '../../kit/js/ui.js';
 import { DRAW } from '../render/art-towers.js';
 import { drawCrop } from '../render/art-common.js';
 import { cellAt, tileAt, resize } from '../render/board.js';
-import { startTutorial, stopTutorial, tutorialActive, tutorialAllows, onTutorialAllow } from './tutorial.js';
+import { startTutorial, stopTutorial, tutorialActive, tutorialAllows, onTutorialAllow, startShedTour, stopShedTour } from './tutorial.js';
 import { ACHIEVEMENTS } from '../data/achievements.js';
 import { DIARY, diaryEntry } from '../data/diary.js';
 import { achievementCount, progressOf } from './achievements.js';
@@ -171,7 +171,7 @@ function nextPest(){
     c.translate(80, 84 + (E.fly ? sz*.28 : 0));
     drawEnemy(c, { type:t, size:E.size, ph:1.2, fly:!!E.fly, face:1, hp:1, max:1 }, sz);
   }
-  Audio.play(D.boss?'boss':'pop');
+  Audio.play(D.boss ? (D.voice?'boss-'+D.voice:'boss') : 'pop');
 }
 
 // The crops counter shows the crop this garden is protecting.
@@ -219,6 +219,8 @@ export function showMenu(){
       <button class="tool-btn icon-only" data-go="settings" aria-label="Settings">${ICON.gear}</button>
     </div>`);
   for (const c2 of $('home').querySelectorAll('canvas[data-crop]')){ const c=c2.getContext('2d'); c.setTransform(2,0,0,2,0,0); drawCrop(c,c2.dataset.crop,20,22,32); }
+  stopShedTour();
+  if (!devMode && !Save.data.shedTour && Save.data.tutorialDone && starsLeft()>0) startShedTour(false);
 }
 
 // ---------- Garden Shed ----------
@@ -240,11 +242,12 @@ function showShed(){
     ${sprayUnlocked()?'':`<p class="home-note">More upgrades unlock in ${LEVELS[SPRAY.unlock].ch.name}.</p>`}
     <div class="shed-foot"><button class="btn main" data-go="menu">Back to gardens</button>
     ${anyOwned?'<button class="btn ghost" data-go="refund">Refund all stars</button>':''}</div>`);
+  emit('shedOpen');
 }
 function buyPerk(id){
   const p=PERKS.find(x=>x.id===id), tier=Save.data.perks[id]||0, cost=p.costs[tier];
   if (cost==null || cost>starsLeft()){ Audio.play('denied'); return; }
-  Save.data.perks[id]=tier+1; Save.commit(); Audio.play('sparkle'); showShed(); emit('perk', id);
+  Save.data.perks[id]=tier+1; Save.commit(); Audio.play('sparkle'); const y=window.scrollY; showShed(); window.scrollTo(0,y); emit('perk', id);
 }
 
 // ---------- Achievements ----------
@@ -414,7 +417,7 @@ export function renderBar(){
       if (!tutorialAllows(key)){ Audio.play('denied'); return; }      // the tutorial step is about a different defender
       Audio.play('tap');
       G.S.build=G.S.build===key?null:key; G.S.sel=null; renderInfo(); renderBar();
-      if (G.S.build){ msg(`${T.name}: ${T.desc} Tap the grass to plant.`); emit('pickTower', key); }
+      if (G.S.build){ msg(`${T.name}: ${T.desc} Touch the grass to see its reach, then let go to plant.`); emit('pickTower', key); }
     };
     bar.append(b);
   }
@@ -505,8 +508,28 @@ function onSprayBtn(){
   if (!S.aiming) G.aim=null; dirty();
 }
 function onBoardMove(ev){
-  const S=G.S; if (!S || !S.aiming) return;
+  const S=G.S; if (!S) return;
+  if (S.build && !S.aiming){
+    // Placing a defender: show where it will go and how far it reaches.
+    // A mouse previews on hover; a finger previews while pressed and plants on release.
+    if (ev.pointerType==='mouse' || G.preview){ const [c,r]=cellAt(ev.clientX, ev.clientY); G.preview={ c, r, type:S.build }; }
+    return;
+  }
+  if (!S.aiming) return;
   const [x,y]=tileAt(ev.clientX, ev.clientY); G.aim={ x, y, r:sprayStats().radius, drift:SPRAY.drift };
+}
+function onBoardUp(ev){
+  const S=G.S, p=G.preview; if (!p || ev.pointerType==='mouse') return;
+  G.preview=null; dirty();
+  if (S && S.mode==='play' && !S.paused && S.build===p.type) tryPlant(p.c, p.r);
+}
+function tryPlant(c,r){
+  const S=G.S, res=plantAt(c,r);
+  if (res.ok){ if (!tutorialActive()) msg(tileNote(res.tower) || (S.wave===0&&S.towers.length===1?'Nice. Plant more, or tap Start wave when ready.':`${TYPES[res.tower.type].name} planted.`)); dirty(); return; }
+  Audio.play('denied');
+  if (res.reason==='seeds') msg(`Not enough seeds. ${res.name} costs ${res.cost}.`);
+  else if (res.reason==='scenery') msg('Something’s already there. Plant on open grass.');
+  else msg(r>=ROWS-1?'That’s your crop row. Plant on the grass.':'Keep the path clear. Plant on the grass.');
 }
 
 function onBoardTap(ev){
@@ -520,13 +543,10 @@ function onBoardTap(ev){
   const t=towerAt(c,r);
   if (t){ S.sel=t; S.build=null; renderBar(); renderInfo(); Audio.play('tap'); emit('select', t); return; }
   if (S.build){
-    const res=plantAt(c,r);
-    if (res.ok){ if (!tutorialActive()) msg(tileNote(res.tower) || (S.wave===0&&S.towers.length===1?'Nice. Plant more, or tap Start wave when ready.':`${TYPES[res.tower.type].name} planted.`)); dirty(); return; }
-    Audio.play('denied');
-    if (res.reason==='seeds') msg(`Not enough seeds. ${res.name} costs ${res.cost}.`);
-    else if (res.reason==='scenery') msg('Something’s already there. Plant on open grass.');
-    else msg(r>=ROWS-1?'That’s your crop row. Plant on the grass.':'Keep the path clear. Plant on the grass.');
-    return;
+    if (ev.pointerType==='mouse') return tryPlant(c,r);
+    // touch: show the preview now, plant when the finger lifts (slide to adjust first)
+    G.preview={ c, r, type:S.build }; try { $('cv').setPointerCapture(ev.pointerId); } catch {}
+    dirty(); return;
   }
   if (S.sel){ S.sel=null; renderInfo(); }
 }
@@ -534,6 +554,9 @@ function onBoardTap(ev){
 export function initUI(){
   $('cv').addEventListener('pointerdown', onBoardTap);
   $('cv').addEventListener('pointermove', onBoardMove);
+  $('cv').addEventListener('pointerup', onBoardUp);
+  $('cv').addEventListener('pointercancel', () => { G.preview=null; });
+  $('cv').addEventListener('pointerleave', ev => { if (ev.pointerType==='mouse') G.preview=null; });
   $('spray').onclick=onSprayBtn;
   $('over').addEventListener('click', onOverlayClick);
   $('home').addEventListener('click', onOverlayClick);

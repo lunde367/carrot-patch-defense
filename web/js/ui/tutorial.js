@@ -37,3 +37,25 @@ export function startTutorial(){
       button:'Let’s go' },
   ]);
 }
+
+// Garden Shed tour: shown the first time the player has stars to spend.
+// It starts on the home screen (pointing at the Shed button) and finishes inside the Shed.
+const shedCoach = createCoach({
+  skipLabel:'Skip',
+  onFinish(){ Save.data.shedTour = true; Save.commit(); },
+});
+export const shedTourActive = () => shedCoach.active;
+export function stopShedTour(){ shedCoach.stop(); }
+export function startShedTour(inShed){
+  const steps = [
+    { text:'You earned stars! Spend them in the Garden Shed on upgrades that help in every level.',
+      target:'.shed-btn', until:'shedOpen' },
+    { text:'This is how many stars you have to spend. Beat levels with more crops left to earn up to 3 stars each.',
+      target:'.star-count', button:'Next' },
+    { text:'Each upgrade costs stars, shown on its button. Tap one you can afford to buy it.',
+      target:() => document.querySelector('.perk button:not([disabled])'), until:'perk' },
+    { text:'Bought! The bars under an upgrade show how many tiers you own. Changed your mind? Refund all stars any time and pick again.',
+      target:'[data-go="refund"]', button:'Got it' },
+  ];
+  shedCoach.start(inShed ? steps.slice(1) : steps);
+}

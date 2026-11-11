@@ -1,5 +1,5 @@
 // Draws the garden board. Sizes itself to fit any phone, tablet or desktop window.
-import { G, towerAt, rangeOf } from '../engine/game.js';
+import { G, towerAt, rangeOf, HILL } from '../engine/game.js';
 import { path, buildable } from '../engine/path.js';
 import { drawScenery, drawBonus } from './art-scenery.js';
 import { COLS, ROWS } from '../data/levels.js';
@@ -126,6 +126,16 @@ export function draw(clock){
     g.beginPath(); g.arc(f.x*s,f.y*s,R,0,6.28); g.fillStyle=`rgba(196,214,92,${a})`; g.fill();
     g.setLineDash([5,6]); g.strokeStyle=`rgba(140,160,40,${a*1.6})`; g.lineWidth=2; g.stroke(); g.setLineDash([]);
     for (let i=0;i<9;i++){ const ang=i*.698+p*1.5, rr=R*(.35+.55*((i*37)%10)/10); ell(g,f.x*s+Math.cos(ang)*rr,f.y*s+Math.sin(ang)*rr,s*.12*(1-p*.5),s*.1*(1-p*.5),`rgba(220,232,140,${a})`); } }
+  // placing: a ghost of the defender's reach, green where it can go, red where it can't
+  const P=G.preview;
+  if (P && S.build===P.type){
+    const T=TYPES[P.type], ok=buildable(P.c,P.r) && !S.towers.some(t=>t.c===P.c&&t.r===P.r), x=(P.c+.5)*s, y=(P.r+.5)*s;
+    g.fillStyle=ok?'rgba(255,255,255,.35)':'rgba(194,69,107,.35)'; g.fillRect(P.c*s+1,P.r*s+1,s-2,s-2);
+    if (T.range && ok){ const R=T.range[0]*S.perks.rangeMul*(path.bonus.get(P.c+','+P.r)==='hill'?HILL:1)*s;
+      g.beginPath(); g.arc(x,y,R,0,6.28); g.fillStyle='rgba(255,255,255,.14)'; g.fill();
+      g.setLineDash([5,5]); g.strokeStyle='rgba(255,255,255,.85)'; g.lineWidth=2; g.stroke(); g.setLineDash([]); }
+    if (ok){ g.save(); g.globalAlpha=.6; g.translate(x,y); DRAW[P.type](g,s,0,0,clockReal()); g.restore(); }
+  }
   // aiming: show the spray circle where it will land
   if (S.aiming && G.aim){ const R=G.aim.r*s, D=R*(G.aim.drift||1);
     g.beginPath(); g.arc(G.aim.x*s,G.aim.y*s,D,0,6.28); g.setLineDash([3,6]); g.strokeStyle='rgba(160,120,40,.75)'; g.lineWidth=1.5; g.stroke(); g.setLineDash([]);

@@ -4,6 +4,7 @@ import { G, update } from './engine/game.js';
 import { Save, starsLeft } from './save.js';
 import { SHOT_SOUND, MUSIC } from './sounds.js';
 import { on } from '../kit/js/events.js';
+import { ENEMY } from './data/enemies.js';
 import { Audio } from '../kit/js/audio.js';
 import { shake, confetti } from '../kit/js/fx.js';
 import { bindSave } from '../kit/js/monetization.js';
@@ -38,7 +39,7 @@ on('leak', lost => shake(board(), lost>1 ? 2.5 : .8));
 on('boss', () => shake(board(), 1.4));
 on('fence', () => shake(board(), .6));
 on('win', ({ stars }) => { if (stars===3) setTimeout(() => confetti(), 250); });
-on('boss', () => Audio.play('boss'));
+on('boss', type => Audio.play(ENEMY[type] && ENEMY[type].voice ? 'boss-'+ENEMY[type].voice : 'boss'));
 on('waveStart', () => Audio.play('wave'));
 on('waveClear', () => Audio.play('chime'));
 
