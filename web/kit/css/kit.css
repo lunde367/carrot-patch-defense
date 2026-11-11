@@ -103,9 +103,17 @@ button.btn{ font:inherit; font-weight:800; border-radius:var(--r-md); border:2px
   60%{ transform:translate(calc(var(--shake) * -.6), 0) } 80%{ transform:translate(calc(var(--shake) * .6), 1px) } }
 
 /* ---------- dev-mode stand-in for a rewarded ad ---------- */
-.testad{ position:fixed; inset:0; z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
-  background:#1d2433; color:#fff; font-family:var(--body) }
+.testad{ position:fixed; inset:0; z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+  background:#1d2433; color:#fff; font-family:var(--body); text-align:center; padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px)) }
 .testad b{ font-family:var(--display); font-size:1.6rem }
+.testad p{ margin:0; max-width:30ch; line-height:1.45; color:#d6deea }
+.testad small{ color:#8a96aa }
+.testad-reward{ font-weight:800; color:#f6c344 !important }
+.testad-price{ font-family:var(--display); font-size:1.4rem; color:#fff }
+.testad-row{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center }
+.testad-btn{ font:inherit; font-weight:800; border-radius:var(--r-md); padding:10px 16px; border:2px solid rgba(255,255,255,.4); background:transparent; color:#fff; cursor:pointer }
+.testad-btn.main{ background:#f0913f; border-color:#f0913f; color:#24170a }
+.testad-btn.num{ min-width:64px; font-size:1.15rem }
 .testad-bar{ width:180px; height:6px; background:rgba(255,255,255,.2); border-radius:3px; overflow:hidden }
 .testad-bar i{ display:block; height:100%; width:100%; background:#f0913f; transform-origin:left; animation:adbar 1.8s linear forwards }
 @keyframes adbar{ from{ transform:scaleX(0) } to{ transform:scaleX(1) } }

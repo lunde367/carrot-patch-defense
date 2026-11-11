@@ -3,8 +3,9 @@
 import { G, plantAt, upgrade, costOf, upCostOf, towerAt, spray, sprayReady, sprayStats } from '../../web/js/engine/game.js';
 import { PLANTS, SPRAY } from '../../web/js/data/spray.js';
 import { path, pointAt, laneTotal, buildable, bonusAt } from '../../web/js/engine/path.js';
-import { HILL } from '../../web/js/engine/game.js';
+import { HILL, fertReady, fertilize } from '../../web/js/engine/game.js';
 import { TYPES } from '../../web/js/data/towers.js';
+import { ENEMY } from '../../web/js/data/enemies.js';
 import { COLS, ROWS } from '../../web/js/data/levels.js';
 
 const ATTACKERS = ['bunny','rose','squirrel','sprinkler','pine','owl','ladybug'];
@@ -72,14 +73,15 @@ export const STRATEGIES = {
       if (avail.includes('hive') && wave>=3 && count('hive')<Math.min(2, Math.floor(wave/3)) && place('hive')) continue;
       const want = 3 + Math.floor(wave*.8);
       const n = G.S.towers.filter(t=>t.type!=='sunflower' && !TYPES[t.type].support).length;
+      // try the defender we have fewest of; if it can't go anywhere (or costs too much), try the next one
+      const order = atk.slice().sort((a,b)=>count(a)-count(b)), placeAny = () => order.some(k=>place(k));
       if (n < want){
-        const next = atk.slice().sort((a,b)=>count(a)-count(b))[0];
-        if (place(next)) continue;
+        if (placeAny()) continue;
         if (upgradeBest()) continue;
         break;
       }
       if (upgradeBest()) continue;
-      if (place(atk.slice().sort((a,b)=>count(a)-count(b))[0])) continue;
+      if (placeAny()) continue;
       break;
     }
   },
@@ -143,4 +145,11 @@ export function maybeSpray(){
   }
   if (!best) return false;
   return !!spray(best.x, best.y);
+}
+
+// Fertilizer: use it when a crowd or a boss is on the board. Every bot does this; it has no downside.
+export function maybeFertilize(){
+  const S=G.S; if (!fertReady()) return;
+  const live=S.enemies.filter(e=>e.hp>0);
+  if (live.length>=5 || live.some(e=>ENEMY[e.type].boss)) fertilize();
 }

@@ -142,6 +142,10 @@ export function draw(clock){
     g.beginPath(); g.arc(f.x*s,f.y*s,R,0,6.28); g.fillStyle=`rgba(196,214,92,${a})`; g.fill();
     g.setLineDash([5,6]); g.strokeStyle=`rgba(140,160,40,${a*1.6})`; g.lineWidth=2; g.stroke(); g.setLineDash([]);
     for (let i=0;i<9;i++){ const ang=i*.698+p*1.5, rr=R*(.35+.55*((i*37)%10)/10); ell(g,f.x*s+Math.cos(ang)*rr,f.y*s+Math.sin(ang)*rr,s*.12*(1-p*.5),s*.1*(1-p*.5),`rgba(220,232,140,${a})`); } }
+  // fertilizer: little green sparkles rise from every defender while it works
+  if (S.fertT>0){ const t=clockReal();
+    for (const tw of S.towers) for (let k=0;k<2;k++){ const ph=(t*1.4+k*.5+tw.x*.3)%1;
+      ell(g,(tw.x+(k?.22:-.22))*s,(tw.y-.1-ph*.5)*s,s*.045,s*.045,`rgba(140,220,90,${1-ph})`); } }
   // burning scenery flickers every frame
   for (const o of path.scenery) if (o.kind==='fire'){ const x=(o.c+.5)*s, y=(o.r+.5)*s, t=clockReal();
     for (let k=0;k<3;k++){ const ph=t*7+k*2.1, h=s*(.26+.06*Math.sin(ph)), w=s*(.13-.025*k), dx=(k-1)*s*.1;

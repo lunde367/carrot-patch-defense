@@ -16,7 +16,7 @@ import { TYPES } from '../../web/js/data/towers.js';
 import { ENEMY } from '../../web/js/data/enemies.js';
 import { LEVELS, WAVES } from '../../web/js/data/levels.js';
 import { PERKS, perkValues } from '../../web/js/data/perks.js';
-import { STRATEGIES, monoStrategy, MONO_TYPES, preparePath, maybeSpray } from './bots.js';
+import { STRATEGIES, monoStrategy, MONO_TYPES, preparePath, maybeSpray, maybeFertilize } from './bots.js';
 import { SPRAY } from '../../web/js/data/spray.js';
 import { buildReport } from './report.js';
 import { PLAYERS, starsBefore, shop, describe } from './shed.js';
@@ -49,7 +49,7 @@ function playOne(gi, strategy, seed, perkSet=perks, useSpray=SPRAY_MODE==='on'){
     if (!startWave()) break;
     let t=0;
     let nextSpray=0;
-    while (S.mode==='play' && S.active && t<900){ update(DT); t+=DT; if (useSpray && t>=nextSpray){ nextSpray=t+.5; if (maybeSpray()){ sprays++; wilted+=G.lastWilt||0; } } }
+    while (S.mode==='play' && S.active && t<900){ update(DT); t+=DT; if (t>=nextSpray){ nextSpray=t+.5; maybeFertilize(); if (useSpray && maybeSpray()){ sprays++; wilted+=G.lastWilt||0; } } }
     if (S.mode!=='play') break;
   }
   const won = S.mode==='won', lost = S.maxLives - S.lives;

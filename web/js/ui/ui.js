@@ -1,15 +1,18 @@
 // Everything the player sees and taps outside the board: HUD, tray, panels and overlays.
-import { G, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits } from '../engine/game.js';
+import { G, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray } from '../engine/game.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
 import { path } from '../engine/path.js';
 import { TYPES, TRAY, statsText } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
 import { PARTS, CHAPTERS, LEVELS, WAVES, ROWS } from '../data/levels.js';
 import { drawEnemy } from '../render/art-enemies.js';
-import { PERKS, perkValues, REWARDS } from '../data/perks.js';
+import { PERKS, perkValues, ALL_PERKS, PRODUCTS } from '../data/perks.js';
 import { Save, starsLeft } from '../save.js';
 import { Audio } from '../../kit/js/audio.js';
-import { Ads } from '../../kit/js/monetization.js';
+import { Ads, Store } from '../../kit/js/monetization.js';
+import { FERT } from '../data/fertilizer.js';
+import { EXTRAS } from '../data/extras.js';
+import { toast } from '../../kit/js/fx.js';
 import { devMode, secretTaps } from '../../kit/js/native.js';
 import { on, emit } from '../../kit/js/events.js';
 import { $, starStr, ICON } from '../../kit/js/ui.js';
@@ -39,8 +42,8 @@ let quietStart = false;
 export function play(gi, bonusSeeds=0, { quiet=false }={}){
   stopTutorial(); quietStart = quiet;
   // Test mode plays with every Garden Shed upgrade owned.
-  const owned = devMode ? Object.fromEntries(PERKS.map(p => [p.id, p.costs.length])) : Save.data.perks;
-  startLevel(gi, Save.data.settings.speed, bonusSeeds, perkValues(owned));
+  const owned = devMode ? ALL_PERKS : Save.data.perks;
+  startLevel(gi, fast3Open() ? Save.data.settings.speed : Math.min(2, Save.data.settings.speed), bonusSeeds, perkValues(owned));
 }
 on('levelStart', (...a) => { drawLivesIcon(); return onLevelStart(...a); });
 const onLevelStart = (LV => {
@@ -59,6 +62,7 @@ const onLevelStart = (LV => {
   if (!devMode){
     for (const k of TRAY) if (towerOpen(k) && TYPES[k].unlock>0 && !Save.data.seen[k]) intro.push(['defender', k]);
     if (G.S.sprayOn && !Save.data.seen.spray) intro.push(['spray']);
+    if (G.S.fertOn && !Save.data.seen.fert) intro.push(['fert']);
   }
   nextIntro();
 });
@@ -69,6 +73,7 @@ function nextIntro(){
   if (card[0]==='part') showPartCard(card[1]);
   else if (card[0]==='diary') showDiaryPage(card[1]);
   else if (card[0]==='defender') showNewDefender(card[1]);
+  else if (card[0]==='fert') showFertIntro();
   else showSprayIntro();
 }
 // A diary page, shown on a sheet of lined paper. Marked as read once shown.
@@ -106,6 +111,40 @@ function showNewDefender(key){
   drawIcon($('newdefArt'), key, 84);
   Audio.play('sparkle');
 }
+
+// ---------- Extras: ads, or free with Remove Ads ----------
+const noAds = () => Store.owns(PRODUCTS.removeAds);
+const extrasHere = () => G.LV && G.LV.gi >= EXTRAS.firstLevel && !tutorialActive();
+export const fast3Open = () => noAds() || Date.now() < (Save.data.fast3Until||0);
+const today = () => { const d=new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; };
+const starsToday = () => Save.data.adStars.day===today() ? Save.data.adStars.n : 0;
+// Run an extra: free with Remove Ads, otherwise after a (placeholder) ad. Resolves true if earned.
+async function earn(placement, label){
+  if (noAds()) return true;
+  const S=G.S, was=S && S.paused; if (S) S.paused=true;
+  const ok = await Ads.showRewarded(placement, label);
+  if (S) S.paused=was; dirty(); return ok;
+}
+const tv = () => noAds() ? '' : '<span class="tv">AD</span>';
+// A small yes/no card over the board (used for the 3× speed offer).
+function offerCard(title, text, yes, onYes, onNo){
+  const S=G.S; if (S) S.paused=true;
+  overlay(`<div class="panel offer-card"><h3>${title}</h3><p>${text}</p></div>
+    <div class="row"><button class="btn main" data-go="offer-yes">${yes}</button><button class="btn ghost" data-go="offer-no">Not now</button></div>`);
+  offerYes = async () => { hideOverlay(); if (S) S.paused=false; await onYes(); dirty(); };
+  offerNo = () => { hideOverlay(); if (S) S.paused=false; if (onNo) onNo(); dirty(); };
+}
+let offerYes = null, offerNo = null;
+
+function showFertIntro(){
+  G.S.paused=true;
+  overlay(`<div class="panel newdef"><span class="tag">New tool</span><div class="spray-art fert-art">${$('fert').querySelector('svg').outerHTML}</div>
+    <h3>Fertilizer</h3><p>Good food for your garden. Tap the green button during a wave and every defender works faster for a few seconds.</p>
+    <p>It never hurts anything. It takes a while to be ready again, so save it for a big crowd or a boss.</p></div>
+    <div class="row"><button class="btn main" data-go="fert-ok">Got it</button></div>`);
+  Audio.play('sparkle');
+}
+const fertUnlocked = () => devMode || !!Save.data.seen.fert;
 
 // Spray upgrades appear in the Shed only once the Sprayer has been introduced in a level.
 const sprayUnlocked = () => devMode || !!Save.data.seen.spray;
@@ -230,7 +269,7 @@ export function showMenu(){
 // ---------- Garden Shed ----------
 function showShed(){
   const left=starsLeft();
-  const rows = PERKS.filter(p => !p.spray || sprayUnlocked()).map(p => {
+  const rows = PERKS.filter(p => (!p.spray || sprayUnlocked()) && (!p.fert || fertUnlocked())).map(p => {
     const tier=Save.data.perks[p.id]||0, maxed=tier>=p.costs.length, cost=p.costs[tier];
     const desc = p.desc(maxed ? tier-1 : tier);
     return `<div class="perk"><h3>${p.name}</h3>
@@ -243,6 +282,9 @@ function showShed(){
       <h2>Garden Shed</h2><span class="star-count">★ ${left}</span></div>
     <p class="home-note">Spend stars on upgrades that help in every level. Earn more stars by beating levels with more crops left.</p>
     ${devMode?'<p class="devnote">Test mode: you play with every upgrade already owned, whatever you buy here.</p>':''}
+    ${highest()>=EXTRAS.firstLevel ? (()=>{ const n=EXTRAS.starsPerDay-starsToday();
+      return `<div class="shed-bonus"><span><b>Bonus star</b><small>${n>0?`${noAds()?'Claim':'Watch a short ad for'} an extra star. ${n} left today.`:'Come back tomorrow for more.'}</small></span>
+        <button class="btn ghost small" data-go="adstar" ${n>0?'':'disabled'}>${n>0?`${tv()}+★ 1`:'Done'}</button></div>`; })() : ''}
     <div class="perks">${rows}</div>
     ${sprayUnlocked()?'':`<p class="home-note">More upgrades unlock in ${LEVELS[SPRAY.unlock].ch.name}.</p>`}
     <div class="shed-foot"><button class="btn main" data-go="menu">Back to gardens</button>
@@ -291,6 +333,13 @@ function showSettings(){
       <div class="set-row"><span><b>Tutorial</b><small>Play the guided first level again.</small></span>
         <button class="btn ghost small" data-go="replay-tutorial">Replay</button></div>
     </div>
+    <div class="set-group">
+      ${noAds() ? `<div class="set-row"><span><b>Ads removed</b><small>Thank you for supporting the game! 3× speed and second chances are yours for good.</small></span></div>`
+        : `<div class="set-row"><span><b>Remove ads · ${EXTRAS.removeAdsPrice}</b><small>One purchase. Removes every ad, and unlocks 3× speed and second chances for good. Ads are only ever for optional extras.</small></span>
+        <button class="btn main small" data-go="removeads">Remove ads</button></div>`}
+      <div class="set-row"><span><b>Restore purchases</b><small>Got a new phone? Bring your purchase back.</small></span><button class="btn ghost small" data-go="restore">Restore</button></div>
+      ${devMode&&noAds()?`<div class="set-row"><span><b>Test: forget Remove Ads</b><small>Undo the pretend purchase so you can test ads again.</small></span><button class="btn ghost small" data-go="forget-ads">Forget</button></div>`:''}
+    </div>
     ${devMode?`<div class="set-group dev">
       <div class="set-row"><span><b>Test mode is on</b><small>Every level and defender is unlocked. Tap the title 7 times to turn it off.</small></span></div>
       <div class="set-row"><span><b>Reset progress</b><small>Erase all stars, upgrades, unlocks and achievements.</small></span>
@@ -331,12 +380,12 @@ function showWin(w, recorded=false){
 on('lose', ({ wave }) => {
   stopTutorial();
   Save.data.stats.losses++; Save.commit(); Audio.play('lose');
-  const LV=G.LV, ad=Ads.rewardedReady('retry_bonus'), left=starsLeft();
+  const LV=G.LV, left=starsLeft(), second = extrasHere() && !G.S.revived;
   overlay(`<h2>The pests got the ${LV.ch.cropPlural}</h2>
     <p>You reached wave ${wave} of ${LV.waves} in ${LV.name}.</p>
     ${left>0?`<p>You have ★ ${left} to spend in the Garden Shed. Upgrades there could help.</p>`:''}
     <div class="row"><button class="btn main" data-go="retry">Try again</button>
-    ${ad?`<button class="btn ghost" data-go="adretry">Watch an ad: retry with +${REWARDS.retrySeeds} seeds</button>`:''}
+    ${second?`<button class="btn ghost offer" data-go="revive">${tv()}Keep going from wave ${wave} with ${Math.ceil(G.S.maxLives/2)} crops</button>`:''}
     ${left>0?'<button class="btn ghost" data-go="shed">Garden Shed</button>':''}
     <button class="btn ghost" data-go="menu">All gardens</button></div>`);
   dirty();
@@ -387,6 +436,19 @@ async function onOverlayClick(ev){
     case 'spray-ok': { Save.data.seen.spray=true; Save.commit(); G.S.paused=false; hideOverlay(); dirty();
       msg('Save the Sprayer for when pests get close to your crops.'); return nextIntro(); }
     case 'part-ok': return nextIntro();
+    case 'fert-ok': { Save.data.seen.fert=true; Save.commit(); G.S.paused=false; hideOverlay(); dirty();
+      msg('Save the Fertilizer for a big crowd or a boss.'); return nextIntro(); }
+    case 'offer-yes': return offerYes && offerYes();
+    case 'offer-no': return offerNo && offerNo();
+    case 'revive': { b.disabled=true; if (await earn('second_chance', 'keep going with half your crops') && revive()){ hideOverlay(); msg(`Back in! Wave ${G.S.wave+1} again, with ${G.S.lives} crops.`); Audio.play('chime'); } else b.disabled=false; return; }
+    case 'adstar': { b.disabled=true;
+      if (starsToday()<EXTRAS.starsPerDay && await earn('bonus_star', 'one bonus star')){
+        Save.data.adStars={ day:today(), n:starsToday()+1 }; Save.data.bonusStars=(Save.data.bonusStars||0)+1; Save.commit(); Audio.play('sparkle'); }
+      showShed(); return; }
+    case 'removeads': { b.disabled=true; const ok=await Store.buy(PRODUCTS.removeAds, { name:'Remove Ads', price:EXTRAS.removeAdsPrice });
+      if (ok){ Audio.play('chime'); toast('<span><b>Thank you!</b><small>Ads are gone, and 3× speed and second chances are yours for good.</small></span>'); } showSettings(); return; }
+    case 'restore': { const ok=await Store.restore(); toast(`<span><b>${ok?'Purchases restored':'Nothing to restore'}</b></span>`); showSettings(); return; }
+    case 'forget-ads': { Store.forget(PRODUCTS.removeAds); Save.data.fast3Until=0; Save.data.adStars={day:'',n:0}; Save.commit(); showSettings(); return; }
     case 'pest-ok': return nextPest();
     case 'fold': {
       // Only one part open at a time: opening one folds the others.
@@ -403,7 +465,6 @@ async function onOverlayClick(ev){
       if (intro.length){ G.S.paused=true; nextIntro(); }
       return;
     }
-    case 'adretry': { b.disabled=true; const ok=await Ads.showRewarded('retry_bonus'); if (ok) play(gi, REWARDS.retrySeeds); else b.disabled=false; return; }
   }
 }
 
@@ -454,7 +515,8 @@ let lastKey='';
 const dirty = () => { lastKey=''; };
 export function refresh(){
   const S=G.S; if (!S) return;
-  const key=[S.seeds,S.lives,S.wave,S.active,S.mode,S.speed,S.paused,S.sel&&S.sel.lv,G.LV.gi,Math.ceil(S.sprayCd*4),S.aiming,S.sprayOn].join('|');
+  if (S.speed===3 && !fast3Open()){ S.speed=2; Save.data.settings.speed=2; Save.commit(); msg('Your hour of 3× speed is up. 2× is always free.'); }
+  const key=[S.seeds,S.lives,S.wave,S.active,S.mode,S.speed,S.paused,S.sel&&S.sel.lv,G.LV.gi,Math.ceil(S.sprayCd*4),S.aiming,S.sprayOn,Math.ceil(S.fertCd*4),Math.ceil(S.fertT*4),S.adSeeds,S.adRefill].join('|');
   if (key===lastKey) return; lastKey=key;
   $('seeds').textContent=S.seeds; $('lives').textContent=S.lives; $('wave').textContent=`${S.wave}/${G.LV.waves}`;
   $('season').textContent=G.LV.season==='late summer'?'late':G.LV.season;
@@ -463,7 +525,7 @@ export function refresh(){
   $('spd').textContent=S.speed+'×';
   $('restart').disabled=S.mode==='menu';
   for (const k of TRAY){ const el=$('card-'+k); if (el && towerOpen(k)) el.classList.toggle('poor', S.seeds<costOf(k)); }
-  paintSpray();
+  paintSpray(); paintFert(); paintOffers();
   if (S.sel){ const up=$('iUp');
     if (S.sel.lv>=2){ up.textContent='Max level'; up.disabled=true; }
     else { const cost=upCostOf(S.sel); up.textContent=`Upgrade · ${cost}`; up.disabled=S.seeds<cost; }
@@ -502,6 +564,22 @@ function paintDev(){
 
 // ---------- board input ----------
 // ---------- the Sprayer button: tap it, then tap the garden ----------
+function paintFert(){
+  const S=G.S, b=$('fert'); b.hidden = !S || !S.fertOn || S.mode!=='play';
+  if (b.hidden) return;
+  b.classList.toggle('solo', $('spray').hidden);
+  const on=S.fertT>0, ready=fertReady(), full=FERT.recharge*S.perks.fertRecharge;
+  b.style.setProperty('--p', on ? S.fertT/S.perks.fertTime : ready ? 1 : 1 - S.fertCd/full);
+  b.classList.toggle('on', on); b.classList.toggle('ready', ready);
+  b.setAttribute('aria-label', on ? 'Fertilizer: working' : ready ? 'Fertilizer: ready' : `Fertilizer: ready in ${Math.ceil(S.fertCd)} seconds`);
+}
+function paintOffers(){
+  const S=G.S, ok = S && S.mode==='play' && !S.paused && extrasHere();
+  const seeds=$('adSeeds'); seeds.hidden = !(ok && S.wave===0 && !S.active && !S.adSeeds);
+  if (!seeds.hidden) seeds.innerHTML=`${tv()}+${EXTRAS.bonusSeeds} seeds`;
+  const refill=$('adRefill'); refill.hidden = !(ok && S.sprayOn && S.active && !S.adRefill && !sprayReady() && S.sprayCd>EXTRAS.refillAfter);
+  if (!refill.hidden) refill.innerHTML=`${tv()}Refill`;
+}
 function paintSpray(){
   const S=G.S, b=$('spray'); b.hidden = !S || !S.sprayOn || S.mode!=='play';
   if (b.hidden) return;
@@ -572,7 +650,25 @@ export function initUI(){
   $('over').addEventListener('click', onOverlayClick);
   $('home').addEventListener('click', onOverlayClick);
   $('go').onclick=()=>{ if (startWave()){ disarmRestart(); introducePests(); } };
-  $('spd').onclick=()=>{ const S=G.S; if (!S) return; S.speed=S.speed===1?2:S.speed===2?3:1; Save.data.settings.speed=S.speed; Save.commit(); Audio.play('tap'); };
+  $('spd').onclick=()=>{ const S=G.S; if (!S) return;
+    let next = S.speed===1?2:S.speed===2?3:1;
+    const setSpeed = v => { S.speed=v; Save.data.settings.speed=v; Save.commit(); dirty(); };
+    if (next===3 && !fast3Open()){
+      if (!extrasHere()){ setSpeed(1); Audio.play('tap'); return; }        // no offers in the tutorial or first garden
+      return offerCard('Super speed: 3×', noAds() ? '' : `Watch a short ad to unlock 3× speed for ${EXTRAS.fastHours} hour. 1× and 2× are always free.`, `${tv()}Unlock 3×`,
+        async () => { if (await earn('fast_forward', `3× speed for ${EXTRAS.fastHours} hour`)){ Save.data.fast3Until=Date.now()+EXTRAS.fastHours*3600e3; setSpeed(3); msg('3× speed for the next hour!'); Audio.play('chime'); } else setSpeed(1); },
+        () => setSpeed(1));
+    }
+    setSpeed(next); Audio.play('tap'); };
+  $('fert').onclick=()=>{ const S=G.S; if (!S || S.paused || S.mode!=='play') return;
+    if (!S.active){ Audio.play('denied'); msg('Save the Fertilizer for a wave. Start a wave first.'); return; }
+    if (S.fertT>0){ msg('Your defenders are already fed!'); return; }
+    if (!fertilize()){ Audio.play('denied'); msg(`The Fertilizer is getting ready. ${Math.ceil(S.fertCd)} seconds to go.`); return; }
+    msg('Fertilized! Every defender works faster for a few seconds.'); dirty(); };
+  $('adSeeds').onclick=async()=>{ const S=G.S; if (!S || S.adSeeds || S.wave>0) return;
+    if (await earn('bonus_seeds', `+${EXTRAS.bonusSeeds} seeds`)){ S.adSeeds=true; addSeeds(EXTRAS.bonusSeeds); msg(`+${EXTRAS.bonusSeeds} seeds!`); Audio.play('sparkle'); } dirty(); };
+  $('adRefill').onclick=async()=>{ const S=G.S; if (!S || S.adRefill || sprayReady()) return;
+    if (await earn('spray_refill', 'a full Sprayer')){ refillSpray(); msg('Sprayer refilled!'); Audio.play('splash'); } dirty(); };
   $('restart').onclick=onRestart;
   $('sound').onclick=onSound;
   $('map').onclick=()=>{ Audio.play('tap'); showMenu(); };

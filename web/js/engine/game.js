@@ -4,6 +4,7 @@ import { ENEMY } from '../data/enemies.js';
 import { LEVELS, setGrid } from '../data/levels.js';
 import { path, setPath, setScenery, sceneryAt, bonusAt, pointAt, laneTotal, buildable } from './path.js';
 import { sceneryFor, bonusFor } from '../data/scenery.js';
+import { FERT } from '../data/fertilizer.js';
 import { emit } from '../../kit/js/events.js';
 import { NO_PERKS } from '../data/perks.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
@@ -23,6 +24,8 @@ export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
   G.S = { mode:'play', paused:false, seeds:120+gi*15+bonusSeeds+perks.seeds, lives:maxLives, maxLives, perks, wave:0,
     fence:perks.fence, headStartUsed:false,
     sprayOn: gi >= SPRAY.unlock && !G.LV.ch.noSpray, sprayCd:0, aiming:false,   // Part 4: the sprayer is put away for good
+    fertOn: gi >= FERT.unlock, fertCd:0, fertT:0,                                 // Fertilizer: cooldown, and time left while it's working
+    revived:false, adSeeds:false, adRefill:false,                                 // one-per-try extras (ads or Remove Ads)
     enemies:[], towers:[], shots:[], fx:[], spawnQ:[], spawnT:0, laneNext:0, active:false, speed, sel:null, build:null };
   emit('levelStart', LV);
 }
@@ -76,8 +79,9 @@ function spawnEnemy(type, dist, morph, lane=0){
 }
 function grow(e){
   const S=G.S, ad=ENEMY[e.type].adult, d=ENEMY[ad], frac=e.hp/e.max, mx=Math.round(d.hp*hpScale(S.wave));
+  // A grown-up comes out above ground (a grub that grows while tunneling must not stay hidden forever).
   Object.assign(e, { type:ad, max:mx, hp:Math.max(1,Math.round(mx*frac)), spd:d.spd, size:d.size, armor:d.armor||0, fly:!!d.fly,
-    reward:d.reward+Math.floor(G.LV.gi/2) });
+    reward:d.reward+Math.floor(G.LV.gi/2), under:false, bt:0 });
   puffs(e.x, e.y, 6, 1); emit('grow', e);
 }
 
@@ -100,9 +104,9 @@ export function plantAt(c,r){
   if (towerAt(c,r)) return { ok:false, reason:'taken' };
   if (S.seeds<cost) return { ok:false, reason:'seeds', cost, name:T.name };
   S.seeds-=cost;
-  const head = S.build==='bunny' && S.perks.headStart && !S.headStartUsed;
+  const head = S.build==='bunny' && S.perks.headLv>0 && !S.headStartUsed;
   if (head) S.headStartUsed = true;
-  const lv = head ? 1 : 0;
+  const lv = head ? S.perks.headLv : 0;
   const t={ type:S.build, c, r, x:c+.5, y:r+.5, lv, cd:0, hop:1, look:1, spent:cost, tile:bonusAt(c,r) };
   t.cool = !S.heat || watered(t);
   S.towers.push(t); emit('plant', t); return { ok:true, tower:t };
@@ -120,6 +124,25 @@ export function sell(t){
 // ---------- the Pesticide Sprayer ----------
 export const sprayStats = () => { const p=G.S.perks;
   return { damage:SPRAY.power*p.sprayDmg, radius:SPRAY.radius*p.sprayRadius, recharge:SPRAY.recharge*p.sprayRecharge, wilt:SPRAY.wilt*p.sprayWilt }; };
+// ---------- Fertilizer ----------
+export const fertReady = () => G.S.fertOn && G.S.fertCd<=0 && G.S.fertT<=0 && G.S.mode==='play' && G.S.active;
+export function fertilize(){
+  const S=G.S; if (!fertReady()) return false;
+  S.fertT=S.perks.fertTime; S.fertCd=FERT.recharge*S.perks.fertRecharge;
+  for (const t of S.towers) puffs(t.x, t.y-.2, 3, .6);
+  emit('fert'); return true;
+}
+// ---------- Extras from ads (or Remove Ads) ----------
+// Second chance: after a loss, go back to the start of the wave you lost on with half your crops.
+export function revive(){
+  const S=G.S; if (S.mode!=='lost' || S.revived) return false;
+  S.revived=true; S.mode='play'; S.lives=Math.ceil(S.maxLives/2);
+  S.enemies=[]; S.shots=[]; S.spawnQ=[]; S.active=false; S.heat=false; S.rain=false; S.fertT=0;
+  S.wave=Math.max(0, S.wave-1); emit('revive'); return true;
+}
+export function addSeeds(n){ G.S.seeds+=n; emit('seeds', n); }
+export function refillSpray(){ G.S.sprayCd=0; G.S.adRefill=true; }
+
 export const sprayReady = () => G.S.sprayOn && G.S.sprayCd<=0 && G.S.mode==='play';
 // Spray a circle centred on tile coordinates (x, y). Returns how many pests and plants it hit.
 export function spray(x, y){
@@ -192,7 +215,7 @@ export function update(dt){
       if (e.st>=D.spawns.every){ e.st=0; spawnEnemy(D.spawns.type, Math.max(0.3, e.dist-0.25), null, e.lane); puffs(e.x,e.y,4,.8); } }
     if (e.cocoon>0){ e.cocoon-=dt; if (e.cocoon<=0) grow(e); continue; }
     if (e.morphAt!=null && e.dist>=e.morphAt){ e.morphAt=null; e.cocoon=1.3; floatText(e.x,e.y-.35,'growing!','#8a5fb0',1); emit('cocoon'); continue; }
-    if (D.burrow){ e.bt+=dt; e.under = e.bt>1 && (e.bt%4.5)>3; }
+    if (D.burrow){ e.bt+=dt; e.under = e.bt>1 && (e.bt%4.5)>3; } else e.under = false;
     let mul=(e.slow>0?.5:1)*(e.under?1.3:1)*(S.rain?RAIN_SLOW:1);
     if (D.hopper){ e.jump=Math.sin(e.ph*.9)>.2; mul*=e.jump?2.2:.25; }
     e.dist+=e.spd*mul*dt;
@@ -207,10 +230,11 @@ export function update(dt){
   }
 
   if (S.sprayCd>0 && S.active) S.sprayCd=Math.max(0, S.sprayCd-dt);   // recharges during waves
+  if (S.active){ if (S.fertT>0) S.fertT=Math.max(0, S.fertT-dt); else if (S.fertCd>0) S.fertCd=Math.max(0, S.fertCd-dt); }
   for (const t of S.towers){
     const T=TYPES[t.type];
     t.dry = !!(G.CH.drought && !S.rain && PLANTS.includes(t.type) && !watered(t));
-    t.cd-=dt*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1)*hiveBoost(t); t.hop=Math.max(0,t.hop-dt*4);
+    t.cd-=dt*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1)*hiveBoost(t)*(S.fertT>0 ? S.perks.fertBoost : 1); t.hop=Math.max(0,t.hop-dt*4);
     if (t.wilt>0){ t.wilt=Math.max(0, t.wilt-dt); continue; }          // wilted by the spray
     if (t.type==='sunflower' || T.support) continue;
     const R=rangeOf(t), seen = e => Math.hypot(e.x-t.x,e.y-t.y) <= R*(G.CH.smog && e.fly ? SMOG : 1);

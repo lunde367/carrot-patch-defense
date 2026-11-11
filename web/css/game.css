@@ -205,3 +205,24 @@ canvas{ display:block }
 
 /* tutorial: defenders the current step isn't about */
 .card.tut-off{ opacity:.35; filter:grayscale(.6) }
+
+/* Fertilizer button: sits above the Sprayer, same shape, green */
+.fert-btn{ position:absolute; right:10px; bottom:76px; z-index:4; width:50px; height:50px; border-radius:50%; border:0; padding:0; cursor:pointer;
+  display:grid; place-items:center; background:#e4f2c4; color:#2f5e1e; box-shadow:0 3px 10px rgba(30,40,20,.3) }
+.fert-btn.solo{ bottom:10px }
+.board.spray-left .fert-btn{ right:auto; left:10px }
+.fert-ring{ position:absolute; inset:-4px; border-radius:50%; z-index:-1; background:conic-gradient(#6fae54 calc(var(--p,1)*360deg), rgba(255,255,255,.35) 0) }
+.fert-btn:not(.ready):not(.on){ filter:grayscale(.7); opacity:.85; cursor:default }
+.fert-btn.ready .fert-ring{ animation:spray-glow 1.6s ease-in-out infinite }
+.fert-btn.on{ background:#9fd36c; outline:3px solid #fff; outline-offset:2px }
+@media (prefers-reduced-motion: reduce){ .fert-btn.ready .fert-ring{ animation:none } }
+/* optional extras offered by ads (or free with Remove Ads) */
+.offer-pill{ position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:4; font:inherit; font-weight:800; font-size:.85rem;
+  background:var(--panel); color:var(--panel-ink); border:2px solid var(--gold); border-radius:var(--r-pill); padding:6px 14px; box-shadow:0 3px 10px rgba(30,40,20,.25); cursor:pointer; white-space:nowrap }
+.tv{ display:inline-block; font-size:.7rem; font-weight:800; letter-spacing:.06em; background:var(--gold); color:#3a2a10; border-radius:4px; padding:1px 5px; margin-right:6px; vertical-align:1px }
+.offer-pill.small{ top:auto; left:auto; transform:none; right:72px; bottom:22px; font-size:.78rem; padding:4px 10px }
+.board.spray-left .offer-pill.small{ right:auto; left:72px }
+.offer-card .panel{ text-align:center }
+.shed-bonus{ display:flex; align-items:center; gap:12px; justify-content:space-between; border:2px dashed var(--gold); border-radius:var(--r-lg); padding:10px 12px; background:var(--surface) }
+.shed-bonus b{ font-family:var(--display) }
+.shed-bonus small{ display:block; color:var(--muted) }

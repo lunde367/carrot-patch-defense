@@ -28,6 +28,7 @@ Audio.register({
                         tone(160,.08,{type:'triangle',vol:.12,to:90}); }],
   // boss voices, picked to match each boss
   buzzlet:  [.12, ()=>tone(520,.06,{type:'sawtooth',vol:.02,to:560})],
+  fert:     [.5,  ()=>{ [392,494,587,784].forEach((f,i)=>tone(f,.2,{type:'sine',vol:.1,at:i*.06})); noise(.3,{freq:2500,q:.5,vol:.04}); }],
   rain:     [2,   ()=>{ noise(1.8,{freq:5000,q:.3,vol:.07,type:'highpass',attack:.4}); }],
   'boss-whoosh':[.5, ()=>{ noise(1,{freq:600,q:.7,vol:.2,attack:.3}); noise(.8,{freq:1400,q:1,vol:.1,at:.25}); }],
   'boss-coo':   [.5, ()=>{ tone(330,.25,{type:'sine',vol:.12,to:300}); tone(300,.35,{type:'sine',vol:.12,at:.3,to:260}); tone(280,.3,{type:'sine',vol:.1,at:.7,to:250}); }],

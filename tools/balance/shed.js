@@ -1,5 +1,6 @@
 // What Garden Shed upgrades a player would realistically own when they reach a level.
 import { PERKS } from '../../web/js/data/perks.js';
+import { FERT } from '../../web/js/data/fertilizer.js';
 import { SPRAY } from '../../web/js/data/spray.js';
 
 // Kinds of player, by how many stars they usually earn per level.
@@ -17,7 +18,7 @@ export const starsBefore = (gi, starsPerLevel) => Math.floor(gi * starsPerLevel)
 export function shop(stars, gi = 99){
   const owned = {};
   for (;;){
-    const options = PERKS.filter(p => !p.spray || gi > SPRAY.unlock).map(p => ({ p, tier:owned[p.id]||0 }))
+    const options = PERKS.filter(p => (!p.spray || gi > SPRAY.unlock) && (!p.fert || gi > FERT.unlock)).map(p => ({ p, tier:owned[p.id]||0 }))
       .filter(o => o.tier < o.p.costs.length && o.p.costs[o.tier] <= stars)
       .sort((a,b) => a.p.costs[a.tier] - b.p.costs[b.tier]);
     if (!options.length) break;
