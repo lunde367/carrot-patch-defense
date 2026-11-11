@@ -22,6 +22,9 @@ import { shop, starsBefore } from './shed.js';
 import { STRATEGIES, preparePath, maybeSpray, maybeFertilize } from './bots.js';
 
 const arg = (name, def) => { const i=process.argv.indexOf('--'+name); return i>0 ? +process.argv[i+1] : def; };
+// --only seeds|refill|second|stars tests one extra on its own
+const ONLY = (()=>{ const i=process.argv.indexOf('--only'); return i>0 ? process.argv[i+1] : null; })();
+const use = k => !ONLY || ONLY===k;
 const RUNS = arg('runs', 20), FROM = arg('from', 0), TO = arg('to', LEVELS.length-1), PER_DAY = arg('perday', 6);
 const DT = 1/30;
 const mulberry32 = a => () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
@@ -31,22 +34,22 @@ const bonusStars = gi => Math.floor(gi/PER_DAY)*EXTRAS.starsPerDay;
 
 function play(gi, seed, ads){
   const rnd = mulberry32(seed); Math.random = mulberry32(seed*7919+13);
-  const stars = starsBefore(gi, 2.5) + (ads ? bonusStars(gi) : 0);
+  const stars = starsBefore(gi, 2.5) + (ads && use('stars') ? bonusStars(gi) : 0);
   startLevel(gi, 1, 0, perkValues(shop(stars, gi).owned)); preparePath();
   const S = G.S, extras = ads && gi >= EXTRAS.firstLevel;
   const avail = Object.keys(TYPES).filter(k => TYPES[k].unlock <= gi);
   let revived = false;
   for (let w=0; w<LEVELS[gi].waves; w++){
-    if (extras && w===0){ addSeeds(EXTRAS.bonusSeeds); S.adSeeds = true; }
+    if (extras && use('seeds') && w===0){ addSeeds(EXTRAS.bonusSeeds); S.adSeeds = true; }
     STRATEGIES.balanced(avail, S.wave+1, rnd);
     if (!startWave()) break;
     let t=0, next=0;
     while (S.mode==='play' && S.active && t<900){
       update(DT); t+=DT;
       if (t>=next){ next=t+.5; maybeFertilize(); maybeSpray();
-        if (extras && S.sprayOn && !S.adRefill && !sprayReady() && S.sprayCd>EXTRAS.refillAfter) refillSpray(); }
+        if (extras && use('refill') && S.sprayOn && !S.adRefill && !sprayReady() && S.sprayCd>EXTRAS.refillAfter) refillSpray(); }
     }
-    if (S.mode==='lost' && extras && revive()){ revived = true; w = S.wave-1; continue; }   // replay the wave it lost on
+    if (S.mode==='lost' && extras && use('second') && revive()){ revived = true; w = S.wave-1; continue; }   // replay the wave it lost on
     if (S.mode!=='play') break;
   }
   const won = S.mode==='won', lost = S.maxLives - S.lives;
@@ -55,7 +58,7 @@ function play(gi, seed, ads){
 
 const pct = x => `${Math.round(x*100)}%`.padStart(4);
 const rows = [];
-console.log(`Ad check: ${RUNS} games per player per level, ${PER_DAY} levels a day\n`);
+console.log(`Ad check: ${RUNS} games per player per level, ${PER_DAY} levels a day${ONLY?`, only: ${ONLY}`:''}\n`);
 console.log('                        no ads        all ads       change');
 console.log('                      win   3★       win   3★       win   3★   second chance used');
 for (const L of LEVELS.slice(FROM, TO+1)){
