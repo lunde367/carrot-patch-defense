@@ -572,6 +572,7 @@ function paintFert(){
   b.style.setProperty('--p', on ? S.fertT/S.perks.fertTime : ready ? 1 : 1 - S.fertCd/full);
   b.classList.toggle('on', on); b.classList.toggle('ready', ready);
   b.setAttribute('aria-label', on ? 'Fertilizer: working' : ready ? 'Fertilizer: ready' : `Fertilizer: ready in ${Math.ceil(S.fertCd)} seconds`);
+  const cd=b.querySelector('.ab-cd'); cd.hidden = on || ready || !S.active; cd.textContent = Math.ceil(S.fertCd);
 }
 function paintOffers(){
   const S=G.S, ok = S && S.mode==='play' && !S.paused && extrasHere();
@@ -586,6 +587,7 @@ function paintSpray(){
   const st=sprayStats(), ready=sprayReady() && S.active;
   b.style.setProperty('--p', ready ? 1 : 1 - S.sprayCd/st.recharge);
   b.classList.toggle('ready', ready); b.classList.toggle('aiming', !!S.aiming);
+  const cd=b.querySelector('.ab-cd'); cd.hidden = ready || !S.active || S.sprayCd<=0; cd.textContent = Math.ceil(S.sprayCd);
   b.setAttribute('aria-label', ready ? (S.aiming ? 'Sprayer: tap the garden to spray, or tap here to cancel' : 'Pesticide Sprayer: ready') : `Pesticide Sprayer: refilling, ${Math.ceil(S.sprayCd)} seconds`);
 }
 function onSprayBtn(){

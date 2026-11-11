@@ -112,7 +112,7 @@ canvas{ display:block }
 .version{ margin:0; text-align:center; color:var(--muted); font-size:.8rem }
 
 /* Pesticide Sprayer button: sits in the board's corner, its ring fills as it recharges */
-.spray-btn{ position:absolute; right:10px; bottom:10px; z-index:4; width:56px; height:56px; border-radius:50%; border:0; padding:0; cursor:pointer;
+.spray-btn{ position:absolute; right:10px; bottom:20px; z-index:4; width:56px; height:56px; border-radius:50%; border:0; padding:0; cursor:pointer;
   display:grid; place-items:center; color:#3c4a10; background:#e4ecb4; box-shadow:0 2px 8px rgba(20,30,10,.3) }
 .spray-ring{ position:absolute; inset:-4px; border-radius:50%; z-index:-1;
   background:conic-gradient(#a7bb3a calc(var(--p, 1) * 360deg), rgba(255,255,255,.35) 0);
@@ -207,9 +207,9 @@ canvas{ display:block }
 .card.tut-off{ opacity:.35; filter:grayscale(.6) }
 
 /* Fertilizer button: sits above the Sprayer, same shape, green */
-.fert-btn{ position:absolute; right:10px; bottom:76px; z-index:4; width:50px; height:50px; border-radius:50%; border:0; padding:0; cursor:pointer;
+.fert-btn{ position:absolute; right:13px; bottom:100px; z-index:4; width:50px; height:50px; border-radius:50%; border:0; padding:0; cursor:pointer;
   display:grid; place-items:center; background:#e4f2c4; color:#2f5e1e; box-shadow:0 3px 10px rgba(30,40,20,.3) }
-.fert-btn.solo{ bottom:10px }
+.fert-btn.solo{ bottom:20px }
 .board.spray-left .fert-btn{ right:auto; left:10px }
 .fert-ring{ position:absolute; inset:-4px; border-radius:50%; z-index:-1; background:conic-gradient(#6fae54 calc(var(--p,1)*360deg), rgba(255,255,255,.35) 0) }
 .fert-btn:not(.ready):not(.on){ filter:grayscale(.7); opacity:.85; cursor:default }
@@ -226,3 +226,12 @@ canvas{ display:block }
 .shed-bonus{ display:flex; align-items:center; gap:12px; justify-content:space-between; border:2px dashed var(--gold); border-radius:var(--r-lg); padding:10px 12px; background:var(--surface) }
 .shed-bonus b{ font-family:var(--display) }
 .shed-bonus small{ display:block; color:var(--muted) }
+
+/* ability buttons: a name tag underneath and a countdown while they recharge */
+.spray-btn, .fert-btn{ overflow:visible }
+.ab-lbl{ position:absolute; left:50%; bottom:-14px; transform:translateX(-50%); font-size:.62rem; font-weight:800; letter-spacing:.03em;
+  background:var(--panel); color:var(--panel-ink); border:1px solid rgba(0,0,0,.15); border-radius:var(--r-pill); padding:1px 7px; white-space:nowrap; pointer-events:none }
+.ab-cd{ position:absolute; inset:0; display:grid; place-items:center; font-family:var(--display); font-size:1.15rem; color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.6); background:rgba(30,40,20,.45); border-radius:50%; pointer-events:none }
+.spray-btn:not(.ready), .fert-btn:not(.ready):not(.on){ filter:none; opacity:1 }
+.spray-btn:not(.ready) svg, .fert-btn:not(.ready):not(.on) svg{ opacity:.55 }
