@@ -33,6 +33,27 @@ canvas{ display:block }
 .shed-btn b, .star-count{ font-variant-numeric:tabular-nums }
 .star-count{ font-weight:800; color:var(--gold); font-size:1.1rem }
 
+/* story parts: collapsible sections on the home screen */
+.part{ display:flex; flex-direction:column; gap:10px }
+.part-head{ display:flex; align-items:center; gap:10px; width:100%; font:inherit; color:var(--ink); text-align:left; cursor:pointer;
+  background:var(--surface); border:1px solid var(--line); border-left:6px solid var(--part, var(--line)); border-radius:var(--r-lg); padding:10px 12px }
+.part-head b{ font-family:var(--display); font-size:1.12rem; flex:1; min-width:0 }
+.part-n{ font-size:.7rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--part, var(--muted)); flex:none }
+.part-meta{ font-weight:800; font-size:.85rem; color:var(--muted); font-variant-numeric:tabular-nums; flex:none }
+.part-head .chev, .part-head > svg{ width:20px; height:20px; flex:none; color:var(--muted); transition:transform .2s }
+.part.open .chev{ transform:rotate(180deg) }
+.part-body{ display:none; flex-direction:column; gap:10px; padding-left:8px; border-left:2px solid color-mix(in srgb, var(--part) 35%, transparent) }
+.part.open .part-body{ display:flex }
+.part.locked .part-head{ cursor:default; background:transparent; border-style:dashed; border-left-width:1px }
+.part.locked b{ color:var(--muted) }
+/* the title card when a new part begins */
+.over.part-over{ background:#141a10; }
+.part-card{ display:flex; flex-direction:column; align-items:center; gap:8px; animation:part-in 1s ease-out }
+.part-card span{ font-size:.8rem; font-weight:800; letter-spacing:.2em; text-transform:uppercase; color:var(--part) }
+.part-card h2{ font-size:2rem !important; line-height:1.1; color:#f4f7ec; max-width:12ch }
+.part-card::after{ content:''; width:60px; height:3px; border-radius:2px; background:var(--part); margin-top:6px }
+@keyframes part-in{ from{ opacity:0; transform:translateY(8px) } to{ opacity:1; transform:none } }
+@media (prefers-reduced-motion: reduce){ .part-card{ animation:none } .part-head .chev{ transition:none } }
 .chap{ display:flex; flex-direction:column; gap:9px; padding:12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg) }
 .chap header{ display:flex; gap:12px; align-items:center }
 .chap.locked{ background:transparent; border-style:dashed }

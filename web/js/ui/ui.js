@@ -4,7 +4,7 @@ import { SPRAY, PLANTS } from '../data/spray.js';
 import { path } from '../engine/path.js';
 import { TYPES, TRAY, statsText } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
-import { CHAPTERS, LEVELS, WAVES, ROWS } from '../data/levels.js';
+import { PARTS, CHAPTERS, LEVELS, WAVES, ROWS } from '../data/levels.js';
 import { PERKS, perkValues, REWARDS } from '../data/perks.js';
 import { Save, starsLeft } from '../save.js';
 import { Audio } from '../../kit/js/audio.js';
@@ -49,6 +49,8 @@ on('levelStart', LV => {
   // Cards to show before play, one after another: a diary page, new defenders, a new tool.
   intro = [];
   const page = LV.li===0 && diaryEntry(`start-${LV.ch.id}`);
+  const firstOfPart = LV.li===0 && CHAPTERS.find(c => c.act===LV.ch.act)===LV.ch;
+  if (firstOfPart && LV.ch.act>1 && !Save.data.parts[LV.ch.act]) intro.push(['part', LV.ch.act]);
   if (page && !Save.data.diary[page.key]) intro.push(['diary', page.key]);
   if (!devMode){
     for (const k of TRAY) if (towerOpen(k) && TYPES[k].unlock>0 && !Save.data.seen[k]) intro.push(['defender', k]);
@@ -60,11 +62,21 @@ let intro = [], afterDiary = null;
 function nextIntro(){
   const card = intro.shift();
   if (!card){ if (G.S && G.S.mode==='play'){ G.S.paused=false; hideOverlay(); dirty(); } return; }
-  if (card[0]==='diary') showDiaryPage(card[1]);
+  if (card[0]==='part') showPartCard(card[1]);
+  else if (card[0]==='diary') showDiaryPage(card[1]);
   else if (card[0]==='defender') showNewDefender(card[1]);
   else showSprayIntro();
 }
 // A diary page, shown on a sheet of lined paper. Marked as read once shown.
+// A title card when the story moves into a new part. Shown once.
+function showPartCard(n){
+  const P=PARTS[n-1]; Save.data.parts[n]=true; Save.commit();
+  if (G.S) G.S.paused=true;
+  overlay(`<div class="part-card" style="--part:${P.tint}"><span>Part ${n}</span><h2>${P.name}</h2></div>
+    <div class="row"><button class="btn main" data-go="part-ok">Begin</button></div>`);
+  $('over').classList.add('part-over');
+  Audio.play('wave');
+}
 function showDiaryPage(key, cont='Continue'){
   const d=diaryEntry(key); Save.data.diary[key]=true; Save.commit();
   if (G.S) G.S.paused=true;
@@ -74,7 +86,7 @@ function showDiaryPage(key, cont='Continue'){
 }
 
 // ---------- overlays ----------
-function overlay(html){ const o=$('over'); o.innerHTML=html; o.hidden=false; o.scrollTop=0; }
+function overlay(html){ const o=$('over'); o.classList.remove('part-over'); o.innerHTML=html; o.hidden=false; o.scrollTop=0; }
 // The home screen (garden picker and shed) replaces the game view entirely.
 function setHome(on){ document.querySelector('.app').classList.toggle('home-mode', on); $('home').hidden=!on; }
 function home(html){ hideOverlay(); setHome(true); $('home').innerHTML=html; window.scrollTo(0,0); }
@@ -102,7 +114,7 @@ function showSprayIntro(){
 }
 export function showMenu(){
   leaveLevel(); renderInfo(); disarmRestart(); dirty();
-  const html = CHAPTERS.map((ch, ci) => {
+  const chapHtml = (ch, ci) => {
     // A garden opens only once every level of the garden before it is beaten.
     const prev = CHAPTERS[ci-1];
     if (ci>0 && !devMode && !prev.levels.every(l => (Save.data.stars[l.gi]||0)>0)){
@@ -115,6 +127,21 @@ export function showMenu(){
         ${ok?`<span class="stars">${starStr(st)}</span>`:'<span class="lv-lock">Locked</span>'}</button>`; }).join('');
     return `<div class="chap"><header><canvas data-crop="${ch.crop}" width="80" height="80"></canvas>
       <span><b>${ch.name}</b><small>${ch.pests}</small></span></header><div class="lvls">${lvls}</div></div>`;
+  };
+  // Gardens grouped into the story's parts, each a section that opens and closes.
+  // A part's name is hidden until one of its gardens is open. The part you're in starts open.
+  const opened = ch => devMode || CHAPTERS.indexOf(ch)===0 || CHAPTERS[CHAPTERS.indexOf(ch)-1].levels.every(l => (Save.data.stars[l.gi]||0)>0);
+  const current = Math.max(...CHAPTERS.filter(opened).map(c => c.act));
+  const html = PARTS.map(P => {
+    const chs = CHAPTERS.filter(c => c.act===P.n), reached = chs.some(opened);
+    if (!reached) return `<section class="part locked"><div class="part-head"><span class="part-n">Part ${P.n}</span>
+      <b>???</b><span class="part-meta">${chs.length ? 'Keep playing to find out' : 'Coming soon'}</span>${ICON.lock}</div></section>`;
+    const lv = chs.flatMap(c => c.levels), got = lv.reduce((a,l) => a+(Save.data.stars[l.gi]||0), 0);
+    const open = Save.data.fold[P.n] ?? (P.n===current);
+    return `<section class="part${open?' open':''}" style="--part:${P.tint}">
+      <button class="part-head" data-go="fold" data-part="${P.n}" aria-expanded="${open}"><span class="part-n">Part ${P.n}</span>
+        <b>${P.name}</b><span class="part-meta">★ ${got}/${lv.length*3}</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <div class="part-body">${chs.map(c => chapHtml(c, CHAPTERS.indexOf(c))).join('')}</div></section>`;
   }).join('');
   home(`<div class="home-head"><h2>Pick a garden</h2>
       <button class="shed-btn" data-go="shed">${ICON.shed}Garden Shed <b>★ ${starsLeft()}</b></button></div>
@@ -284,6 +311,9 @@ async function onOverlayClick(ev){
     }
     case 'spray-ok': { Save.data.seen.spray=true; Save.commit(); G.S.paused=false; hideOverlay(); dirty();
       msg('Save the Sprayer for when pests get close to your crops.'); return nextIntro(); }
+    case 'part-ok': return nextIntro();
+    case 'fold': { const n=+b.dataset.part, box=b.closest('.part'), open=box.classList.toggle('open');
+      b.setAttribute('aria-expanded', open); Save.data.fold[n]=open; Save.commit(); Audio.play('pop'); return; }
     case 'diary-ok': { if (afterDiary){ const f=afterDiary; afterDiary=null; return f(); } return nextIntro(); }
     case 'diary': return showDiary();
     case 'gotit': {

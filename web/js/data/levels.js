@@ -2,6 +2,15 @@
 // pool entries: [pest, first wave it appears, weight, optional "grows up at this fraction of the path"]
 export const COLS = 9, ROWS = 14, WAVES = 8;
 
+// The story's four parts. A part's name stays hidden until the player reaches it, so the turn
+// in the story is discovered, not announced. `tint` colors its heading on the home screen.
+export const PARTS = [
+  { n:1, name:'The Backyard',         tint:'#5f9a45' },
+  { n:2, name:'The Long Hot Summer',  tint:'#c29a3a' },
+  { n:3, name:'The Dry Years',        tint:'#9a7a5a' },
+  { n:4, name:'The First Rain',       tint:'#4f9a8a' },
+];
+
 export const CHAPTERS = [
   { id:'cabbage', name:'Cabbage Patch', crop:'cabbage', cropPlural:'cabbages', pests:'Slugs, snails & beetles', grass:['#a6cf8a','#9ec781'], levels:[
     { name:'Seedlings', season:'spring', boss:'fatslug',
@@ -105,6 +114,7 @@ export const LEVELS = [];
 CHAPTERS.forEach((ch,ci) => ch.levels.forEach((lv,li) => {
   LEVELS.push(Object.assign(lv, { ch, ci, li, gi:LEVELS.length }));
 }));
+CHAPTERS.forEach(ch => { ch.act = ch.act || 1; });
 LEVELS.forEach(l => { l.hpMul = TOUGHNESS[l.gi] ?? 1+l.gi*.14; });
 // How much less spray damage pests take on each level (0 = none, 0.3 = 30% less). Grows through
 // the story, the same for every player: rising in Act 2, high in Act 3, fading in Act 4.
