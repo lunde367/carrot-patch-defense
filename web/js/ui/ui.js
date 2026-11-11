@@ -175,7 +175,8 @@ function setupPestsSeen(){
 function pestTraits(type){
   const D=ENEMY[type], out=[];
   const ground = Object.values(TYPES).filter(T => T.ground).map(T => T.name);
-  if (D.boss) out.push('A boss: big, tough and worth lots of seeds.');
+  if (D.boss){ const bite=Math.max(3, Math.round(G.S.maxLives*.25));
+    out.push(`A boss: big and tough, and it comes in the final wave. If it reaches your garden it eats ${bite} crops at once.`); }
   if (D.fly) out.push(`Flies over the path. ${ground.join(' and ')} can’t reach it.`);
   if (D.armor) out.push(`Armor ${D.armor}: every hit does ${D.armor} less damage, so small hits barely dent it.`);
   if (D.burrow) out.push('Tunnels underground for part of the way, where nothing can hit it.');
