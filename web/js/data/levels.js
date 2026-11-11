@@ -8,7 +8,7 @@ export const PARTS = [
   { n:1, name:'The Backyard',         tint:'#5f9a45' },
   { n:2, name:'The Long Hot Summer',  tint:'#c29a3a' },
   { n:3, name:'The Dry Years',        tint:'#9a7a5a' },
-  { n:4, name:'The First Rain',       tint:'#4f9a8a' },
+  { n:4, name:'The First Rain',       tint:'#4f9a8a', before:'Three seasons later…' },
 ];
 
 export const CHAPTERS = [
@@ -140,7 +140,7 @@ export const CHAPTERS = [
     act:4, mood:'regrow', rain:[2,4,6], levels:[
     { name:'First Rain', season:'spring', boss:'bullfrog', mirrorOf:1,
       pool:[['puddleslug',1,3],['frog',2,2]],
-      intro:'It rained. It actually rained! Pests slow down in the rain, and every plant gets a drink. The sprayer stays in the shed now: the bees are back.' },
+      intro:'The trees you planted are growing, and the rain is back! Pests slow down in the rain, and every plant gets a drink. No more spraying: the bees are back.' },
     { name:'Puddles', season:'summer', boss:'mudcrab', mirrorOf:2,
       pool:[['puddleslug',1,2.5],['frog',1,2],['mudsnail',3,1.5]],
       intro:'Mud snails have come up out of the puddles, and a Mud Crab is crawling up the creek.' },

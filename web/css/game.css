@@ -49,6 +49,7 @@ canvas{ display:block }
 /* the title card when a new part begins */
 .over.part-over{ background:#141a10; }
 .part-card{ display:flex; flex-direction:column; align-items:center; gap:8px; animation:part-in 1s ease-out }
+.part-before{ margin:0 0 14px !important; font-style:italic; color:#c6d4b6; font-size:1rem; animation:part-in 1.6s ease-out }
 .part-card span{ font-size:.8rem; font-weight:800; letter-spacing:.2em; text-transform:uppercase; color:var(--part) }
 .part-card h2{ font-size:2rem !important; line-height:1.1; color:#f4f7ec; max-width:12ch }
 .part-card::after{ content:''; width:60px; height:3px; border-radius:2px; background:var(--part); margin-top:6px }

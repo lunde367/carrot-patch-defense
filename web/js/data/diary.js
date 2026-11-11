@@ -16,10 +16,10 @@ export const DIARY = [
   { key:'after-dust',       title:'After the Dust Bowl',     text:'We saved some wheat. Not much. The city folks say there’s a garden on a rooftop downtown. I’m going to see.' },
   { key:'start-rooftop',    title:'The rooftop',             text:'You can’t see the sun through the smog. Up here, between the chimneys, a few peppers are still growing.' },
   { key:'start-vault',      title:'The seed vault',          text:'This is the last seed vault. Somebody packed these seeds years ago, back when there were gardens everywhere.' },
-  { key:'after-vault',      title:'After the Last Seed Vault', text:'I kept the seeds. That’s all there is now. Seeds, and hope.' },
-  { key:'start-rain',       title:'Rain',                    text:'It rained. It actually rained. Something green came up by the fence this morning. I put the sprayer away in the shed. I don’t think we’ll need it again.' },
+  { key:'after-vault',      title:'After the Last Seed Vault', text:'I saved the seeds. And I’m done spraying. It never fixed anything; the bugs just came back tougher. This time I’m planting the vault seeds instead: clover, wildflowers, and trees along the creek.' },
+  { key:'start-rain',       title:'Rain',                    text:'Three seasons of planting. The roots hold the ground now, and the trees shade the creek. This morning, for the first time in years, it rained.' },
   { key:'after-rain',       title:'After the Rain Garden',   text:'The creek is running again. The frogs are singing at night. I’d forgotten how loud a healthy garden is.' },
-  { key:'start-meadow',     title:'The meadow',              text:'Clover, bees, ladybugs. The meadow came back on its own once we stopped fighting it.' },
+  { key:'start-meadow',     title:'The meadow',              text:'The clover brought the bees, and the bees brought the flowers. The rooftop gardeners came out to help, and now half the street is planting. The meadow is coming back because we gave it room.' },
   { key:'start-newgarden',  title:'The new garden',          text:'Today we planted the seeds from the vault. Pumpkins, beans, flowers. A garden that works with nature, not against it.' },
   { key:'after-newgarden',  title:'After The New Garden',    text:'Bees on the clover, frogs in the pond, the creek running again. We didn’t fight nature this time. We gave it room.' },
 ];

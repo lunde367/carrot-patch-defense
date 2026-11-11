@@ -76,7 +76,7 @@ function nextIntro(){
 function showPartCard(n){
   const P=PARTS[n-1]; Save.data.parts[n]=true; Save.commit();
   if (G.S) G.S.paused=true;
-  overlay(`<div class="part-card" style="--part:${P.tint}"><span>Part ${n}</span><h2>${P.name}</h2></div>
+  overlay(`<div class="part-card" style="--part:${P.tint}">${P.before?`<p class="part-before">${P.before}</p>`:''}<span>Part ${n}</span><h2>${P.name}</h2></div>
     <div class="row"><button class="btn main" data-go="part-ok">Begin</button></div>`);
   $('over').classList.add('part-over');
   Audio.play('wave');

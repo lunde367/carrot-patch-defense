@@ -33,6 +33,18 @@ export function drawBonus(c, b, s){
 }
 
 const ART = {
+  sapling(c, { cx, cy, s }){   // a young tree you planted, staked and tied
+    shadow(c, cx, cy+s*.28, s*.26, s*.07);
+    c.strokeStyle='#a8845a'; c.lineWidth=Math.max(1.5,s*.03); c.beginPath(); c.moveTo(cx+s*.12, cy+s*.28); c.lineTo(cx+s*.12, cy-s*.18); c.stroke();
+    c.strokeStyle='#7a5234'; c.lineWidth=Math.max(1.5,s*.04); c.beginPath(); c.moveTo(cx, cy+s*.28); c.lineTo(cx, cy-s*.05); c.stroke();
+    c.strokeStyle='#c2456b'; c.lineWidth=1.5; c.beginPath(); c.moveTo(cx, cy-s*.02); c.lineTo(cx+s*.12, cy-s*.05); c.stroke();
+    for (const [dx,dy,r] of [[-.1,-.12,.12],[.08,-.14,.11],[0,-.24,.13]]) ell(c, cx+dx*s, cy+dy*s, s*r, s*r*.9, '#7cc05a', '#4a8a34', 1.2);
+  },
+  clover(c, { cx, cy, s, R }){   // a patch of clover with a couple of flowers
+    for (let k=0;k<5;k++){ const x=cx+(R()-.5)*s*.55, y=cy+(R()-.5)*s*.45;
+      for (const a of [0,2.1,4.2]) ell(c, x+Math.cos(a)*s*.045, y+Math.sin(a)*s*.045, s*.05, s*.045, '#5fa040', '#3f7a2a', .8); }
+    for (let k=0;k<2;k++) ell(c, cx+(R()-.5)*s*.4, cy+(R()-.5)*s*.3, s*.05, s*.06, '#f2f0f8', '#c8b8d8', .8);
+  },
   skep(c, { cx, cy, s }){   // an old straw bee hive, empty
     shadow(c, cx, cy+s*.27, s*.34, s*.08);
     c.beginPath(); c.moveTo(cx-s*.3, cy+s*.24); c.quadraticCurveTo(cx-s*.34, cy-s*.32, cx, cy-s*.32); c.quadraticCurveTo(cx+s*.34, cy-s*.32, cx+s*.3, cy+s*.24); c.closePath();

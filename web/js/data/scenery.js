@@ -14,7 +14,7 @@ export const SCENERY = {
   dust:       { small:['rock','bucket'],     big:{ kind:'trough',   w:2, h:1 } },
   rooftop:    { small:['crate','pot'],       big:{ kind:'table',    w:2, h:1 } },
   vault:      { small:['rock','crate'],      big:{ kind:'log',      w:2, h:1 } },
-  rain:       { small:['bush','rock'],       big:{ kind:'pond',     w:2, h:2 } },
+  rain:       { small:['sapling','clover'],  big:{ kind:'pond',     w:2, h:2 } },
   meadow:     { small:['bush','skep'],       big:{ kind:'haystack', w:2, h:2 } },
   newgarden:  { small:['bush','basket'],     big:{ kind:'pond',     w:2, h:2 } },
 };
