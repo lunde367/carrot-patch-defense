@@ -1,14 +1,16 @@
 // Everything the player sees and taps outside the board: HUD, tray, panels and overlays.
-import { G, DIFFICULTY, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, sceneryPiece, clearScenery } from '../engine/game.js';
+import { G, DIFFICULTY, bossWave, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, canClear, sceneryPiece, clearScenery } from '../engine/game.js';
 import { SCENERY_NAMES } from '../data/scenery.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
 import { path } from '../engine/path.js';
 import { TYPES, TRAY, statsText } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
-import { PARTS, CHAPTERS, LEVELS, WAVES, ROWS, COLS } from '../data/levels.js';
+import { PARTS, CHAPTERS, LEVELS, ENDLESS, WAVES, ROWS, COLS } from '../data/levels.js';
+import { drawDiaryScene } from '../render/art-diary.js';
+import { TOWER_FACTS, pestFact } from '../data/facts.js';
 import { drawEnemy } from '../render/art-enemies.js';
 import { PERKS, perkValues, ALL_PERKS, PRODUCTS } from '../data/perks.js';
-import { Save, starsLeft } from '../save.js';
+import { Save, starsLeft, starsEarned, endlessStars } from '../save.js';
 import { Audio } from '../../kit/js/audio.js';
 import { Ads, Store } from '../../kit/js/monetization.js';
 import { FERT } from '../data/fertilizer.js';
@@ -21,7 +23,7 @@ import { DRAW } from '../render/art-towers.js';
 import { drawCrop } from '../render/art-common.js';
 import { cellAt, tileAt, resize, rebuild } from '../render/board.js';
 import { startTutorial, stopTutorial, tutorialActive, tutorialAllows, onTutorialAllow, startShedTour, stopShedTour } from './tutorial.js';
-import { ACHIEVEMENTS } from '../data/achievements.js';
+import { ACHIEVEMENTS, ACH_GROUPS } from '../data/achievements.js';
 import { DIARY, diaryEntry } from '../data/diary.js';
 import { achievementCount, progressOf, niceDate } from './achievements.js';
 
@@ -45,22 +47,29 @@ export function play(gi, bonusSeeds=0, { quiet=false }={}){
   // Test mode plays with every Garden Shed upgrade owned.
   const owned = devMode ? ALL_PERKS : Save.data.perks;
   G.diffId = diffOf(); G.diff = DIFFICULTY[G.diffId].hp;
-  startLevel(gi, fast3Open() ? Save.data.settings.speed : Math.min(2, Save.data.settings.speed), bonusSeeds, perkValues(owned));
+  startLevel(gi===ENDLESS.gi ? ENDLESS : gi, fast3Open() ? Save.data.settings.speed : Math.min(2, Save.data.settings.speed), bonusSeeds, perkValues(owned));
 }
 on('levelStart', (...a) => { drawLivesIcon(); return onLevelStart(...a); });
 const onLevelStart = (LV => {
   if (devMode && !LV.ch.noSpray) G.S.sprayOn = true;
   $('board').classList.toggle('spray-left', path.exitCol >= 5);   // keep the button off the path's end
   setHome(false); hideOverlay(); disarmRestart(); resize(); renderBar(); renderInfo(); dirty();
-  msg(`${LV.ch.name} ${LV.li+1}: ${LV.name}. ${LV.intro}${G.S.fence?` Your fence will stop the first ${G.S.fence} pests that get through.`:''}`);
+  msg(LV.endless ? `Endless Garden. Best so far: wave ${Save.data.endless.best}.` : `${LV.ch.name} ${LV.li+1}: ${LV.name}. Plant your defenders, then tap Start wave.`);
+  paintDiff();
   if (quietStart){ quietStart=false; return; }                         // started silently behind the menu
-  if (LV.gi===0 && !Save.data.tutorialDone){ startTutorial(); return; }   // the tutorial comes first
+  if (LV.gi===0 && !Save.data.tutorialDone){                           // the tutorial comes first, after the diary's opening page
+    const p0=diaryEntry('start-cabbage');
+    if (p0 && !Save.data.diary[p0.key]){ afterDiary=()=>{ G.S.paused=false; hideOverlay(); dirty(); startTutorial(); }; showDiaryPage(p0.key, 'Start gardening'); }
+    else startTutorial();
+    return; }
   // Cards to show before play, one after another: a diary page, new defenders, a new tool.
   intro = [];
   const page = diaryEntry(LV.li===0 ? `start-${LV.ch.id}` : `start-${LV.ch.id}-${LV.li+1}`);   // a garden's first level, or a page for a later level
   const firstOfPart = LV.li===0 && CHAPTERS.find(c => c.act===LV.ch.act)===LV.ch;
   if (firstOfPart && LV.ch.act>1 && !Save.data.parts[LV.ch.act]) intro.push(['part', LV.ch.act]);
   if (page && !Save.data.diary[page.key]) intro.push(['diary', page.key]);
+  if (!Save.data.settings.diffAsked && !devMode) intro.push(['diff']);          // asked once: who's gardening?
+  if (!Save.data.intros[LV.gi] && !(Save.data.stars[LV.gi]>0)) intro.push(['level']);                           // what this level is about, the first time
   if (!devMode){
     for (const k of TRAY) if (towerOpen(k) && TYPES[k].unlock>0 && !Save.data.seen[k]) intro.push(['defender', k]);
     if (G.S.sprayOn && !Save.data.seen.spray) intro.push(['spray']);
@@ -76,8 +85,29 @@ function nextIntro(){
   else if (card[0]==='diary') showDiaryPage(card[1]);
   else if (card[0]==='defender') showNewDefender(card[1]);
   else if (card[0]==='fert') showFertIntro();
+  else if (card[0]==='level') showLevelCard();
+  else if (card[0]==='diff') showDiffChoice();
   else showSprayIntro();
 }
+// What this level is about: shown the first time it's played (the text used to sit under the board).
+function showLevelCard(){
+  const LV=G.LV, S=G.S; Save.data.intros[LV.gi]=true; Save.commit(); S.paused=true;
+  const d=G.diffId!=='normal' ? ` · ${DIFFICULTY[G.diffId].name}` : '';
+  overlay(`<div class="panel newdef levelcard"><span class="tag">${LV.endless ? 'After the story' : `${LV.ch.name} · ${LV.li+1} of ${LV.ch.levels.length}`}</span>
+    <h3>${LV.name}</h3><p>${LV.intro}</p>
+    <p class="lc-facts">${LV.endless?'Endless':LV.waves} waves · ${S.maxLives} ${LV.ch.cropPlural} to protect${d}</p>
+    ${S.fence?`<p class="lc-facts">Your fence will stop the first ${S.fence} pests that get through.</p>`:''}</div>
+    <div class="row"><button class="btn main" data-go="level-ok">Let’s go</button></div>`);
+}
+// Asked once, early: how hard should the pests be? It can be changed in Settings any time.
+function showDiffChoice(){
+  G.S.paused=true;
+  overlay(`<div class="panel newdef"><span class="tag">One quick question</span><h3>Who’s gardening?</h3>
+    <p>Pick how tough the pests are. You can change it any time in Settings.</p>
+    <div class="diff-pick">${Object.entries(DIFFICULTY).map(([k,d])=>`<button class="btn ${k==='normal'?'main':'ghost'}" data-go="diff-pick" data-diff="${k}"><b>${d.name}</b><small>${d.note}</small></button>`).join('')}</div></div>`);
+}
+// A small badge on the board when the difficulty isn't Normal.
+function paintDiff(){ const b=$('diffBadge'); b.hidden = G.diffId==='normal' || !G.diffId; b.textContent = G.diffId ? DIFFICULTY[G.diffId].name : ''; b.dataset.diff = G.diffId||''; }
 // A diary page, shown on a sheet of lined paper. Marked as read once shown.
 // A title card when the story moves into a new part. Shown once.
 function showPartCard(n){
@@ -88,11 +118,13 @@ function showPartCard(n){
   $('over').classList.add('part-over');
   Audio.play('wave');
 }
+const paintScenes = root => { for (const cv of root.querySelectorAll('canvas[data-scene]')) if (!drawDiaryScene(cv, cv.dataset.scene)) cv.remove(); };
 function showDiaryPage(key, cont='Continue'){
   const d=diaryEntry(key); Save.data.diary[key]=true; Save.commit(); emit('diary', key);
   if (G.S) G.S.paused=true;
-  overlay(`<div class="diary-page"><span class="diary-tag">From the garden diary</span><h3>${d.title}</h3><p>${d.text}</p></div>
+  overlay(`<div class="diary-page"><canvas class="diary-art" data-scene="${key}"></canvas><span class="diary-tag">From the garden diary</span><h3>${d.title}</h3><p>${d.text}</p></div>
     <div class="row"><button class="btn main" data-go="diary-ok">${cont}</button></div>`);
+  paintScenes($('over'));
   Audio.play('page');
 }
 
@@ -141,7 +173,7 @@ let offerYes = null, offerNo = null;
 function showFertIntro(){
   G.S.paused=true;
   overlay(`<div class="panel newdef"><span class="tag">New tool</span><div class="spray-art fert-art">${$('fert').querySelector('svg').outerHTML}</div>
-    <h3>Fertilizer</h3><p>Good food for your garden. Tap the green button during a wave and every defender works faster for a few seconds.</p>
+    <h3>Compost</h3><p>Kitchen scraps and old leaves, turned into good food for your garden. Tap the green button during a wave and every defender works faster for a few seconds.</p>
     <p>It never hurts anything. It takes a while to be ready again, so save it for a big crowd or a boss.</p></div>
     <div class="row"><button class="btn main" data-go="fert-ok">Got it</button></div>`);
   Audio.play('sparkle');
@@ -256,30 +288,40 @@ export function showMenu(){
         <b>${P.name}</b><span class="part-meta">★ ${got}/${lv.length*3}</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <div class="part-body">${chs.map(c => chapHtml(c, CHAPTERS.indexOf(c))).join('')}</div></section>`;
   }).join('');
-  home(`<div class="home-head"><h2>Pick a garden</h2>
+  const hi=LEVELS[highest()], allDone=(Save.data.stars[LEVELS.length-1]||0)>0;
+  home(`<div class="home-head"><h2><small class="where">Part ${hi.ch.act} · ${PARTS[hi.ch.act-1].name}</small>${hi.ch.name}</h2>
       <button class="shed-btn" data-go="shed">${ICON.shed}Garden Shed <b>★ ${starsLeft()}</b></button></div>
-    ${html}${devMode?'<p class="devnote">Test mode is on: every level and defender is unlocked. Tap the title 7 times to turn it off.</p>':''}
+    ${allDone ? `<p class="home-note">The story is finished. Every garden is open to replay.</p>`
+      : `<button class="btn main continue" data-lv="${hi.gi}">${(Save.data.stars[0]||0)>0?'Continue':'Start'} · ${hi.ch.name} ${hi.li+1}: ${hi.name}</button>`}
+    ${html}
+    ${storyDone()?`<button class="endless-card" data-go="endless"><span><small>After the story</small><b>Endless Garden</b><em>Waves never stop. A boss every 5th wave.</em></span><span class="e-best"><small>Best</small><b>${Save.data.endless.best}</b></span></button>`:''}
+    ${devMode?'<p class="devnote">Test mode is on: every level and defender is unlocked. Tap the title 7 times to turn it off.</p>':''}
     <div class="home-tools">
-      <button class="tool-btn" data-go="achievements">${ICON.trophy}<span>Achievements</span><b>${achievementCount()}/${ACHIEVEMENTS.length}</b></button>
+      <button class="tool-btn wide" data-go="achievements">${ICON.trophy}<span>Achievements</span><b>${achievementCount()}/${ACHIEVEMENTS.length}</b></button>
       <button class="tool-btn" data-go="diary">${ICON.book}<span>Diary</span></button>
-      <button class="tool-btn icon-only" data-go="settings" aria-label="Settings">${ICON.gear}</button>
+      <button class="tool-btn" data-go="guide">${ICON.map}<span>Field guide</span></button>
+      <button class="tool-btn" data-go="stats">${ICON.trophy}<span>Stats</span></button>
+      <button class="tool-btn" data-go="settings">${ICON.gear}<span>Settings</span></button>
     </div>`);
-  for (const c2 of $('home').querySelectorAll('canvas[data-crop]')){ const c=c2.getContext('2d'); c.setTransform(2,0,0,2,0,0); drawCrop(c,c2.dataset.crop,20,22,32); }
+  for (const c2 of $('home').querySelectorAll('canvas[data-crop]')){ const c=c2.getContext('2d'); c.setTransform(2,0,0,2,0,0); drawCrop(c,c2.dataset.crop,20,24,66); }
   stopShedTour();
   if (!devMode && !Save.data.shedTour && Save.data.tutorialDone && starsLeft()>0) startShedTour(false);
 }
 
+const storyDone = () => devMode || (Save.data.stars[LEVELS.length-1]||0)>0;
 // ---------- Garden Shed ----------
 function showShed(){
   const left=starsLeft();
-  const rows = PERKS.filter(p => (!p.spray || sprayUnlocked()) && (!p.fert || fertUnlocked())).map(p => {
+  const perkRow = p => {
     const tier=Save.data.perks[p.id]||0, maxed=tier>=p.costs.length, cost=p.costs[tier];
     const desc = p.desc(maxed ? tier-1 : tier);
     return `<div class="perk"><h3>${p.name}</h3>
       <button data-perk="${p.id}" ${maxed||cost>left?'disabled':''}>${maxed?'Owned':`★ ${cost}`}</button>
       <p>${maxed?desc:(tier?`Next: ${desc}`:desc)}</p>
       <span class="tiers">${p.costs.map((_,i)=>`<i class="${i<tier?'on':''}"></i>`).join('')}</span></div>`;
-  }).join('');
+  };
+  const rows = PERKS.filter(p => !p.post && (!p.spray || sprayUnlocked()) && (!p.fert || fertUnlocked())).map(perkRow).join('');
+  const postRows = storyDone() ? PERKS.filter(p => p.post).map(perkRow).join('') : '';
   const anyOwned = Object.values(Save.data.perks).some(Boolean);
   home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button>
       <h2>Garden Shed</h2><span class="star-count">★ ${left}</span></div>
@@ -289,6 +331,8 @@ function showShed(){
       return `<div class="shed-bonus"><span><b>Bonus star</b><small>${n>0?`${noAds()?'Claim':'Watch a short ad for'} an extra star. ${n} left today.`:'Come back tomorrow for more.'}</small></span>
         <button class="btn ghost small" data-go="adstar" ${n>0?'':'disabled'}>${n>0?`${tv()}+★ 1`:'Done'}</button></div>`; })() : ''}
     <div class="perks">${rows}</div>
+    ${postRows?`<h3 class="ach-group">After the story<small>Endless Garden: ★ ${endlessStars()} earned</small></h3>
+      <p class="home-note">Every 3 waves of your best Endless Garden run earns a star.</p><div class="perks">${postRows}</div>`:''}
     ${sprayUnlocked()?'':`<p class="home-note">More upgrades unlock in ${LEVELS[SPRAY.unlock].ch.name}.</p>`}
     <div class="shed-foot"><button class="btn main" data-go="menu">Back to gardens</button>
     ${anyOwned?'<button class="btn ghost" data-go="refund">Refund all stars</button>':''}</div>`);
@@ -302,12 +346,18 @@ function buyPerk(id){
 
 // ---------- Achievements ----------
 function showAchievements(){
-  const rows = ACHIEVEMENTS.map(a => {
+  const row = a => {
     const got = Save.data.ach[a.id], prog = progressOf(a);
     return `<div class="ach${got?' got':''}"><span class="ach-icon" aria-hidden="true">${got?'★':ICON.lock}</span>
       <span class="ach-text"><b>${a.name}</b><small>${a.desc}</small>
       ${!got && prog!=null ? `<span class="ach-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${a.goal}" aria-valuenow="${prog}"><i style="width:${prog/a.goal*100}%"></i></span><small class="ach-num">${prog.toLocaleString()} / ${a.goal.toLocaleString()}</small>` : ''}
       </span>${got?`<span class="ach-date">${niceDate(got)}</span>`:''}</div>`;
+  };
+  const listed = new Set(ACH_GROUPS.flatMap(g => g[1]));
+  const rows = ACH_GROUPS.map(([name, ids], i) => {
+    const list = ACHIEVEMENTS.filter(a => i===0 ? !listed.has(a.id) : ids.includes(a.id));
+    if (!list.length) return '';
+    return `<h3 class="ach-group">${name}<small>${list.filter(a=>Save.data.ach[a.id]).length}/${list.length}</small></h3>${list.map(row).join('')}`;
   }).join('');
   home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button>
       <h2>Achievements</h2><span class="star-count">${achievementCount()}/${ACHIEVEMENTS.length}</span></div>
@@ -315,11 +365,80 @@ function showAchievements(){
 }
 
 // ---------- Diary ----------
-function showDiary(){
-  const read = DIARY.filter(d => Save.data.diary[d.key]);
-  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button><h2>Garden diary</h2></div>
-    ${read.length ? `<div class="diary-list">${read.map(d=>`<div class="diary-page"><h3>${d.title}</h3><p>${d.text}</p></div>`).join('')}</div>`
-      : '<p class="home-note">Your diary is empty. Finish your first garden to write the first page.</p>'}`);
+// The diary is a journal you page through, one entry per page, each with a small picture.
+// A page is written once it has been read in a level, or once its level is already behind you.
+function pageWritten(d){
+  if (Save.data.diary[d.key]) return true;
+  const m=d.key.match(/^(start|after)-([a-z]+)(?:-(\d))?$/), ch=m && CHAPTERS.find(c => c.id===m[2]); if (!ch) return false;
+  const lv = m[1]==='after' ? ch.levels[ch.levels.length-1] : ch.levels[(+m[3]||1)-1];
+  return (Save.data.stars[lv.gi]||0)>0;
+}
+let jPage = 0;
+function showDiary(at){
+  const pages = DIARY.filter(pageWritten);
+  let wrote=false; for (const d of pages) if (!Save.data.diary[d.key]){ Save.data.diary[d.key]=true; wrote=true; }
+  if (wrote){ Save.commit(); emit('diary'); }
+  jPage = Math.max(0, Math.min(pages.length-1, at==null ? pages.length-1 : at));
+  const d = pages[jPage];
+  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button><h2>Garden diary</h2><span class="star-count">${pages.length}/${DIARY.length}</span></div>
+    ${d ? `<div class="journal"><div class="j-rings" aria-hidden="true">${'<i></i>'.repeat(7)}</div>
+        <div class="j-page" id="jPage"><canvas class="diary-art" data-scene="${d.key}"></canvas>
+          <h3>${d.title}</h3><p>${d.text}</p><span class="j-num">Page ${jPage+1}</span></div></div>
+      <div class="j-nav"><button class="btn ghost" data-go="j-prev" ${jPage===0?'disabled':''}>‹ Earlier</button>
+        <button class="btn ghost" data-go="j-next" ${jPage>=pages.length-1?'disabled':''}>Later ›</button></div>
+      ${pages.length<DIARY.length?'<p class="home-note">More pages get written as you play.</p>':''}`
+      : '<p class="home-note">Your diary is empty. Start your first garden to write the first page.</p>'}`);
+  paintScenes($('home'));
+  // swipe left or right to turn the page
+  const el=$('jPage'); if (el){ let x0=null;
+    el.addEventListener('pointerdown', e => { x0=e.clientX; });
+    el.addEventListener('pointerup', e => { if (x0!=null && Math.abs(e.clientX-x0)>40) turnPage(e.clientX<x0 ? 1 : -1); x0=null; }); }
+}
+function turnPage(dir){
+  const n=DIARY.filter(pageWritten).length, to=jPage+dir; if (to<0 || to>=n) return;
+  Audio.play('page'); showDiary(to);
+  const el=$('jPage'); if (el) el.classList.add(dir>0 ? 'turn-next' : 'turn-prev');
+}
+
+// ---------- Field guide: every defender and every pest met so far ----------
+const guideCount = () => `${TRAY.filter(towerOpen).length + Object.keys(Save.data.pests||{}).length}/${TRAY.length + Object.keys(ENEMY).length}`;
+function showGuide(tab){
+  setupPestsSeen();
+  const met = Save.data.pests||{};
+  const pestIds = Object.keys(ENEMY), seen = pestIds.filter(t => devMode || met[t]);
+  const cards = tab==='pests'
+    ? pestIds.map(t => { const E=ENEMY[t]; if (!(devMode || met[t])) return `<div class="g-card unknown"><span class="g-q">?</span><b>Not met yet</b></div>`;
+        return `<div class="g-card"><canvas data-pest="${t}" width="128" height="128"></canvas><b>${E.name}${E.boss?' <i>Boss</i>':''}</b>
+          <ul>${pestTraits(t).map(x=>`<li>${x}</li>`).join('')}</ul><p class="g-fact">${pestFact(t)}</p></div>`; }).join('')
+    : TRAY.map(k => { const T=TYPES[k]; if (!towerOpen(k)) return `<div class="g-card unknown"><span class="g-q">?</span><b>Unlocks in ${LEVELS[T.unlock].ch.name}</b></div>`;
+        return `<div class="g-card"><canvas data-tower="${k}"></canvas><b>${T.name}</b><p>${T.desc}</p><p class="g-fact">${TOWER_FACTS[k]||''}</p></div>`; }).join('');
+  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button><h2>Field guide</h2></div>
+    <div class="seg" role="tablist"><button role="tab" aria-checked="${tab!=='pests'}" data-go="guide" data-tab="defenders">Defenders ${TRAY.filter(towerOpen).length}/${TRAY.length}</button>
+      <button role="tab" aria-checked="${tab==='pests'}" data-go="guide" data-tab="pests">Pests ${seen.length}/${pestIds.length}</button></div>
+    <div class="guide">${cards}</div>`);
+  for (const cv of $('home').querySelectorAll('canvas[data-tower]')) drawIcon(cv, cv.dataset.tower, 64);
+  for (const cv of $('home').querySelectorAll('canvas[data-pest]')){
+    const t=cv.dataset.pest, E=ENEMY[t], c=cv.getContext('2d'), sz=36/E.size;
+    c.translate(64, 68 + (E.fly ? sz*.28 : 0)); drawEnemy(c, { type:t, size:E.size, ph:1.2, fly:!!E.fly, face:1, hp:1, max:1 }, sz);
+  }
+}
+
+// ---------- Stats ----------
+function showStats(){
+  const s=Save.data.stats, n=v=>(v||0).toLocaleString(), beaten=LEVELS.filter(l=>(Save.data.stars[l.gi]||0)>0).length;
+  const games=(s.wins||0)+(s.losses||0);
+  const rows=[
+    ['Levels beaten', `${beaten} of ${LEVELS.length}`], ['Stars earned', n(starsEarned())],
+    ['Three-star levels', `${LEVELS.filter(l=>Save.data.stars[l.gi]===3).length} of ${LEVELS.length}`],
+    ['Games won', n(s.wins)], ['Games lost', n(s.losses)], ['Win rate', games ? Math.round(s.wins/games*100)+'%' : '—'],
+    ['Pests squashed', n(s.kills)], ['Bosses beaten', n(s.bossKills)], ['Seeds from Sunflowers', n(s.flowerSeeds)],
+    ['Pests hit by the Sprayer', n(s.sprayHits)], ['Times Compost was used', n(s.ferts)], ['Birds scared off', n(s.scares)],
+    ['Things cleared out of the way', n(s.clears)], ['Wins on Hard', n(s.toughWins)],
+    ['Diary pages written', `${DIARY.filter(pageWritten).length} of ${DIARY.length}`],
+    ['Endless Garden best wave', n(Save.data.endless.best)], ['Endless Garden runs', n(Save.data.endless.runs)],
+  ];
+  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button><h2>Stats</h2></div>
+    <div class="stats-list">${rows.map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>`);
 }
 
 // ---------- Settings ----------
@@ -354,7 +473,7 @@ function showSettings(){
       <div class="set-row"><span><b>Reset progress</b><small>Erase all stars, upgrades, unlocks and achievements.</small></span>
         <button class="reset-btn" data-go="reset">Reset</button></div>
     </div>`:''}
-    <p class="version">Carrot Patch Defense · version 0.3</p>`);
+    <p class="version">Carrot Patch Defense · version 0.4</p>`);
 }
 
 on('win', w => {
@@ -383,16 +502,26 @@ function showWin(w, recorded=false){
     <div class="row">${next?`<button class="btn main" data-go="next">${next.ci!==LV.ci?`On to ${next.ch.name}`:'Next level'}</button>`:''}
     ${gained?'<button class="btn ghost" data-go="shed">Garden Shed</button>':''}
     <button class="btn ghost" data-go="retry">Play again</button><button class="btn ghost" data-go="menu">All gardens</button></div>
-    ${next?'':'<p>That’s every garden for now. More are coming!</p>'}`);
+    ${next?'':`<div class="row"><button class="btn main" data-go="ending">${Save.data.ended?'See the ending again':'Finish the story'}</button></div>`}`);
   dirty();
 }
 on('lose', ({ wave }) => {
   stopTutorial();
   Save.data.stats.losses++; Save.commit(); Audio.play('lose');
-  const LV=G.LV, left=starsLeft(), second = extrasHere() && !G.S.revived;
+  const LV=G.LV, left=starsLeft(), second = extrasHere() && !G.S.revived && !LV.endless;
+  if (LV.endless){
+    const E=Save.data.endless, cleared=wave-1; E.runs++; Save.commit();
+    overlay(`<h2>${cleared>=E.best && cleared>0 ? 'A new best!' : 'The garden rests'}</h2>
+      <p>You held the Endless Garden for ${cleared} wave${cleared===1?'':'s'}. Your best is ${E.best}.</p>
+      <p>Endless stars: ★ ${endlessStars()}. The next one comes at wave ${(endlessStars()+1)*3}.</p>
+      <p class="tip"><b>Tip:</b> ${lossTip()}</p>
+      <div class="row"><button class="btn main" data-go="retry">Go again</button><button class="btn ghost" data-go="shed">Garden Shed</button><button class="btn ghost" data-go="menu">All gardens</button></div>`);
+    dirty(); return;
+  }
   overlay(`<h2>The pests got the ${LV.ch.cropPlural}</h2>
     <p>You reached wave ${wave} of ${LV.waves} in ${LV.name}.</p>
-    ${left>0?`<p>You have ★ ${left} to spend in the Garden Shed. Upgrades there could help.</p>`:''}
+    <p class="tip"><b>Tip:</b> ${lossTip()}</p>
+    ${left>0?`<p>You have ★ ${left} to spend in the Garden Shed.</p>`:''}
     <div class="row"><button class="btn main" data-go="retry">Try again</button>
     ${second?`<button class="btn ghost offer" data-go="revive">${tv()}Keep going from wave ${wave} with ${Math.ceil(G.S.maxLives/2)} crops</button>`:''}
     ${left>0?'<button class="btn ghost" data-go="shed">Garden Shed</button>':''}
@@ -400,11 +529,35 @@ on('lose', ({ wave }) => {
   dirty();
 });
 
+// One tip after a loss, based on the kind of pest that ate the most crops.
+function lossTip(){
+  const S=G.S, top=Object.entries(S.leaks).sort((a,b)=>b[1]-a[1])[0];
+  if (!top) return 'Plant defenders near the bends, where pests pass more than once.';
+  const D=ENEMY[top[0]], name=D.name, ground=Object.values(TYPES).filter(T=>T.ground).map(T=>T.name+'s').join(' and ');
+  if (D.boss) return `The ${name} got through. Upgrade your strongest defenders to level 3 before the last wave${S.fertOn?', and save your Compost for it':''}.`;
+  if (D.fly) return `Most of what got through was flying (${name}s). ${ground} can’t reach fliers, so add Carrot Bunnies${towerOpen('rose')?' or Thorny Roses':''} near the end of the path.`;
+  if (D.armor) return `${name}s wear armor, so small hits barely dent them. Big hitters like ${towerOpen('owl')?'Night Owls and ':''}Pine Trees get through it.`;
+  if (D.burrow) return `${name}s tunnel under part of the path. Spread defenders along the whole path so something is waiting where they come up.`;
+  if (D.spd>=1.4 || D.hopper) return `${name}s are quick. A Sprinkler slows everything near it, which gives your other defenders time.`;
+  return `${name}s came in crowds. Pine Trees and Sprinklers hit many pests at once, and upgrades beat extra defenders.`;
+}
+// The ending: shown after the last level, and again any time from its win screen.
+function showEnding(){
+  const first=!Save.data.ended; Save.data.ended=true; Save.commit(); emit('ending');
+  const todo=ACHIEVEMENTS.length-achievementCount();
+  overlay(`<div class="part-card ending" style="--part:#f6c344"><span>The End</span><h2>The garden is yours for good.</h2></div>
+    <p class="ending-text">Twelve gardens, thirty-six harvests, and one sprayer left to rust in the shed. Thank you for playing.</p>
+    <p class="ending-text small">${first?'The <b>Endless Garden</b> is now open. ':''}${todo?`${todo} achievement${todo>1?'s are':' is'} still waiting.`:''}</p>
+    <div class="row"><button class="btn main" data-go="endless">Endless Garden</button><button class="btn ghost" data-go="menu">All gardens</button></div>`);
+  $('over').classList.add('part-over');
+  Audio.play('win');
+}
+
 export function pause(){
   const S=G.S; if (!S || S.mode!=='play' || S.paused) return;
   if (!S.active && S.wave===0) return;           // nothing to protect yet
   S.paused=true;
-  overlay(`<h2>Paused</h2><p>${G.LV.name}, wave ${S.wave} of ${G.LV.waves}</p>
+  overlay(`<h2>Paused</h2><p>${G.LV.name}, wave ${S.wave}${G.LV.endless?'':` of ${G.LV.waves}`}${G.diffId!=='normal'?` · ${DIFFICULTY[G.diffId].name}`:''}</p><p class="pause-intro">${G.LV.intro}</p>
     <div class="row"><button class="btn main" data-go="resume">Resume</button><button class="btn ghost" data-go="menu">All gardens</button></div>`);
   dirty();
 }
@@ -426,7 +579,7 @@ async function onOverlayClick(ev){
       const s=Save.data.settings, k=b.dataset.go==='t-sfx'?'sfx':'music'; s[k]=!s[k];
       Save.commit(); Audio.setSettings(s); paintSound(); showSettings(); if (k==='sfx' && s.sfx) Audio.play('tap'); return;
     }
-    case 'diff': { const s=Save.data.settings; s.diff=b.dataset.diff; delete s.tough; Save.commit(); showSettings(); return; }
+    case 'diff': { const s=Save.data.settings; s.diff=b.dataset.diff; s.diffAsked=true; delete s.tough; Save.commit(); showSettings(); return; }
     case 'replay-tutorial': Save.data.tutorialDone=false; Save.commit(); return play(0);
     case 'shed': leaveLevel(); return showShed();
     case 'refund': Save.data.perks={}; Save.commit(); return showShed();
@@ -446,8 +599,16 @@ async function onOverlayClick(ev){
     case 'spray-ok': { Save.data.seen.spray=true; Save.commit(); G.S.paused=false; hideOverlay(); dirty();
       msg('Save the Sprayer for when pests get close to your crops.'); return nextIntro(); }
     case 'part-ok': return nextIntro();
+    case 'level-ok': return nextIntro();
+    case 'ending': return showEnding();
+    case 'endless': return play(ENDLESS.gi);
+    case 'guide': return showGuide(b.dataset.tab||'defenders');
+    case 'stats': return showStats();
+    case 'j-prev': case 'j-next': return turnPage(b.dataset.go==='j-next' ? 1 : -1);
+    case 'diff-pick': { const s=Save.data.settings; s.diff=b.dataset.diff; s.diffAsked=true; delete s.tough; Save.commit();
+      G.diffId=s.diff; G.diff=DIFFICULTY[s.diff].hp; paintDiff(); return nextIntro(); }
     case 'fert-ok': { Save.data.seen.fert=true; Save.commit(); G.S.paused=false; hideOverlay(); dirty();
-      msg('Save the Fertilizer for a big crowd or a boss.'); return nextIntro(); }
+      msg('Save the Compost for a big crowd or a boss.'); return nextIntro(); }
     case 'offer-yes': return offerYes && offerYes();
     case 'offer-no': return offerNo && offerNo();
     case 'revive': { b.disabled=true; if (await earn('second_chance', 'keep going with half your crops') && revive()){ hideOverlay(); msg(`Back in! Wave ${G.S.wave+1} again, with ${G.S.lives} crops.`); Audio.play('chime'); } else b.disabled=false; return; }
@@ -499,7 +660,7 @@ export function renderBar(){
       if (!tutorialAllows(key)){ Audio.play('denied'); return; }      // the tutorial step is about a different defender
       Audio.play('tap');
       G.S.build=G.S.build===key?null:key; G.S.sel=null; renderInfo(); renderBar();
-      if (G.S.build){ msg(`${T.name}: ${T.desc} Touch the grass to see its reach, then let go to plant.`); emit('pickTower', key); }
+      if (G.S.build){ msg(`${T.name}. Touch the grass to see its reach, then let go to plant.`); emit('pickTower', key); }
     };
     bar.append(b);
   }
@@ -512,14 +673,20 @@ function tileNote(t){
   if (t.tile==='sunny') return t.type==='sunflower' ? `${name} in a sunny patch: 50% more seeds!` : `${name} in a sunny patch: works 15% faster!`;
   return '';
 }
+const LIVING = ['bush','sapling','clover','skep'];
+const moved = o => G.CH.act===4 && LIVING.includes(o.kind);
 // A small bubble over the board next to a tapped piece of scenery, offering to clear it.
 function paintScenePop(){
   const S=G.S, o=S&&S.selScen, pop=$('scenePop');
   if (!o || S.sel || S.mode!=='play'){ pop.hidden=true; return; }
-  const [name,verb]=SCENERY_NAMES[o.kind]||['Scenery','Clear'], cost=clearCost(o), big=o.w*o.h>1;
+  const [name,verb0]=SCENERY_NAMES[o.kind]||['Scenery','Clear'], cost=clearCost(o), big=o.w*o.h>1;
+  // In Part 4 living things are moved, never cleared, and the pond stays.
+  const gentle=moved(o), verb=gentle ? 'Replant' : verb0, stays=!canClear(o);
   pop.querySelector('b').textContent=name;
-  pop.querySelector('small').textContent=`${big?'These spots are':'This spot is'} blocked. Clear it for seeds to plant a defender here.`;
-  const btn=$('spClear'); btn.textContent=`${verb} · ${cost} seeds`; btn.disabled=S.seeds<cost;
+  pop.querySelector('small').textContent = stays ? 'The pond stays. The frogs live here now.'
+    : gentle ? 'Move it to a better spot to plant a defender here.'
+    : `${big?'These spots are':'This spot is'} blocked. Clear it for seeds to plant a defender here.`;
+  const btn=$('spClear'); btn.hidden=stays; btn.textContent=`${verb} · ${cost} seeds`; btn.disabled=S.seeds<cost;
   pop.hidden=false;
   // place it above the piece (or below, near the top edge), kept inside the board
   const cv=$('cv'), tile=cv.clientWidth/COLS, bw=pop.offsetWidth, bh=pop.offsetHeight;
@@ -547,10 +714,10 @@ export function refresh(){
   if (S.speed===3 && !fast3Open()){ S.speed=2; Save.data.settings.speed=2; Save.commit(); msg('Your hour of 3× speed is up. 2× is always free.'); }
   const key=[S.seeds,S.lives,S.wave,S.active,S.mode,S.speed,S.paused,S.sel&&S.sel.lv,G.LV.gi,Math.ceil(S.sprayCd*4),S.aiming,S.sprayOn,Math.ceil(S.fertCd*4),Math.ceil(S.fertT*4),S.adSeeds,S.adRefill].join('|');
   if (key===lastKey) return; lastKey=key;
-  $('seeds').textContent=S.seeds; $('lives').textContent=S.lives; $('wave').textContent=`${S.wave}/${G.LV.waves}`;
-  $('season').textContent=G.LV.season==='late summer'?'late':G.LV.season;
+  $('seeds').textContent=S.seeds; $('lives').textContent=S.lives; $('wave').textContent=G.LV.endless ? S.wave : `${S.wave}/${G.LV.waves}`;
+  $('season').textContent=G.LV.endless?'wave':G.LV.season==='late summer'?'harvest':G.LV.season;
   const go=$('go'); go.disabled=S.active||S.mode!=='play'||S.paused;
-  go.textContent = S.mode!=='play' ? 'Pick a level' : S.active ? `Wave ${S.wave}…` : S.wave+1===G.LV.waves ? 'Boss wave' : `Start wave ${S.wave+1}`;
+  go.textContent = S.mode!=='play' ? 'Pick a level' : S.active ? `Wave ${S.wave}…` : bossWave(S.wave+1) ? 'Boss wave' : `Start wave ${S.wave+1}`;
   $('spd').textContent=S.speed+'×';
   $('restart').disabled=S.mode==='menu';
   for (const k of TRAY){ const el=$('card-'+k); if (el && towerOpen(k)) el.classList.toggle('poor', S.seeds<costOf(k)); }
@@ -601,7 +768,7 @@ function paintFert(){
   const on=S.fertT>0, ready=fertReady(), full=FERT.recharge*S.perks.fertRecharge;
   b.style.setProperty('--p', on ? S.fertT/S.perks.fertTime : ready ? 1 : 1 - S.fertCd/full);
   b.classList.toggle('on', on); b.classList.toggle('ready', ready);
-  b.setAttribute('aria-label', on ? 'Fertilizer: working' : ready ? 'Fertilizer: ready' : `Fertilizer: ready in ${Math.ceil(S.fertCd)} seconds`);
+  b.setAttribute('aria-label', on ? 'Compost: working' : ready ? 'Compost: ready' : `Compost: ready in ${Math.ceil(S.fertCd)} seconds`);
   const cd=b.querySelector('.ab-cd'); cd.hidden = on || ready || !S.active; cd.textContent = Math.ceil(S.fertCd);
 }
 function paintOffers(){
@@ -696,10 +863,10 @@ export function initUI(){
     }
     setSpeed(next); Audio.play('tap'); };
   $('fert').onclick=()=>{ const S=G.S; if (!S || S.paused || S.mode!=='play') return;
-    if (!S.active){ Audio.play('denied'); msg('Save the Fertilizer for a wave. Start a wave first.'); return; }
+    if (!S.active){ Audio.play('denied'); msg('Save the Compost for a wave. Start a wave first.'); return; }
     if (S.fertT>0){ msg('Your defenders are already fed!'); return; }
-    if (!fertilize()){ Audio.play('denied'); msg(`The Fertilizer is getting ready. ${Math.ceil(S.fertCd)} seconds to go.`); return; }
-    msg('Fertilized! Every defender works faster for a few seconds.'); dirty(); };
+    if (!fertilize()){ Audio.play('denied'); msg(`The Compost is getting ready. ${Math.ceil(S.fertCd)} seconds to go.`); return; }
+    msg('Compost spread! Every defender works faster for a few seconds.'); dirty(); };
   $('adSeeds').onclick=async()=>{ const S=G.S; if (!S || S.adSeeds || S.wave>0) return;
     if (await earn('bonus_seeds', `+${EXTRAS.bonusSeeds} seeds`)){ S.adSeeds=true; addSeeds(EXTRAS.bonusSeeds); msg(`+${EXTRAS.bonusSeeds} seeds!`); Audio.play('sparkle'); } dirty(); };
   $('adRefill').onclick=async()=>{ const S=G.S; if (!S || S.adRefill || sprayReady()) return;
@@ -708,7 +875,8 @@ export function initUI(){
   $('sound').onclick=onSound;
   $('map').onclick=()=>{ Audio.play('tap'); showMenu(); };
   $('spClear').onclick=()=>{ const S=G.S, o=S.selScen; if (!o) return; const [name]=SCENERY_NAMES[o.kind]||['Scenery'];
-    if (clearScenery(o)){ S.selScen=null; rebuild(); renderInfo(); Audio.play('pop'); msg(o.kind==='fire'?'Fire’s out! That spot is free now.':o.kind==='litter'||o.kind==='tire'?'All cleaned up! That spot is free now.':`${name} cleared. That spot is free now.`); }
+    const gentle=moved(o);
+    if (clearScenery(o)){ S.selScen=null; rebuild(); renderInfo(); Audio.play('pop'); msg(gentle?`${name} moved to a better spot. This one is free now.`:o.kind==='fire'?'Fire’s out! That spot is free now.':o.kind==='litter'||o.kind==='tire'?'All cleaned up! That spot is free now.':`${name} cleared. That spot is free now.`); }
     else { Audio.play('denied'); msg(`Not enough seeds. It costs ${clearCost(o)}.`); } };
   $('spClose').onclick=()=>{ G.S.selScen=null; renderInfo(); };
   $('iUp').onclick=()=>{ const t=G.S.sel; if (upgrade(t)){ renderInfo(); msg(`${TYPES[t.type].name} upgraded to level ${t.lv+1}.`); } };
@@ -723,11 +891,12 @@ export function initUI(){
   });
   paintSound();
 
-  on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat && !G.S.rain && !swarmAt(wave) && !pestQueue.length) msg(boss ? `Final wave! The ${ENEMY[G.LV.boss].name} is coming!` : wave===G.LV.waves-1 ? 'One more wave before the boss.' : 'Here they come…'); });
+  on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat && !G.S.rain && !swarmAt(wave) && !pestQueue.length) msg(boss ? `${G.LV.endless?'Boss wave':'Final wave'}! The ${ENEMY[(G.S.spawnQ.find(q=>ENEMY[q.t].boss)||{t:G.LV.boss}).t].name} is coming!` : wave===G.LV.waves-1 ? 'One more wave before the boss.' : 'Here they come…'); });
   on('rain', () => msg('Rain! Pests slow down in the wet, and every plant gets a drink.'));
   on('swarm', () => msg('Aphid boom! A huge swarm is hatching. Splash defenders and the spray shine here.'));
   on('heat', hot => msg(hot ? `Heat wave! ${hot} defender${hot>1?'s are':' is'} overheating. Defenders near a Sprinkler stay cool.` : 'Heat wave! Your Sprinklers are keeping everyone cool.'));
   on('fence', left => msg(left ? `Your Sturdy Fence stopped a pest! It can stop ${left} more this level.` : 'Your Sturdy Fence stopped a pest! That was its last one this level.'));
   on('waveClear', () => { if (G.S) { G.S.aiming=false; G.aim=null; } });
+  on('waveClear', ({ wave }) => { if (G.LV.endless && wave>Save.data.endless.best){ Save.data.endless.best=wave; Save.commit(); emit('endlessBest', wave); } });
   on('waveClear', ({ wave, seeds, fromFlowers }) => msg(`Wave ${wave} cleared. +${seeds} seeds${fromFlowers?` (${fromFlowers} from sunflowers)`:''}.`));
 }

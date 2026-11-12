@@ -77,5 +77,7 @@ async function boot(){
     onBack(){ const S=G.S; if (!S) return; if (S.paused) resume(); else if (S.mode==='play') pause(); else showMenu(); },
   });
   requestAnimationFrame(t => { last=t; frame(t); });
+  // Offline cache for the web and home-screen versions (the store apps carry their own files).
+  if ('serviceWorker' in navigator && location.protocol==='https:' && !window.Capacitor) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 boot();

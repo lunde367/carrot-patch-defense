@@ -17,6 +17,7 @@ export const SCENERY = {
   rain:       { small:['sapling','clover'],  big:{ kind:'pond',     w:2, h:2 } },
   meadow:     { small:['bush','skep'],       big:{ kind:'haystack', w:2, h:2 } },
   newgarden:  { small:['bush','basket'],     big:{ kind:'pond',     w:2, h:2 } },
+  endless:    { small:['bush','sapling','clover'], big:{ kind:'pond', w:2, h:2 } },
 };
 // How many small pieces each level in a garden gets (level 1, 2, 3), and whether it gets the big one.
 const SMALL = [6, 8, 10], BIG = [false, true, true];   // more scenery; any piece can be cleared for seeds

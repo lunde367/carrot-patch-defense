@@ -7,6 +7,7 @@ const V = {   // what each tier gives
   pouch:[15,30,45,55,65], fence:[2,4,5], thumb:[4,8,11,14], reach:[5,10,14], harvest:[10,20,28,35], head:[2,3],
   formula:[20,40,60,75], nozzle:[20,40,55], refill:[30,50,60], gentle:[50,80],
   fmix:[45,55,65], flong:[12,14,16], fbin:[15,30],
+  heirloom:[20,40,60], roots:[2,4], sprouts:[4,7,10],
 };
 export const PERKS = [
   { id:'pouch',   name:'Seed Pouch',     costs:[1,2,3,4,5], desc:t=>`Start every level with +${V.pouch[t]} seeds.` },
@@ -20,17 +21,23 @@ export const PERKS = [
   { id:'nozzle',  name:'Wider Nozzle',     spray:true, costs:[1,2,3],   desc:t=>`The spray circle is ${V.nozzle[t]}% wider.` },
   { id:'refill',  name:'Quick Refill',     spray:true, costs:[1,2,3],   desc:t=>`The Sprayer refills ${V.refill[t]}% faster.` },
   { id:'gentle',  name:'Gentle Formula',   spray:true, costs:[1,1],     desc:t=>`Your plants wilt ${V.gentle[t]}% shorter in the spray.` },
-  // Fertilizer upgrades (shown once the Fertilizer has been introduced)
-  { id:'fmix',    name:'Rich Mix',       fert:true, costs:[1,2,3], desc:t=>`Fertilizer makes defenders work ${V.fmix[t]}% faster (from 35%).` },
-  { id:'flong',   name:'Slow Release',   fert:true, costs:[1,2,3], desc:t=>`Fertilizer lasts ${V.flong[t]} seconds (from 10).` },
-  { id:'fbin',    name:'Compost Bin',    fert:true, costs:[2,3],   desc:t=>`Fertilizer is ready again ${V.fbin[t]}% sooner.` },
+  // Compost upgrades (shown once the Compost has been introduced)
+  { id:'fmix',    name:'Rich Mix',       fert:true, costs:[1,2,3], desc:t=>`Compost makes defenders work ${V.fmix[t]}% faster (from 35%).` },
+  { id:'flong',   name:'Deep Mulch',   fert:true, costs:[1,2,3], desc:t=>`Compost lasts ${V.flong[t]} seconds (from 10).` },
+  { id:'fbin',    name:'Second Bin',    fert:true, costs:[2,3],   desc:t=>`Compost is ready again ${V.fbin[t]}% sooner.` },
+  // After the story: bought with stars from the Endless Garden (shown once the story is finished)
+  { id:'heirloom', name:'Heirloom Seeds', post:true, costs:[2,3,4], desc:t=>`Start every level with another +${V.heirloom[t]} seeds.` },
+  { id:'roots',    name:'Deep Roots',     post:true, costs:[3,4],   desc:t=>`Every garden has ${V.roots[t]} more crops to lose.` },
+  { id:'sprouts',  name:'Quick Sprouts',  post:true, costs:[2,3,4], desc:t=>`All defenders work ${V.sprouts[t]}% faster, all the time.` },
 ];
 
 // Owned tiers → the numbers the game uses.
 export function perkValues(owned = {}){
   const n = id => owned[id] || 0, at = (id, base) => n(id) ? V[id][n(id)-1] : base;
   return {
-    seeds:    at('pouch', 0),
+    seeds:    at('pouch', 0) + at('heirloom', 0),
+    lives:    at('roots', 0),                 // extra crops
+    rateMul:  1 + at('sprouts', 0)/100,
     fence:    at('fence', 0),                 // pests the fence stops before any crop is eaten
     costMul:  1 - at('thumb', 0)/100,
     rangeMul: 1 + at('reach', 0)/100,
@@ -47,6 +54,6 @@ export function perkValues(owned = {}){
 }
 export const NO_PERKS = perkValues({});
 // Everything owned (test mode plays with this).
-export const ALL_PERKS = Object.fromEntries(PERKS.map(p => [p.id, p.costs.length]));
+export const ALL_PERKS = Object.fromEntries(PERKS.filter(p => !p.post).map(p => [p.id, p.costs.length]));
 
 export const PRODUCTS = { removeAds:'remove_ads' };

@@ -79,9 +79,9 @@ export const ENEMY = {
   blight:{voice:'slurp',name:'The Blight',boss:true,hp:640,armor:4,spd:.4,reward:90,size:.6,shape:'slug',col:'#4a5a2a',dk:'#1e2a0a',spots:true,glow:'#c6ff5a',spawns:{type:'glowslug',every:3}},
   // ---- Rain Garden (Part 4) ----
   puddleslug:{name:'Puddle Slug',hp:12,spd:.7,reward:3,size:.22,gap:.6,shape:'slug',col:'#b0a070',dk:'#706036'},
-  frog:{name:'Flood Frog',hp:20,spd:.9,reward:4,size:.26,gap:.6,hopper:true,shape:'frog',col:'#6aa85a',dk:'#2f5e2a'},
+  frog:{name:'Froghopper',hp:20,spd:.9,reward:4,size:.26,gap:.6,hopper:true,shape:'hopper',col:'#8a9a4a',dk:'#4a5626'},
   mudsnail:{name:'Mud Snail',hp:30,armor:2,spd:.55,reward:6,size:.29,gap:.9,shape:'snail',shell:'#8a6a4a',sdk:'#4a3420'},
-  bullfrog:{voice:'croak',name:'Bullfrog',boss:true,hp:340,spd:.55,reward:50,size:.5,hopper:true,shape:'frog',col:'#5a8a4a',dk:'#2a4a1e'},
+  bullfrog:{voice:'chirp',name:'Giant Froghopper',boss:true,hp:340,spd:.55,reward:50,size:.5,hopper:true,shape:'hopper',col:'#6e7e3a',dk:'#38441c'},
   mudcrab:{voice:'click',name:'Mud Crab',boss:true,hp:420,armor:5,spd:.45,reward:60,size:.5,shape:'shield',col:'#a8603a',dk:'#5a2a14'},
   snapper:{voice:'click',name:'Old Snapper',boss:true,hp:560,armor:6,spd:.4,reward:75,size:.54,shape:'shield',col:'#5a7a4a',dk:'#2a3a1e',spots:true},
   // ---- Wildflower Meadow & The New Garden (Part 4) ----

@@ -9,6 +9,17 @@ const partDone = (s, n) => CHAPTERS.filter(ch=>ch.act===n).every(ch=>ch.levels.e
 const totalStars = s => LEVELS.reduce((n,l)=>n+starsAt(s,l.gi), 0);
 const shedTiers = s => Object.values(s.perks||{}).reduce((n,v)=>n+(+v||0), 0);
 
+// Headings on the Achievements page. Anything not listed lands under the first one.
+export const ACH_GROUPS = [
+  ['Garden basics', []],
+  ['Story',         ['master','part1','part2','part3','part4','diary5','diaryAll','ending']],
+  ['Stars',         ['ribbon','perfect','stars30','stars60','stars90','ribbon3']],
+  ['Clever wins',   ['noNibble','speedy','close','few','marathon','flawless12','kinds']],
+  ['Tools',         ['fence','shed','clear1','clear50','sprayHits','fert','scare','shed10']],
+  ['Big numbers',   ['bosses','pests','sunny','bosses20','pests5k','pests20k','sunny2']],
+  ['Endless Garden',['endless10','endless20','endless30']],
+  ['Hard',          ['tough1','tough10','tough3']],
+];
 export const ACHIEVEMENTS = [
   { id:'firstWin',   name:'First Harvest',    desc:'Win any level.',                                    check:(s,e)=>e.type==='win' },
   { id:'noNibble',   name:'Not a Nibble',     desc:'Win a level without losing a single crop.',         check:(s,e)=>e.type==='win' && e.lost===0 },
@@ -48,13 +59,18 @@ export const ACHIEVEMENTS = [
   { id:'clear1',     name:'Tidy Up',          desc:'Clear something out of the way for seeds.',         check:(s,e)=>e.type==='clear' },
   { id:'clear50',    name:'Clean Sweep',      desc:'Clear 50 things out of the way.',                   stat:'clears', goal:50 },
   { id:'sprayHits',  name:'Soaked',           desc:'Hit 100 pests with the Sprayer.',                   stat:'sprayHits', goal:100 },
-  { id:'fert',       name:'Green Thumb',      desc:'Use Fertilizer 25 times.',                          stat:'ferts', goal:25 },
+  { id:'fert',       name:'Green Thumb',      desc:'Use Compost 25 times.',                          stat:'ferts', goal:25 },
   { id:'scare',      name:'Shoo!',            desc:'Scare away 50 birds with Scarecrows.',              stat:'scares', goal:50 },
   { id:'shed10',     name:'Well Stocked',     desc:'Buy 10 Garden Shed upgrades.',                      check:s=>shedTiers(s)>=10 },
   // hard difficulty
   { id:'tough1',     name:'Tough Cookie',     desc:'Win a level on Hard.',                        check:(s,e)=>e.type==='win' && e.tough },
   { id:'tough10',    name:'Tough as Nails',   desc:'Win 10 levels on Hard.',                      stat:'toughWins', goal:10 },
   { id:'tough3',     name:'Thorny Customer',  desc:'Get 3 stars on a 12-wave level on Hard.',     check:(s,e)=>e.type==='win' && e.tough && e.waves>=12 && e.stars===3 },
+  // after the story
+  { id:'ending',     name:'Happily Ever After', desc:'See the end of the story.',                       check:s=>!!s.ended },
+  { id:'endless10',  name:'Holding On',       desc:'Clear 10 waves in the Endless Garden.',             check:s=>(s.endless?.best||0)>=10 },
+  { id:'endless20',  name:'Deep Rooted',      desc:'Clear 20 waves in the Endless Garden.',             check:s=>(s.endless?.best||0)>=20 },
+  { id:'endless30',  name:'Evergreen',        desc:'Clear 30 waves in the Endless Garden.',             check:s=>(s.endless?.best||0)>=30 },
   // big numbers
   { id:'bosses20',   name:'Boss of Bosses',   desc:'Squash 20 bosses.',                                 stat:'bossKills', goal:20 },
   { id:'pests5k',    name:'Pest Patrol',      desc:'Squash 5,000 pests.',                               stat:'kills', goal:5000 },

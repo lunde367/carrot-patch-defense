@@ -36,8 +36,11 @@ capacitor.config.json   ← app name & ID for the stores
 
 Most tuning only touches `js/data/`:
 - **When defenders unlock:** `unlock` in `towers.js` (0 = Seedlings, 1 = Leafy Heads, …).
-- **Garden Shed upgrades:** `perks.js`. Costs add up to 31, a bit more than the 27 stars you can earn, so players choose.
-- **Stars:** lose 4 or fewer crops for 3 stars, 10 or fewer for 2 (in `engine/game.js`).
+- **Garden Shed upgrades:** `perks.js`. Costs add up to about 110, a little more than the 108 stars the 36 levels give, so players choose. Three more upgrades open after the story and are paid for with Endless Garden stars.
+- **Stars:** lose a fifth of your crops or fewer for 3 stars, half or fewer for 2 (in `engine/game.js`). Part 1 has 20 crops, later parts 10.
+- **Difficulty:** Easy / Normal / Hard multiply pest health (`DIFFICULTY` in `engine/game.js`).
+- **Story:** diary pages are in `diary.js`, their pictures in `render/art-diary.js`, field guide facts in `facts.js`.
+- **Endless Garden:** `ENDLESS` in `levels.js`.
 - **Pesticide Sprayer:** `spray.js` (damage, circle, recharge, wilt time, how far the wilting mist
   drifts, which level unlocks it); spray resistance per level is `SPRAY_RESIST` in `levels.js`.
 

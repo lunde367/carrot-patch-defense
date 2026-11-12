@@ -1,7 +1,7 @@
 // Pure game simulation: no DOM, drawing, sound or ads. It reports what happens through events.
 import { TYPES } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
-import { LEVELS, setGrid } from '../data/levels.js';
+import { LEVELS, setGrid, ROWS } from '../data/levels.js';
 import { path, setPath, setScenery, sceneryAt, bonusAt, pointAt, laneTotal, buildable } from './path.js';
 import { sceneryFor, bonusFor } from '../data/scenery.js';
 import { FERT } from '../data/fertilizer.js';
@@ -16,15 +16,17 @@ const DRY_SLOW = .75;    // in a drought, plant defenders with no Sprinkler near
 export const HILL = 1.2, SUNNY_RATE = 1.15, SUNNY_SEEDS = 1.5;   // helpful tiles: +20% range; 15% faster; +50% sunflower seeds
 
 export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
-  const LV = G.LV = LEVELS[gi]; G.CH = LV.ch; setGrid(LV.cols, LV.rows); setPath(LV.lanes || LV.pts); G.hint = null;
+  // `gi` is a level's number, or a level object that isn't part of the story (the Endless Garden).
+  const LV = G.LV = typeof gi==='object' ? gi : LEVELS[gi]; gi = LV.gi; G.CH = LV.ch; setGrid(LV.cols, LV.rows); setPath(LV.lanes || LV.pts); G.hint = null;
   const onPath=(c,r)=>path.cells.has(c+','+r), scen=sceneryFor(LV, onPath, LV.gi===0 ? [[2,1],[4,3]] : []);
   setScenery(scen, bonusFor(LV, onPath, scen));
   newShots = [];                                   // drop shots left over from a game that ended mid-wave
-  const maxLives = G.LV.lives;
+  const maxLives = G.LV.lives + (perks.lives||0);
   G.S = { mode:'play', paused:false, seeds:120+gi*15+bonusSeeds+perks.seeds, lives:maxLives, maxLives, perks, wave:0,
     fence:perks.fence, headStartUsed:false,
     sprayOn: gi >= SPRAY.unlock && !G.LV.ch.noSpray, sprayCd:0, aiming:false,   // Part 4: the sprayer is put away for good
-    fertOn: gi >= FERT.unlock, fertCd:0, fertT:0,                                 // Fertilizer: cooldown, and time left while it's working
+    fertOn: gi >= FERT.unlock, fertCd:0, fertT:0,                                 // Compost: cooldown, and time left while it's working
+    leaks:{},                                                                     // pests that reached the crops, by type (for the tip after a loss)
     revived:false, adSeeds:false, adRefill:false,                                 // one-per-try extras (ads or Remove Ads)
     enemies:[], towers:[], shots:[], fx:[], spawnQ:[], spawnT:0, laneNext:0, active:false, speed, sel:null, build:null };
   emit('levelStart', LV);
@@ -38,6 +40,7 @@ export const starLimits = max => [Math.floor(max*.2), Math.floor(max*.5)];
 export const starsFor = (lost, max) => { const [a,b]=starLimits(max); return lost<=a?3:lost<=b?2:1; };
 // A boss that gets through eats a quarter of the crops (5 of 20, 3 of 10).
 const bossBite = () => Math.max(3, Math.round(G.S.maxLives*.25));
+export const bossWave = w => G.LV.endless ? w%5===0 : w===G.LV.waves;
 export const heatAt = w => (G.LV.heat || G.CH.heat || []).includes(w);
 export const rainAt = w => (G.LV.rain || G.CH.rain || []).includes(w);
 export const swarmAt = w => (G.LV.swarm || G.CH.swarm || []).includes(w);
@@ -45,7 +48,7 @@ export const swarmAt = w => (G.LV.swarm || G.CH.swarm || []).includes(w);
 export const DIFFICULTY = {
   easy:   { hp:.8,  name:'Easy',   note:'Pests are softer. Great for little gardeners.' },
   normal: { hp:1,   name:'Normal', note:'The garden as it was meant to be played.' },
-  hard:   { hp:1.3, name:'Hard',   note:'For grown-up gardeners. You’ll need your Sprayer and Fertilizer.' },
+  hard:   { hp:1.3, name:'Hard',   note:'For grown-up gardeners. You’ll need your Sprayer and Compost.' },
 };
 const hpMul = () => G.LV.hpMul*(G.diff||1);
 const hpScale = w => (1+.2*(w-1)+.015*(w-1)*(w-1))*hpMul();
@@ -59,7 +62,8 @@ function makeWave(w){
   }
   // Aphid boom (Apple Orchard): a big extra burst of the garden's smallest pest.
   if (swarmAt(w)){ const small=pool[0]; for (let i=0;i<Math.floor(n*.9);i++) q.splice(Math.floor(Math.random()*q.length), 0, {t:small[0], m:small[3]}); }
-  if (w===G.LV.waves) q.push({t:G.LV.boss});
+  if (G.LV.endless){ if (w%5===0) q.push({t:G.LV.bosses[(w/5-1)%G.LV.bosses.length]}); if (q.length>46) q.splice(0, q.length-46); }
+  else if (w===G.LV.waves) q.push({t:G.LV.boss});
   return q;
 }
 export function startWave(){
@@ -72,11 +76,11 @@ export function startWave(){
   S.rain = rainAt(S.wave); if (S.rain) emit('rain');
   if (S.heat) emit('heat', S.towers.filter(t=>!t.cool).length);
   if (swarmAt(S.wave)) emit('swarm');
-  emit('waveStart', { wave:S.wave, boss:S.wave===G.LV.waves }); emit('select', null);
+  emit('waveStart', { wave:S.wave, boss:bossWave(S.wave) }); emit('select', null);
   return true;
 }
 function spawnEnemy(type, dist, morph, lane=0){
-  const S=G.S, d=ENEMY[type], sc=d.boss?hpMul():hpScale(Math.max(1,S.wave));
+  const S=G.S, d=ENEMY[type], sc=d.boss?hpMul()*(G.LV.endless?.6+S.wave*.12:1):hpScale(Math.max(1,S.wave));
   const hp=Math.round(d.hp*sc), [x,y]=pointAt(dist, lane);
   const e={ type, hp, max:hp, spd:d.spd, reward:d.reward+Math.floor(G.LV.gi/2), size:d.size, armor:d.armor||0,
     dist, x, y, face:1, slow:0, hit:0, ph:Math.random()*6, bt:0, fly:!!d.fly, lane, morphAt:morph?laneTotal(lane)*morph:null, cocoon:0, scared:0, st:0 };
@@ -131,7 +135,7 @@ export function sell(t){
 // ---------- the Pesticide Sprayer ----------
 export const sprayStats = () => { const p=G.S.perks;
   return { damage:SPRAY.power*p.sprayDmg, radius:SPRAY.radius*p.sprayRadius, recharge:SPRAY.recharge*p.sprayRecharge, wilt:SPRAY.wilt*p.sprayWilt }; };
-// ---------- Fertilizer ----------
+// ---------- Compost (called `fert` in code) ----------
 export const fertReady = () => G.S.fertOn && G.S.fertCd<=0 && G.S.fertT<=0 && G.S.mode==='play' && G.S.active;
 export function fertilize(){
   const S=G.S; if (!fertReady()) return false;
@@ -150,9 +154,11 @@ export function revive(){
 // ---------- Clearing scenery ----------
 // Any rock, stump, fire or pile of litter can be cleared away for seeds, freeing its tiles.
 export const clearCost = o => o.w*o.h>1 ? 60 : 30;
+// In Part 4 the garden is healing: the pond stays where it is (the frogs live there).
+export const canClear = o => !(G.CH.act===4 && o.kind==='pond');
 export const sceneryPiece = (c,r) => path.scenery.find(o => c>=o.c && c<o.c+o.w && r>=o.r && r<o.r+o.h) || null;
 export function clearScenery(o){
-  const S=G.S; if (!o || S.mode!=='play') return false;
+  const S=G.S; if (!o || S.mode!=='play' || !canClear(o)) return false;
   const cost=clearCost(o); if (S.seeds<cost) return false;
   S.seeds-=cost;
   setScenery(path.scenery.filter(x => x!==o), [...path.bonus].map(([k,kind]) => { const [c,r]=k.split(',').map(Number); return { c, r, kind }; }));
@@ -241,9 +247,9 @@ export function update(dt){
     const [x,y,f]=pointAt(e.dist, e.lane); e.x=x; e.y=y; if (f) e.face=f;
     if (e.dist>=laneTotal(e.lane)){
       e.dead=true;
-      if (S.fence>0){ S.fence--; floatText(e.x,12.7,'Fence!','#8a6a48',1); emit('fence', S.fence); continue; }   // Sturdy Fence
-      const lost=D.boss?bossBite():1; S.lives=Math.max(0,S.lives-lost);
-      floatText(e.x,12.9,'−'+lost,'#c2456b',1); emit('leak', lost);
+      if (S.fence>0){ S.fence--; floatText(e.x,ROWS-1.3,'Fence!','#8a6a48',1); emit('fence', S.fence); continue; }   // Sturdy Fence
+      const lost=D.boss?bossBite():1; S.lives=Math.max(0,S.lives-lost); S.leaks[e.type]=(S.leaks[e.type]||0)+lost;
+      floatText(e.x,ROWS-1.1,'−'+lost,'#c2456b',1); emit('leak', lost);
       if (S.lives<=0){ S.mode='lost'; S.active=false; emit('lose', { wave:S.wave }); return; }
     }
   }
@@ -253,7 +259,7 @@ export function update(dt){
   for (const t of S.towers){
     const T=TYPES[t.type];
     t.dry = !!(G.CH.drought && !S.rain && PLANTS.includes(t.type) && !watered(t));
-    t.cd-=dt*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1)*hiveBoost(t)*(S.fertT>0 ? S.perks.fertBoost : 1); t.hop=Math.max(0,t.hop-dt*4);
+    t.cd-=dt*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1)*hiveBoost(t)*(S.fertT>0 ? S.perks.fertBoost : 1)*(S.perks.rateMul||1); t.hop=Math.max(0,t.hop-dt*4);
     if (t.wilt>0){ t.wilt=Math.max(0, t.wilt-dt); continue; }          // wilted by the spray
     if (t.type==='sunflower' || T.support) continue;
     const R=rangeOf(t), seen = e => Math.hypot(e.x-t.x,e.y-t.y) <= R*(G.CH.smog && e.fly ? SMOG : 1);

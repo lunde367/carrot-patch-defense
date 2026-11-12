@@ -63,8 +63,9 @@ export function rebuild(){
   for (let r=0;r<ROWS-1;r++) for (let c=0;c<COLS;c++){
     if (path.cells.has(c+','+r)||path.blocked.has(c+','+r)||path.bonus.has(c+','+r)||R()>.22) continue;
     const x=c*s+s*(.2+R()*.6), y=r*s+s*(.2+R()*.6);
-    if (R()<.5){ b.strokeStyle='#7fb064'; b.lineWidth=1.5; b.beginPath();
+    if (R()<.5){ b.strokeStyle=CH.mood==='withered'?'#9a8a62':'#7fb064'; b.lineWidth=1.5; b.beginPath();
       for (const o of [-.06,0,.06]){ b.moveTo(x,y); b.lineTo(x+o*s*1.5,y-s*.13); } b.stroke(); }
+    else if (CH.mood==='withered'){ R(); b.strokeStyle='rgba(90,70,45,.55)'; b.lineWidth=1.2; b.beginPath(); b.moveTo(x-s*.07,y); b.lineTo(x+s*.02,y-s*.05); b.lineTo(x+s*.08,y+s*.02); b.stroke(); }   // dry cracks, no blossoms
     else { const col=['#f7d6e0','#fff3b0','#e2d3f5'][Math.floor(R()*3)];
       for (let k=0;k<5;k++){ const a=k*1.2566; ell(b,x+Math.cos(a)*s*.06,y+Math.sin(a)*s*.06,s*.045,s*.045,col); }
       ell(b,x,y,s*.03,s*.03,'#e6a92e'); }

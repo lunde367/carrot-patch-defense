@@ -12,7 +12,7 @@ export const PARTS = [
   { n:1, name:'The Backyard',         tint:'#5f9a45' },
   { n:2, name:'The Long Hot Summer',  tint:'#c29a3a' },
   { n:3, name:'The Dry Years',        tint:'#9a7a5a' },
-  { n:4, name:'The First Rain',       tint:'#4f9a8a', before:'Three seasons later…' },
+  { n:4, name:'The First Rain',       tint:'#4f9a8a', before:'Three years later…' },
 ];
 
 export const CHAPTERS = [
@@ -52,7 +52,7 @@ export const CHAPTERS = [
     { name:'Deep Roots', season:'summer', boss:'molemom',
       pts:[[1.5,-0.6],[1.5,4.5],[4.5,4.5],[4.5,1.5],[7.5,1.5],[7.5,9.5],[2.5,9.5],[2.5,13.2]],
       pool:[['mouse',1,3],['vole',2,2],['mole',3,1.5]],
-      intro:'Voles are fast. Moles tunnel underground, where your towers can’t hit them.' },
+      intro:'Voles are fast. Moles tunnel underground, where your defenders can’t hit them.' },
     { name:'Big Dig', waves:10, season:'late summer', boss:'gopherboss',
       pts:[[7.5,-0.6],[7.5,1.5],[1.5,1.5],[1.5,4.5],[7.5,4.5],[7.5,7.5],[1.5,7.5],[1.5,10.5],[7.5,10.5],[7.5,13.2]],
       pool:[['vole',1,2.5],['mole',1,2],['gopher',3,1.5]],
@@ -64,7 +64,7 @@ export const CHAPTERS = [
     { name:'Hothouse', season:'spring', boss:'sapsucker',
       pts:[[2.5,-0.6],[2.5,2.5],[6.5,2.5],[6.5,5.5],[2.5,5.5],[2.5,8.5],[6.5,8.5],[6.5,11.5],[3.5,11.5],[3.5,13.2]],
       pool:[['whitenymph',1,3,.5],['stinknymph',2,2,.6],['whitefly',4,1.5]],
-      intro:'It’s too hot outside, so the tomatoes moved into the greenhouse. Whitefly nymphs hatch into fliers halfway down.' },
+      intro:'It’s too hot outside, so the tomatoes moved into the greenhouse. Whitefly nymphs grow wings halfway down.' },
     { name:'Vine Rows', season:'summer', boss:'shieldbug',
       lanes:[[[1.5,-0.6],[1.5,4.5],[4.5,4.5],[4.5,7.5],[7.5,7.5],[7.5,10.5],[1.5,10.5],[1.5,13.2]],
              [[7.5,-0.6],[7.5,4.5],[4.5,4.5],[4.5,7.5],[7.5,7.5],[7.5,10.5],[1.5,10.5],[1.5,13.2]]],
@@ -145,7 +145,7 @@ export const CHAPTERS = [
       pool:[['glowslug',1,2],['glowworm',1,2,.45],['glowsnail',2,1.5],['glowmole',3,1.5]],
       intro:'The Blight is everything the spray left behind. Protect the last seeds. If they make it, the garden can come back.' },
   ]},
-  { id:'rain', name:'Rain Garden', crop:'radish', cropPlural:'radishes', pests:'Flood frogs & mud snails', grass:['#9fcc86','#95c27c'],
+  { id:'rain', name:'Rain Garden', crop:'radish', cropPlural:'radishes', pests:'Froghoppers & mud snails', grass:['#9fcc86','#95c27c'],
     act:4, mood:'regrow', rain:[2,4,6], levels:[
     { name:'First Rain', season:'spring', boss:'bullfrog', mirrorOf:1,
       pool:[['puddleslug',1,3],['frog',2,2]],
@@ -215,6 +215,19 @@ LEVELS.forEach(l => { l.lives = l.lives || (l.ch.act>=2 ? 10 : 20); });
 // Players who want a real challenge turn on Tough mode in Settings.
 const HARDER = 1.05;
 LEVELS.forEach(l => { l.hpMul = +((TOUGHNESS[l.gi] ?? 1+l.gi*.14) * (l.gi>=2 && l.ch.act===1 ? HARDER : 1)).toFixed(3); });
+// The Endless Garden: opens after the story. Waves never stop; a boss comes every 5th wave.
+// It is not part of LEVELS (so stars, unlocks and "beat every level" ignore it).
+const last = LEVELS[LEVELS.length-1];
+export const ENDLESS = {
+  endless:true, gi:LEVELS.length, li:2, ci:CHAPTERS.length, name:'Endless Garden', season:'forever', waves:Infinity, lives:10, hpMul:2.2, resist:0,
+  cols:last.cols, rows:last.rows, lanes:last.lanes,
+  ch:{ id:'endless', name:'Endless Garden', crop:'pumpkin', cropPlural:'pumpkins', pests:'Everything, forever', grass:['#9cd68a','#92cc80'], act:4, mood:'regrow', noSpray:true, levels:[] },
+  pool:[['slug',1,3],['caterpillar',1,2,.5],['mouse',2,2],['snail',3,1.5],['aphid',4,2.5,.5],['moth',5,2],['beetle',6,1.5],['vole',7,2],
+        ['stinkbug',9,1.5],['locust',10,2],['mole',11,1.5],['jbeetle',12,1.5],['dustbeetle',14,1.5],['pigeon',15,1.5],['glowslug',17,2],['glowsnail',20,1.5]],
+  bosses:['fatslug','chunkycat','bigmouse','beetleking','mothqueen','gopherboss','baron','locustking','dustdevil','smogqueen','blight'],
+  intro:'The garden is yours, and the pests will never stop trying. Waves get tougher forever, and a boss comes every 5th wave. How long can you hold?',
+};
+ENDLESS.ch.levels.push(ENDLESS);
 // How much less spray damage pests take on each level (0 = none, 0.3 = 30% less). Grows through
 // the story, the same for every player: rising in Act 2, high in Act 3, fading in Act 4.
 const SPRAY_RESIST = [0, 0, 0,   0, 0, 0,   0, 0, 0,   .4, .65, .75,   .6, .7, .75,   .75, .8, .85,

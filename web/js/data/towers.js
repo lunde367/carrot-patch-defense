@@ -17,7 +17,7 @@ export const TYPES = {
     desc:'Scares flying pests back up the path. Doesn’t hurt anything, so pair it with defenders that do.'},
   barrel:{name:'Rain Barrel',unlock:18,cost:45,up:[45,70],range:[2.2,2.6,3],support:true,
     desc:'Waters every plant defender in reach, so drought and heat can’t slow them. Doesn’t fight.'},
-  hive:{name:'Bee Hive',unlock:27,cost:80,up:[80,120],range:[1.8,2.1,2.4],boost:[1.2,1.3,1.4],support:true,
+  hive:{name:'Bee Hive',unlock:31,cost:80,up:[80,120],range:[1.8,2.1,2.4],boost:[1.2,1.3,1.4],support:true,
     desc:'The bees are back! Defenders near the hive work faster. The hive itself doesn’t fight.'},
   ladybug:{name:'Ladybug Nest',unlock:30,cost:60,up:[60,95],range:[2.4,2.6,2.8],rate:[2.2,2.6,3],dmg:[3,5,8],
     desc:'Sends out ladybugs that nip pests fast, twice as hard on small ones like aphids. Hits fliers too.'},

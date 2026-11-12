@@ -15,15 +15,19 @@ function unlock(a){
   const d = new Date();   // the player's own calendar day, not UTC
   Save.data.ach[a.id] = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   Save.commit();
-  Audio.play('sparkle');
-  toast(`${TROPHY}<span><small>Achievement unlocked</small><b>${a.name}</b></span>`, { kind:'ach', ms:7000 });
 }
-function evaluate(e){
+// One pop-up per achievement, or a single summary when several land at once.
+export function evaluate(e){
+  const fresh=[];
   for (const a of ACHIEVEMENTS){
     if (Save.data.ach[a.id]) continue;
     const ok = a.stat ? (Save.data.stats[a.stat]||0) >= a.goal : a.check(Save.data, e);
-    if (ok) unlock(a);
+    if (ok){ unlock(a); fresh.push(a); }
   }
+  if (!fresh.length) return;
+  Audio.play('sparkle');
+  if (fresh.length>2) toast(`${TROPHY}<span><small>${fresh.length} new achievements</small><b>${fresh.slice(0,2).map(a=>a.name).join(', ')} and more</b></span>`, { kind:'ach', ms:8000 });
+  else for (const a of fresh) toast(`${TROPHY}<span><small>Achievement unlocked</small><b>${a.name}</b></span>`, { kind:'ach', ms:7000 });
 }
 const bump = (stat, n=1) => { Save.data.stats[stat] = (Save.data.stats[stat]||0) + n; };
 
@@ -36,6 +40,8 @@ export function initAchievements(){
   on('fert', () => { bump('ferts'); evaluate({ type:'fert' }); });
   on('scare', n => { if (n){ bump('scares', n); evaluate({ type:'scare' }); } });
   on('diary', () => evaluate({ type:'diary' }));
+  on('ending', () => evaluate({ type:'ending' }));
+  on('endlessBest', () => evaluate({ type:'endless' }));
   on('upgrade', t => evaluate({ type:'upgrade', lv:t.lv }));
   on('fence', () => evaluate({ type:'fence' }));
   on('perk', () => evaluate({ type:'perk' }));

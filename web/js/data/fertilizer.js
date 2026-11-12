@@ -1,4 +1,4 @@
-// The Fertilizer: a second reusable ability, the garden-friendly cousin of the Sprayer.
+// Compost (called `fert` in code): a second reusable ability, the garden-friendly cousin of the Sprayer.
 // Tap it and every defender works faster for a few seconds. It then needs time to be ready again.
 // It never hurts anything, so it stays useful all the way through Part 4.
 export const FERT = {

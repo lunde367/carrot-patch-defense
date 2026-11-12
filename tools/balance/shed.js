@@ -18,7 +18,7 @@ export const starsBefore = (gi, starsPerLevel) => Math.floor(gi * starsPerLevel)
 export function shop(stars, gi = 99){
   const owned = {};
   for (;;){
-    const options = PERKS.filter(p => (!p.spray || gi > SPRAY.unlock) && (!p.fert || gi > FERT.unlock)).map(p => ({ p, tier:owned[p.id]||0 }))
+    const options = PERKS.filter(p => !p.post && (!p.spray || gi > SPRAY.unlock) && (!p.fert || gi > FERT.unlock)).map(p => ({ p, tier:owned[p.id]||0 }))
       .filter(o => o.tier < o.p.costs.length && o.p.costs[o.tier] <= stars)
       .sort((a,b) => a.p.costs[a.tier] - b.p.costs[b.tier]);
     if (!options.length) break;

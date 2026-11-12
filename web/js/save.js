@@ -13,6 +13,9 @@ const defaults = () => ({
   stats: { wins:0, losses:0, kills:0, bossKills:0, flowerSeeds:0 },
   ach: {},                                     // achievements earned, id → date
   diary: {},                                   // diary pages read
+  intros: {},                                  // levels whose intro card was shown
+  ended: false,
+  endless: { best:0, runs:0 },                 // Endless Garden: best wave cleared, games played                                // the ending has been seen
   parts: {},                                   // story parts whose title card was shown
   fold: {},                                    // home screen: parts the player opened (true) or closed (false)
   pests: null,                                 // pests already introduced with a card (null = not set up yet)
@@ -27,7 +30,7 @@ function migrate(d, base){
     stars: Array.isArray(d.stars) ? d.stars : [],
     perks: { ...(d.perks||{}) }, seen: { ...(d.seen||{}) },
     settings: { ...base.settings, ...(d.settings||{}) },
-    owned: { ...(d.owned||{}) }, stats: { ...base.stats, ...(d.stats||{}) }, ach: { ...(d.ach||{}) }, diary: { ...(d.diary||{}) }, parts: { ...(d.parts||{}) }, fold: { ...(d.fold||{}) }, pests: d.pests ? { ...d.pests } : null, adStars: { ...base.adStars, ...(d.adStars||{}) } };
+    owned: { ...(d.owned||{}) }, stats: { ...base.stats, ...(d.stats||{}) }, ach: { ...(d.ach||{}) }, diary: { ...(d.diary||{}) }, parts: { ...(d.parts||{}) }, intros: { ...(d.intros||{}) }, endless: { ...base.endless, ...(d.endless||{}) }, fold: { ...(d.fold||{}) }, pests: d.pests ? { ...d.pests } : null, adStars: { ...base.adStars, ...(d.adStars||{}) } };
   if (!d.v || d.v < 2){
     // v1 players already know the basics; introduce only defenders they haven't reached.
     out.tutorialDone = out.stars.some(Boolean);
@@ -41,6 +44,8 @@ export const Save = createSave({
 });
 
 // Stars: earned (best per level), spent in the shed, and left to spend.
-export const starsEarned = () => Save.data.stars.reduce((a,b)=>a+(b||0),0) + (Save.data.bonusStars||0);
+// The Endless Garden pays a star for every 3 waves of your best run.
+export const endlessStars = () => Math.floor((Save.data.endless.best||0)/3);
+export const starsEarned = () => Save.data.stars.reduce((a,b)=>a+(b||0),0) + (Save.data.bonusStars||0) + endlessStars();
 export const starsSpent = () => PERKS.reduce((sum,p)=>sum+p.costs.slice(0,Save.data.perks[p.id]||0).reduce((a,b)=>a+b,0),0);
 export const starsLeft = () => starsEarned() - starsSpent();

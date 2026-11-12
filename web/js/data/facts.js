@@ -1,0 +1,41 @@
+// Field guide: one true thing about the real animal or plant behind each pest and defender.
+// Pests share a fact with the rest of their family (matched by the start of their id or by shape).
+export const TOWER_FACTS = {
+  bunny:'Real rabbits would eat your carrots, not throw them. These ones are on your side.',
+  sprinkler:'Watering early in the morning loses the least water to the sun.',
+  pine:'Pine cones close up tight in wet weather and open again when it’s dry.',
+  sunflower:'Young sunflowers turn to follow the sun across the sky.',
+  rose:'Rose “thorns” are really prickles: they grow from the skin of the stem and snap off.',
+  squirrel:'Squirrels bury thousands of nuts each fall, and the ones they forget grow into trees.',
+  owl:'Owls fly almost silently. One barn owl family can eat thousands of mice in a year.',
+  scarecrow:'Farmers have used scarecrows for more than 3,000 years. Birds get used to them unless they move.',
+  barrel:'One rainy day on a small roof can fill a rain barrel to the top.',
+  hive:'About a third of the food we eat depends on bees and other pollinators.',
+  ladybug:'A single ladybug can eat thousands of aphids in its lifetime.',
+};
+const FAMILY = [
+  [/slug/, 'Slugs are snails without a shell. They come out at night and after rain, and leave a silvery trail.'],
+  [/snail/, 'A garden snail has thousands of tiny teeth on its tongue.'],
+  [/flea/, 'Flea beetles jump like fleas when disturbed and chew tiny round holes in leaves.'],
+  [/beetle|copper|longhorn|shield/, 'Beetles have hard wing covers that work like armor. One in four animal species on Earth is a beetle.'],
+  [/inch/, 'Inchworms have legs only at the front and back, so they walk by making a loop.'],
+  [/caterpillar|^cat|fuzzy|hornworm|chunky/, 'Every caterpillar is a baby moth or butterfly. Its only job is to eat and grow.'],
+  [/moth|sapsucker|swarm/, 'Most moths fly at night. Bright lamps confuse them, and scientists are still working out exactly why.'],
+  [/mouse|whiskers|rat/, 'Mice and rats have front teeth that never stop growing, so they gnaw to keep them short.'],
+  [/vole/, 'Voles look like mice with short tails. They really do eat carrots, from underneath.'],
+  [/mole/, 'Moles eat worms and grubs, not vegetables. It’s their tunnels that wreck the rows.'],
+  [/gopher/, 'Gophers carry food in fur-lined cheek pouches and can pull a whole plant underground.'],
+  [/white/, 'Whiteflies aren’t flies. They’re tiny relatives of aphids that suck sap from leaves.'],
+  [/stink|baron/, 'Stink bugs make a smell when they’re bothered. Many birds won’t eat them twice.'],
+  [/aphid/, 'Aphids can be born already carrying babies. When a plant gets crowded, they grow wings and move on.'],
+  [/^jbeetle/, 'Japanese beetles reached North America around 1916, hidden in plants shipped from overseas.'],
+  [/frog/, 'Baby froghoppers hide inside blobs of foam on plant stems, often called cuckoo spit.'],
+  [/hopper|locust/, 'A locust is a grasshopper that changes its body and behavior when it gets crowded.'],
+  [/root/, 'Corn rootworms spend months underground eating roots, then come up as beetles.'],
+  [/sandflea|dust/, 'Soil with no roots to hold it can blow away. In the 1930s Dust Bowl, storms carried it for hundreds of miles.'],
+  [/pigeon|pidge/, 'City pigeons are descended from rock doves that people tamed thousands of years ago.'],
+  [/smog/, 'In England, peppered moths turned dark when factory soot blackened the trees, then light again when the air was cleaned.'],
+  [/glow|blight|mutant|pale/, 'Nothing in a real garden glows like this. But pests really do change over time when the same spray is used year after year.'],
+  [/crab|snapper|mud/, 'Wet ground brings out animals that stay hidden in dry weather.'],
+];
+export const pestFact = id => (FAMILY.find(([re]) => re.test(id)) || [0, 'Every pest is food for something. A garden with birds, frogs and ladybugs keeps itself in balance.'])[1];
