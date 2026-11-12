@@ -51,11 +51,12 @@ const weather = (kind, w) => G.LV.endless ? eventAt(w)===kind : (G.LV[kind] || G
 export const heatAt = w => weather('heat', w);
 export const rainAt = w => weather('rain', w);
 export const swarmAt = w => weather('swarm', w);
-// Difficulty (chosen in Settings): pest health is multiplied by `hp`. G.diff is the multiplier in play.
+// Difficulty (chosen in Settings): pest health is multiplied by `hp`. The level table in levels.js is tuned
+// for the test bots at 1.0; real players proved much stronger, so Normal sits above it and Easy just below. G.diff is the multiplier in play.
 export const DIFFICULTY = {
-  easy:   { hp:.8,  name:'Easy',   note:'Pests are softer. Great for little gardeners.' },
-  normal: { hp:1,   name:'Normal', note:'The garden as it was meant to be played.' },
-  hard:   { hp:1.3, name:'Hard',   note:'For grown-up gardeners. You’ll need your Sprayer and Compost.' },
+  easy:   { hp:.85,  name:'Easy',   note:'Pests are softer. Great for little gardeners.' },
+  normal: { hp:1.12,  name:'Normal', note:'The garden as it was meant to be played.' },
+  hard:   { hp:1.4, name:'Hard',   note:'For grown-up gardeners. You’ll need your Sprayer and Compost.' },
 };
 const hpMul = () => G.LV.hpMul*(G.diff||1);
 // In the Endless Garden pests also get a steady 9% tougher every wave, so every run ends somewhere.
