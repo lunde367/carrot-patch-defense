@@ -5,7 +5,7 @@ import { SPRAY, PLANTS } from '../data/spray.js';
 import { path } from '../engine/path.js';
 import { TYPES, TRAY, statsText } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
-import { PARTS, CHAPTERS, LEVELS, WAVES, ROWS } from '../data/levels.js';
+import { PARTS, CHAPTERS, LEVELS, WAVES, ROWS, COLS } from '../data/levels.js';
 import { drawEnemy } from '../render/art-enemies.js';
 import { PERKS, perkValues, ALL_PERKS, PRODUCTS } from '../data/perks.js';
 import { Save, starsLeft } from '../save.js';
@@ -88,7 +88,7 @@ function showPartCard(n){
   Audio.play('wave');
 }
 function showDiaryPage(key, cont='Continue'){
-  const d=diaryEntry(key); Save.data.diary[key]=true; Save.commit();
+  const d=diaryEntry(key); Save.data.diary[key]=true; Save.commit(); emit('diary', key);
   if (G.S) G.S.paused=true;
   overlay(`<div class="diary-page"><span class="diary-tag">From the garden diary</span><h3>${d.title}</h3><p>${d.text}</p></div>
     <div class="row"><button class="btn main" data-go="diary-ok">${cont}</button></div>`);
@@ -504,15 +504,25 @@ function tileNote(t){
   if (t.tile==='sunny') return t.type==='sunflower' ? `${name} in a sunny patch: 50% more seeds!` : `${name} in a sunny patch: works 15% faster!`;
   return '';
 }
+// A small bubble over the board next to a tapped piece of scenery, offering to clear it.
+function paintScenePop(){
+  const S=G.S, o=S&&S.selScen, pop=$('scenePop');
+  if (!o || S.sel || S.mode!=='play'){ pop.hidden=true; return; }
+  const [name,verb]=SCENERY_NAMES[o.kind]||['Scenery','Clear'], cost=clearCost(o), big=o.w*o.h>1;
+  pop.querySelector('b').textContent=name;
+  pop.querySelector('small').textContent=`${big?'These spots are':'This spot is'} blocked. Clear it for seeds to plant a defender here.`;
+  const btn=$('spClear'); btn.textContent=`${verb} · ${cost} seeds`; btn.disabled=S.seeds<cost;
+  pop.hidden=false;
+  // place it above the piece (or below, near the top edge), kept inside the board
+  const cv=$('cv'), tile=cv.clientWidth/COLS, bw=pop.offsetWidth, bh=pop.offsetHeight;
+  const cx=(o.c+o.w/2)*tile, top=o.r*tile, below=top-bh-10<0;
+  pop.style.left=Math.max(6, Math.min(cv.clientWidth-bw-6, cx-bw/2))+'px';
+  pop.style.top=(below ? (o.r+o.h)*tile+10 : top-bh-10)+'px';
+  pop.classList.toggle('below', below);
+  pop.style.setProperty('--ax', (cx-parseFloat(pop.style.left))+'px');
+}
 export function renderInfo(){
-  const o=G.S&&G.S.selScen;
-  if (o && !G.S.sel){   // a piece of scenery: offer to clear it
-    const [name,verb]=SCENERY_NAMES[o.kind]||['Scenery','Clear'], cost=clearCost(o);
-    $('info').hidden=false; $('iSell').hidden=true;
-    $('iName').innerHTML=`${name}<em>${o.w*o.h>1?'Big':'In the way'}</em>`;
-    $('iDesc').textContent=`${o.w*o.h>1?'These spots are':'This spot is'} blocked. Pay seeds to free ${o.w*o.h>1?'them':'it'} up for a defender.`; $('iStats').textContent=`Costs ${cost} seeds`;
-    const up=$('iUp'); up.textContent=`${verb} · ${cost}`; up.disabled=G.S.seeds<cost; dirty(); return;
-  }
+  paintScenePop();
   $('iSell').hidden=false;
   const t=G.S&&G.S.sel; $('info').hidden=!t; dirty(); if (!t) return;
   const T=TYPES[t.type];
@@ -537,7 +547,7 @@ export function refresh(){
   $('restart').disabled=S.mode==='menu';
   for (const k of TRAY){ const el=$('card-'+k); if (el && towerOpen(k)) el.classList.toggle('poor', S.seeds<costOf(k)); }
   paintSpray(); paintFert(); paintOffers();
-  if (S.selScen && !S.sel){ $('iUp').disabled=S.seeds<clearCost(S.selScen); }
+  if (S.selScen && !S.sel) paintScenePop();
   if (S.sel){ const up=$('iUp');
     if (S.sel.lv>=2){ up.textContent='Max level'; up.disabled=true; }
     else { const cost=upCostOf(S.sel); up.textContent=`Upgrade · ${cost}`; up.disabled=S.seeds<cost; }
@@ -631,7 +641,7 @@ function tryPlant(c,r){
   if (res.ok){ if (!tutorialActive()) msg(tileNote(res.tower) || (S.wave===0&&S.towers.length===1?'Nice. Plant more, or tap Start wave when ready.':`${TYPES[res.tower.type].name} planted.`)); dirty(); return; }
   Audio.play('denied');
   if (res.reason==='seeds') msg(`Not enough seeds. ${res.name} costs ${res.cost}.`);
-  else if (res.reason==='scenery') msg('Something’s in the way. Unpick your defender, then tap it to clear it for seeds.');
+  else if (res.reason==='scenery') msg('Something’s in the way. Tap it to clear it for seeds.');
   else msg(r>=ROWS-1?'That’s your crop row. Plant on the grass.':'Keep the path clear. Plant on the grass.');
 }
 
@@ -645,8 +655,9 @@ function onBoardTap(ev){
   const [c,r]=cellAt(ev.clientX, ev.clientY);
   const t=towerAt(c,r);
   if (t){ S.sel=t; S.selScen=null; S.build=null; renderBar(); renderInfo(); Audio.play('tap'); emit('select', t); return; }
-  const piece=!S.build && sceneryPiece(c,r);
-  if (piece){ S.sel=null; S.selScen=piece; renderInfo(); Audio.play('tap'); return; }
+  // tapping scenery always opens its clear bubble, even with a defender picked
+  const piece=sceneryPiece(c,r);
+  if (piece){ if (S.build){ S.build=null; renderBar(); } S.sel=null; S.selScen=piece; renderInfo(); Audio.play('tap'); return; }
   if (S.build){
     if (ev.pointerType==='mouse') return tryPlant(c,r);
     // touch: show the preview now, plant when the finger lifts (slide to adjust first)
@@ -688,12 +699,11 @@ export function initUI(){
   $('restart').onclick=onRestart;
   $('sound').onclick=onSound;
   $('map').onclick=()=>{ Audio.play('tap'); showMenu(); };
-  $('iUp').onclick=()=>{ const S=G.S;
-    if (S.selScen && !S.sel){ const o=S.selScen, [name]=SCENERY_NAMES[o.kind]||['Scenery'];
-      if (clearScenery(o)){ S.selScen=null; rebuild(); renderInfo(); Audio.play('pop'); msg(o.kind==='fire'?'Fire’s out! That spot is free now.':o.kind==='litter'||o.kind==='tire'?'All cleaned up! That spot is free now.':`${name} cleared. That spot is free now.`); }
-      else { Audio.play('denied'); msg(`Not enough seeds. It costs ${clearCost(o)}.`); }
-      return; }
-    const t=G.S.sel; if (upgrade(t)){ renderInfo(); msg(`${TYPES[t.type].name} upgraded to level ${t.lv+1}.`); } };
+  $('spClear').onclick=()=>{ const S=G.S, o=S.selScen; if (!o) return; const [name]=SCENERY_NAMES[o.kind]||['Scenery'];
+    if (clearScenery(o)){ S.selScen=null; rebuild(); renderInfo(); Audio.play('pop'); msg(o.kind==='fire'?'Fire’s out! That spot is free now.':o.kind==='litter'||o.kind==='tire'?'All cleaned up! That spot is free now.':`${name} cleared. That spot is free now.`); }
+    else { Audio.play('denied'); msg(`Not enough seeds. It costs ${clearCost(o)}.`); } };
+  $('spClose').onclick=()=>{ G.S.selScen=null; renderInfo(); };
+  $('iUp').onclick=()=>{ const t=G.S.sel; if (upgrade(t)){ renderInfo(); msg(`${TYPES[t.type].name} upgraded to level ${t.lv+1}.`); } };
   $('iSell').onclick=()=>{ const v=sell(G.S.sel); renderInfo(); msg(`Sold for ${v} seeds.`); };
   $('seedsChip').onclick=()=>{ if (devMode && G.S){ G.S.seeds+=200; msg('Test mode: +200 seeds.'); } };
   paintDev();

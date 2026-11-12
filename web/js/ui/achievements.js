@@ -30,13 +30,20 @@ const bump = (stat, n=1) => { Save.data.stats[stat] = (Save.data.stats[stat]||0)
 export function initAchievements(){
   on('kill', ({ boss }) => { bump('kills'); if (boss){ bump('bossKills'); evaluate({ type:'boss' }); } });
   on('waveClear', ({ fromFlowers }) => { if (fromFlowers){ bump('flowerSeeds', fromFlowers); } Save.commit(); evaluate({ type:'wave' }); });
-  on('plant', () => evaluate({ type:'plant', count:G.S.towers.length }));
+  on('plant', t => { const k=Save.data.stats.kinds={ ...(Save.data.stats.kinds||{}) }; k[t.type]=true; evaluate({ type:'plant', count:G.S.towers.length }); });
+  on('clear', () => { bump('clears'); Save.commit(); evaluate({ type:'clear' }); });
+  on('spray', ({ pests }) => { if (pests){ bump('sprayHits', pests); evaluate({ type:'spray' }); } });
+  on('fert', () => { bump('ferts'); evaluate({ type:'fert' }); });
+  on('scare', n => { if (n){ bump('scares', n); evaluate({ type:'scare' }); } });
+  on('diary', () => evaluate({ type:'diary' }));
   on('upgrade', t => evaluate({ type:'upgrade', lv:t.lv }));
   on('fence', () => evaluate({ type:'fence' }));
   on('perk', () => evaluate({ type:'perk' }));
   // win runs after the UI has saved the new stars, so garden-wide checks see them
-  on('win', w => setTimeout(() => evaluate({ type:'win', lost:w.lost, speed:G.S.speed }), 600));
+  on('win', w => setTimeout(() => evaluate({ type:'win', lost:w.lost, left:w.lives, speed:G.S.speed, towers:G.S.towers.length, waves:G.LV.waves, gi:w.gi }), 600));
   on('lose', () => Save.commit());
+  // catch up on anything already earned before these were added (new achievements, old saves)
+  setTimeout(() => evaluate({ type:'boot' }), 1500);
 }
 
 // "2026-11-10" → "Nov 10, 2026", in the player's language.
