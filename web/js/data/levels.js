@@ -193,8 +193,10 @@ export const CHAPTERS = [
 // three-star rate slopes down from about 90% early to about 25% on Big Dig even for a player who
 // never sprays. The Pesticide Sprayer then makes levels easier, a shortcut, never a requirement.
 // Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
-const TOUGHNESS = [1.15, 2.4, 1.95,   5.78, 3.66, 1.96,   4.04, 2.09, 3.16,   8.56, 5.9, 4.72,   8.46, 5, 6.13,   4.4, 5.06, 4.86,
-                   6.69, 5.3, 5.88,   1, 1.85, 4.13,   11.77, 6.52, 8.1,   24.7, 21.82, 22.19,   19.49, 15.22, 12.86,   18.42, 12.77, 24.3];
+const TOUGHNESS = [1.15, 2.4, 2.05, 6.07, 3.84, 2.06, 4.27, 2.36, 3.32,
+                   8.7, 5.86, 4.94, 8.57, 5.15, 6.14, 4.71, 5.09, 4.97,
+                   6.77, 5.39, 5.94, 1, 1.94, 4.46, 11.2, 6.57, 8.54,
+                   24.2, 23.95, 22.23, 21.84, 15.53, 13.72, 18.9, 13.5, 23.8];
 
 // Flat list of every level in play order, each linked back to its chapter.
 export const LEVELS = [];
@@ -210,10 +212,10 @@ LEVELS.forEach(l => { if (l.mirrorOf==null || l.pts || l.lanes) return;
 LEVELS.forEach(l => { l.waves = l.waves || WAVES; });
 // Crops to protect: 20 in the cozy first part, 10 from Part 2 on, when things get serious.
 LEVELS.forEach(l => { l.lives = l.lives || (l.ch.act>=2 ? 10 : 20); });
-// Part 1 (after the first two levels) is 5% tougher than the tuned values: players found it easy
-// without the skills. Later parts were already steep for the test bot, so they stay as tuned.
-// Players who want a real challenge turn on Tough mode in Settings.
-const HARDER = 1.05;
+// (Retuned Nov 2026 with tools/balance/tune.js: for a player who owns a few defender skills, about one
+// challenge star per level beaten, while a player with no skills at all still wins most of the time. From Part 2 on the values sit halfway
+// between that tuning and the earlier no-skills tuning, because the full step cost no-skills players too many losses.)
+const HARDER = 1;
 LEVELS.forEach(l => { l.hpMul = +((TOUGHNESS[l.gi] ?? 1+l.gi*.14) * (l.gi>=2 && l.ch.act===1 ? HARDER : 1)).toFixed(3); });
 // The Endless Garden: opens after the story. Waves never stop; a boss comes every 5th wave.
 // It is not part of LEVELS (so stars, unlocks and "beat every level" ignore it).

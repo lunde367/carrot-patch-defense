@@ -8,6 +8,7 @@ const starsAt = (save, gi) => save.stars[gi] || 0;
 const partDone = (s, n) => CHAPTERS.filter(ch=>ch.act===n).every(ch=>ch.levels.every(l=>starsAt(s,l.gi)>0));
 const totalStars = s => LEVELS.reduce((n,l)=>n+starsAt(s,l.gi), 0);
 const chalTotal = s => Object.values(s.chal||{}).reduce((n,o)=>n+Object.keys(o).length, 0);
+const skillSteps = s => Object.values(s.skills||{}).reduce((n,o)=>n+Object.values(o).reduce((a,b)=>a+b,0), 0);
 const shedTiers = s => Object.values(s.perks||{}).reduce((n,v)=>n+(+v||0), 0);
 
 // Headings on the Achievements page. Anything not listed lands under the first one.
@@ -15,7 +16,7 @@ export const ACH_GROUPS = [
   ['Garden basics', []],
   ['Story',         ['master','part1','part2','part3','part4','diary5','diaryAll','ending']],
   ['Stars',         ['ribbon','perfect','stars30','stars60','stars90','ribbon3']],
-  ['Clever wins',   ['noNibble','speedy','close','few','marathon','flawless12','kinds','chal1','chal25','chal75']],
+  ['Clever wins',   ['noNibble','speedy','close','few','marathon','flawless12','kinds','chal1','chal25','chal75','skill1','skillFull']],
   ['Tools',         ['fence','shed','clear1','clear50','sprayHits','fert','scare','shed10']],
   ['Big numbers',   ['bosses','pests','sunny','bosses20','pests5k','pests20k','sunny2']],
   ['Endless Garden',['endless10','endless20','endless30']],
@@ -59,6 +60,8 @@ export const ACHIEVEMENTS = [
   { id:'chal1',      name:'Show-Off',         desc:'Earn a challenge star.',                            check:s=>chalTotal(s)>=1 },
   { id:'chal25',     name:'Green Fingers',    desc:'Earn 25 challenge stars.',                          check:s=>chalTotal(s)>=25 },
   { id:'chal75',     name:'Master Gardener\u2019s Medal', desc:'Earn 75 challenge stars.',             check:s=>chalTotal(s)>=75 },
+  { id:'skill1',     name:'Special Training', desc:'Buy a defender skill.',                             check:s=>skillSteps(s)>=1 },
+  { id:'skillFull',  name:'Star Pupil',       desc:'Fill both skill branches of one defender.',         check:s=>Object.values(s.skills||{}).some(o=>(o.a||0)>=3 && (o.b||0)>=3) },
   // tools of the trade
   { id:'clear1',     name:'Tidy Up',          desc:'Clear something out of the way for seeds.',         check:(s,e)=>e.type==='clear' },
   { id:'clear50',    name:'Clean Sweep',      desc:'Clear 50 things out of the way.',                   stat:'clears', goal:50 },

@@ -12,6 +12,7 @@ import { haptic, setHaptics } from '../../kit/js/haptics.js';
 import { shouldAskRating, answerRating } from '../../kit/js/rating.js';
 import { track, setTelemetry } from '../../kit/js/telemetry.js';
 import { VERSION } from '../data/config.js';
+import { SKILLS, SKILL_COSTS, SKILL_TOTAL, skillValues, skillsSpent } from '../data/skills.js';
 import { challengesFor, challengeText, challengeMet, CHALLENGE_TOTAL } from '../data/challenges.js';
 import { drawEnemy } from '../render/art-enemies.js';
 import { PERKS, perkValues, ALL_PERKS, PRODUCTS } from '../data/perks.js';
@@ -52,7 +53,7 @@ export function play(gi, bonusSeeds=0, { quiet=false }={}){
   // Test mode plays with every Garden Shed upgrade owned.
   const owned = devMode ? ALL_PERKS : Save.data.perks;
   G.diffId = diffOf(); G.diff = DIFFICULTY[G.diffId].hp;
-  startLevel(gi===ENDLESS.gi ? ENDLESS : gi, fast3Open() ? Save.data.settings.speed : Math.min(2, Save.data.settings.speed), bonusSeeds, perkValues(owned));
+  startLevel(gi===ENDLESS.gi ? ENDLESS : gi, fast3Open() ? Save.data.settings.speed : Math.min(2, Save.data.settings.speed), bonusSeeds, { ...perkValues(owned), skills:skillValues(Save.data.skills) });
 }
 on('levelStart', (...a) => { drawLivesIcon(); return onLevelStart(...a); });
 const onLevelStart = (LV => {
@@ -91,11 +92,13 @@ const chalGot = gi => Save.data.chal[gi] || {};
 export const chalCount = () => Object.values(Save.data.chal).reduce((n,o) => n+Object.keys(o).length, 0);
 const chalList = (L, fresh=[]) => `<ul class="chal-list">${challengesFor(L).map(id => { const got=chalGot(L.gi)[id];
   return `<li class="${got?'got':''}"><i>${CH_ICON}</i><span>${challengeText(id, L)}${fresh.includes(id)?' <b>New!</b>':''}</span></li>`; }).join('')}</ul>`;
+// Challenge stars are spent on defender skills.
+const chalLeft = () => chalCount() + (devMode ? 60 : 0) - skillsSpent(Save.data.skills);
 const chalShown = new Set();          // levels whose challenge card was shown this session
 function showChalCard(){
   const LV=G.LV; chalShown.add(LV.gi); G.S.paused=true;
   overlay(`<div class="panel newdef levelcard"><span class="tag">Challenge stars · ${Object.keys(chalGot(LV.gi)).length} of ${challengesFor(LV).length}</span>
-    <h3>${LV.name}</h3><p>You’ve beaten this level, so three extra goals are open. Win while meeting any of them to earn its star.</p>${chalList(LV)}</div>
+    <h3>${LV.name}</h3><p>You’ve beaten this level, so extra goals are open. Win while meeting any of them to earn its star, then spend stars on defender skills.</p>${chalList(LV)}</div>
     <div class="row"><button class="btn main" data-go="level-ok">Let’s go</button></div>`);
 }
 // Endless Garden: after every boss, pick one of three gifts.
@@ -323,6 +326,7 @@ export function showMenu(){
   const hi=LEVELS[highest()], allDone=(Save.data.stars[LEVELS.length-1]||0)>0;
   home(`<div class="home-head"><h2><small class="where">Part ${hi.ch.act} · ${PARTS[hi.ch.act-1].name}</small>${hi.ch.name}</h2>
       <button class="shed-btn" data-go="shed">${ICON.shed}Garden Shed <b>★ ${starsLeft()}</b></button></div>
+    ${(Save.data.stars[0]||0)>0 || devMode ? `<button class="skills-btn" data-go="skills"><span><b>Defender skills</b><small>Spend challenge stars to make each defender special.</small></span><b class="sk-left">${CH_ICON} ${chalLeft()}</b></button>` : ''}
     ${allDone ? `<p class="home-note">The story is finished. Every garden is open to replay.</p>`
       : `<button class="btn main continue" data-lv="${hi.gi}">${(Save.data.stars[0]||0)>0?'Continue':'Start'} · ${hi.ch.name} ${hi.li+1}: ${hi.name}</button>`}
     ${html}
@@ -432,6 +436,23 @@ function turnPage(dir){
   const el=$('jPage'); if (el) el.classList.add(dir>0 ? 'turn-next' : 'turn-prev');
 }
 
+// ---------- Defender skills: two branches per defender, bought with challenge stars ----------
+function showSkills(){
+  const left=chalLeft(), open=TRAY.filter(towerOpen);
+  const cards=open.map(k => { const T=TYPES[k], own=Save.data.skills[k]||{};
+    const rows=SKILLS[k].map(br => { const n=own[br.id]||0, max=n>=SKILL_COSTS.length, cost=SKILL_COSTS[n];
+      return `<div class="sk-branch"><span><b>${br.name}</b><span class="tiers">${SKILL_COSTS.map((_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>
+          <small>${max ? br.desc(n-1) : `${n?'Next: ':''}${br.desc(n)}`}</small></span>
+        ${max ? '<span class="sk-max">Full</span>' : `<button class="btn ${left>=cost?'main':'ghost'} small" data-go="skill-buy" data-type="${k}" data-br="${br.id}" ${left>=cost?'':'disabled'}>${CH_ICON} ${cost}</button>`}</div>`; }).join('');
+    return `<div class="sk-card"><header><canvas data-tower="${k}"></canvas><b>${T.name}</b></header>${rows}</div>`; }).join('');
+  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button><h2>Defender skills</h2><span class="star-count">${CH_ICON} ${left}</span></div>
+    <p class="home-note">Earn challenge stars (${CH_ICON}) by replaying levels you’ve beaten and meeting their extra goals. You have earned ${chalCount()} of ${CHALLENGE_TOTAL}; every skill together costs ${SKILL_TOTAL}, so choose your favorites.</p>
+    <div class="sk-list">${cards}</div>
+    ${open.length<TRAY.length?`<p class="home-note">${TRAY.length-open.length} more defender${TRAY.length-open.length>1?'s':''} to unlock.</p>`:''}
+    <div class="row"><button class="btn ghost small" data-go="skill-refund" ${skillsSpent(Save.data.skills)?'':'disabled'}>Refund all skills</button></div>`);
+  for (const cv of $('home').querySelectorAll('canvas[data-tower]')) drawIcon(cv, cv.dataset.tower, 44);
+}
+
 // ---------- Field guide: every defender and every pest met so far ----------
 const guideCount = () => `${TRAY.filter(towerOpen).length + Object.keys(Save.data.pests||{}).length}/${TRAY.length + Object.keys(ENEMY).length}`;
 function showGuide(tab){
@@ -462,6 +483,7 @@ function showStats(){
   const rows=[
     ['Levels beaten', `${beaten} of ${LEVELS.length}`], ['Stars earned', n(starsEarned())],
     ['Challenge stars', `${chalCount()} of ${CHALLENGE_TOTAL}`],
+    ['Defender skills bought', `${Object.values(Save.data.skills).reduce((s,o)=>s+Object.values(o).reduce((a,b)=>a+b,0),0)} of ${Object.keys(SKILLS).length*6}`],
     ['Three-star levels', `${LEVELS.filter(l=>Save.data.stars[l.gi]===3).length} of ${LEVELS.length}`],
     ['Games won', n(s.wins)], ['Games lost', n(s.losses)], ['Win rate', games ? Math.round(s.wins/games*100)+'%' : '—'],
     ['Pests squashed', n(s.kills)], ['Bosses beaten', n(s.bossKills)], ['Seeds from Sunflowers', n(s.flowerSeeds)],
@@ -635,6 +657,12 @@ async function onOverlayClick(ev){
     case 'replay-tutorial': Save.data.tutorialDone=false; Save.commit(); return play(0);
     case 'shed': leaveLevel(); return showShed();
     case 'refund': Save.data.perks={}; Save.commit(); return showShed();
+    case 'skills': leaveLevel(); return showSkills();
+    case 'skill-buy': { const [type, br]=[b.dataset.type, b.dataset.br], o=Save.data.skills[type] || (Save.data.skills[type]={}), n=o[br]||0;
+      if (n>=SKILL_COSTS.length || chalLeft()<SKILL_COSTS[n]) return Audio.play('denied');
+      o[br]=n+1; Save.commit(); Audio.play('sparkle'); haptic('light'); track('skill_buy', { type, branch:br, step:n+1 }); emit('skill', type);
+      const y=window.scrollY; showSkills(); window.scrollTo(0,y); return; }
+    case 'skill-refund': Save.data.skills={}; Save.commit(); return showSkills();
     case 'resume': return resume();
     case 'reset': {
       // Two taps: the first arms the button, the second erases.

@@ -4,6 +4,7 @@
 //   node tools/balance/expert.js --diff hard           on Hard (or easy)
 //   node tools/balance/expert.js --from 9 --to 17 --runs 20
 //   node tools/balance/expert.js --noskills            the expert never sprays or composts
+//   node tools/balance/expert.js --trees 1             players own defender skills: challenge stars earned per level beaten (0 to 3)
 //   node tools/balance/expert.js --endless             how many Endless Garden waves each player clears
 //
 // The expert stands in for a skilled person who learns a level: it knows three ways to play
@@ -15,12 +16,14 @@ import { G, DIFFICULTY, startLevel, startWave, update, starsFor, takeBoon } from
 import { TYPES } from '../../web/js/data/towers.js';
 import { LEVELS, ENDLESS } from '../../web/js/data/levels.js';
 import { perkValues } from '../../web/js/data/perks.js';
-import { shop, starsBefore } from './shed.js';
+import { shop, starsBefore, skillShop, chalBefore } from './shed.js';
+import { skillValues } from '../../web/js/data/skills.js';
 import { STRATEGIES, preparePath, maybeSpray, maybeFertilize, expertDuringWave, expertSpray, expertCompost } from './bots.js';
 
 const arg = (name, def) => { const i=process.argv.indexOf('--'+name); return i>0 ? +process.argv[i+1] : def; };
 const sarg = (name, def) => { const i=process.argv.indexOf('--'+name); return i>0 ? process.argv[i+1] : def; };
 const RUNS = arg('runs', 12), FROM = arg('from', 0), TO = arg('to', LEVELS.length-1), DT = 1/30;
+const TREES = arg('trees', 0);
 const DIFF = sarg('diff', 'normal'), SKILLS = !process.argv.includes('--noskills');
 G.diff = DIFFICULTY[DIFF].hp;
 const mulberry32 = a => () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
@@ -28,7 +31,7 @@ const mulberry32 = a => () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15
 function play(level, seed, who, maxWaves=Infinity){
   const rnd = mulberry32(seed); Math.random = mulberry32(seed*7919+13);
   const gi = level.gi, stars = starsBefore(Math.min(gi, LEVELS.length), who==='balanced' ? 2.5 : 2.8);
-  startLevel(level.endless ? level : gi, 1, 0, perkValues(shop(stars, gi).owned)); preparePath();
+  startLevel(level.endless ? level : gi, 1, 0, { ...perkValues(shop(stars, gi).owned), skills:skillValues(skillShop(chalBefore(gi, TREES), gi)) }); preparePath();
   const S = G.S, avail = Object.keys(TYPES).filter(k => TYPES[k].unlock <= gi), waves = Math.min(level.waves, maxWaves);
   const plan = who==='value' ? 'expert' : 'balanced', sharp = who!=='balanced';
   for (let w=0; w<waves; w++){
@@ -59,7 +62,7 @@ if (process.argv.includes('--endless')){
     console.log(`${who.padEnd(9)} Endless Garden waves cleared: worst ${g[0]}, middle ${g[Math.floor(g.length/2)]}, best ${g[g.length-1]}`); }
   process.exit(0);
 }
-console.log(`Expert check: ${DIFFICULTY[DIFF].name}, ${RUNS} games per player per level${SKILLS?'':', no skills'}\n`);
+console.log(`Expert check: ${DIFFICULTY[DIFF].name}, ${RUNS} games per player per level${SKILLS?'':', no skills'}, defender skills: ${TREES} challenge stars per level\n`);
 console.log('                        balanced bot      expert bot\n                        win   3★          win   3★   crops lost     plays');
 const rows=[];
 for (const L of LEVELS.slice(FROM, TO+1)){
@@ -73,4 +76,4 @@ for (const L of LEVELS.slice(FROM, TO+1)){
 const avg=(w,k)=>rows.reduce((s,r)=>s+r[w][k],0)/rows.length;
 console.log(`\nAverage: balanced win ${pct(avg('balanced','win'))}, 3★ ${pct(avg('balanced','three'))}  ·  expert win ${pct(avg('expert','win'))}, 3★ ${pct(avg('expert','three'))}`);
 mkdirSync(new URL('./reports/', import.meta.url), { recursive:true });
-writeFileSync(new URL(`./reports/expert-${DIFF}${SKILLS?'':'-noskills'}.json`, import.meta.url), JSON.stringify(rows, null, 1));
+writeFileSync(new URL(`./reports/expert-${DIFF}${SKILLS?'':'-noskills'}${TREES?`-trees${TREES}`:''}.json`, import.meta.url), JSON.stringify(rows, null, 1));

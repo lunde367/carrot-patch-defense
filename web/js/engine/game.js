@@ -108,12 +108,17 @@ function grow(e){
 // Prices and reach after Garden Shed perks.
 export const costOf = type => Math.round(TYPES[type].cost*G.S.perks.costMul);
 export const upCostOf = t => Math.round(TYPES[t.type].up[t.lv]*G.S.perks.costMul);
-export const rangeOf = t => TYPES[t.type].range[t.lv]*G.S.perks.rangeMul*(t.tile==='hill'?HILL:1);
+// Defender skills (bought with challenge stars): extra numbers for one kind of defender, or nothing.
+const NO_SKILL = {};
+const sk = type => (G.S.perks.skills && G.S.perks.skills[type]) || NO_SKILL;
+export const rangeOf = t => TYPES[t.type].range[t.lv]*G.S.perks.rangeMul*(t.tile==='hill'?HILL:1)*(1+(sk(t.type).range||0));
 // Plant defenders need water in a drought: a Sprinkler close enough to reach them.
 const WATER = ['sprinkler','barrel'];
 const watered = t => WATER.includes(t.type) || G.S.towers.some(o => WATER.includes(o.type) && Math.hypot(o.x-t.x,o.y-t.y) <= rangeOf(o));
 // Bee Hive: the best boost from any hive in reach (a hive doesn't boost itself).
-const hiveBoost = t => { let b=1; for (const h of G.S.towers) if (h.type==='hive' && h!==t && Math.hypot(h.x-t.x,h.y-t.y) <= rangeOf(h)) b=Math.max(b, TYPES.hive.boost[h.lv]); return b; };
+const hiveBoost = t => { let b=1; for (const h of G.S.towers) if (h.type==='hive' && h!==t && Math.hypot(h.x-t.x,h.y-t.y) <= rangeOf(h)) b=Math.max(b, TYPES.hive.boost[h.lv]+(sk('hive').boost||0)); return b; };
+// Cool Water (a Rain Barrel skill): plants a barrel waters work a little faster.
+const coolBoost = t => { const k=sk('barrel').cool; return k && PLANTS.includes(t.type) && G.S.towers.some(o=>o.type==='barrel' && Math.hypot(o.x-t.x,o.y-t.y)<=rangeOf(o)) ? 1+k : 1; };
 export const SMOG = .6;   // in smog, defenders only spot fliers within 60% of their reach
 export const RAIN_SLOW = .8;
 export const towerAt = (c,r) => G.S.towers.find(t=>t.c===c&&t.r===r);
@@ -128,7 +133,8 @@ export function plantAt(c,r){
   const lv = head ? S.perks.headLv : 0;
   const t={ type:S.build, c, r, x:c+.5, y:r+.5, lv, cd:0, hop:1, look:1, spent:cost, tile:bonusAt(c,r) };
   t.cool = !S.heat || watered(t);
-  t.undo={ peak:S.track.peak, head, cost };                                // enough to take the planting back
+  const gift = S.build==='sunflower' ? (sk('sunflower').gift||0) : 0; S.seeds+=gift;   // Early Bloom
+  t.undo={ peak:S.track.peak, head, cost, gift };                                // enough to take the planting back
   S.towers.push(t); S.track.kinds[t.type]=(S.track.kinds[t.type]||0)+1; S.track.peak=Math.max(S.track.peak, S.towers.length); emit('plant', t); return { ok:true, tower:t };
 }
 export function upgrade(t){
@@ -139,7 +145,7 @@ export function upgrade(t){
 // Take back a defender that was just planted: all its seeds return, as if it never happened.
 export function undoPlant(t){
   const S=G.S; if (!t || !t.undo || !S.towers.includes(t) || t.spent!==t.undo.cost || t.lv!==(t.undo.head?S.perks.headLv:0)) return false;
-  S.seeds+=t.spent; S.towers=S.towers.filter(x=>x!==t); if (S.sel===t) S.sel=null;
+  S.seeds+=t.spent-(t.undo.gift||0); S.towers=S.towers.filter(x=>x!==t); if (S.sel===t) S.sel=null;
   S.track.kinds[t.type]--; S.track.peak=t.undo.peak; if (t.undo.head) S.headStartUsed=false;
   emit('undo', t); return true;
 }
@@ -258,6 +264,9 @@ function hitShot(s){
   }
   if (!targetable(s.tgt)) return;
   damage(s.tgt,s.dmg);
+  if (s.pierce){ let best=null, bd=1.3;                 // Big Carrots: clip one more pest close by
+    for (const e of S.enemies){ if (e===s.tgt || !targetable(e)) continue; const d=Math.hypot(e.x-s.tgt.x,e.y-s.tgt.y); if (d<bd){ bd=d; best=e; } }
+    if (best) damage(best, s.dmg*s.pierce); }
   if (s.k==='acorn' && s.bounce>0){
     const hits=[...s.hits,s.tgt]; let best=null, bd=1.8;
     for (const e of S.enemies){ if (!targetable(e)||hits.includes(e)) continue; const d=Math.hypot(e.x-s.tgt.x,e.y-s.tgt.y); if (d<bd){bd=d;best=e;} }
@@ -299,9 +308,10 @@ export function update(dt){
   for (const t of S.towers){
     const T=TYPES[t.type];
     t.dry = !!(G.CH.drought && !S.rain && PLANTS.includes(t.type) && !watered(t));
-    t.cd-=dt*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1)*hiveBoost(t)*(S.fertT>0 ? S.perks.fertBoost : 1)*(S.perks.rateMul||1); t.hop=Math.max(0,t.hop-dt*4);
+    t.cd-=dt*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1)*hiveBoost(t)*coolBoost(t)*(S.fertT>0 ? S.perks.fertBoost : 1)*(S.perks.rateMul||1)*(1+(sk(t.type).rate||0)); t.hop=Math.max(0,t.hop-dt*4);
     if (t.wilt>0){ t.wilt=Math.max(0, t.wilt-dt); continue; }          // wilted by the spray
     if (t.type==='sunflower' || T.support) continue;
+    const K=sk(t.type), DM=T.dmg ? T.dmg[t.lv]*(1+(K.dmg||0)) : 0;
     const R=rangeOf(t), seen = e => Math.hypot(e.x-t.x,e.y-t.y) <= R*(G.CH.smog && e.fly ? SMOG : 1);
     if (t.type==='scarecrow'){
       // Scares every flier in reach back up the path. Bosses only flinch half as far. A scared pest
@@ -310,7 +320,7 @@ export function update(dt){
       const near=S.enemies.filter(e=>targetable(e)&&e.fly&&e.scared<=0&&seen(e));
       if (!near.length) continue;
       t.cd=1/T.rate[t.lv]; t.hop=1;
-      for (const e of near){ e.dist=Math.max(0.35, e.dist-T.push[t.lv]*(ENEMY[e.type].boss?.5:1)); e.scared=2.6;
+      for (const e of near){ e.dist=Math.max(0.35, e.dist-T.push[t.lv]*(1+(K.push||0))*(ENEMY[e.type].boss?.5:1)); e.scared=2.6;
         const [x,y]=pointAt(e.dist, e.lane); e.x=x; e.y=y; }
       S.fx.push({k:'scare',x:t.x,y:t.y,r:R,life:.6,max:.6}); emit('scare', near.length);
       continue;
@@ -320,24 +330,24 @@ export function update(dt){
     t.cd=1/T.rate[t.lv]; t.hop=1;
     const left=e=>laneTotal(e.lane)-e.dist, lead=inR.reduce((a,b)=>left(b)<left(a)?b:a);   // the pest closest to the crops
     if (t.type==='sprinkler'){
-      for (const e of inR){ damage(e,T.dmg[t.lv]); e.slow=T.slow[t.lv]; }
+      for (const e of inR){ damage(e,DM); e.slow=T.slow[t.lv]*(1+(K.slow||0)); }
       S.fx.push({k:'ring',x:t.x,y:t.y,r:R,life:.5,max:.5});
     } else if (t.type==='rose'){
-      for (const e of [...inR].sort((a,b)=>b.dist-a.dist).slice(0,T.multi[t.lv]))
-        S.shots.push({k:'thorn',x:t.x,y:t.y-.2,tgt:e,tx:e.x,ty:e.y,spd:8,dmg:T.dmg[t.lv],a:0,spin:0});
+      for (const e of [...inR].sort((a,b)=>b.dist-a.dist).slice(0,T.multi[t.lv]+(K.multi||0)))
+        S.shots.push({k:'thorn',x:t.x,y:t.y-.2,tgt:e,tx:e.x,ty:e.y,spd:8,dmg:DM,a:0,spin:0});
     } else if (t.type==='pine'){
       const d0=Math.hypot(lead.x-t.x,lead.y-t.y)||1;
-      S.shots.push({k:'cone',x:t.x,y:t.y-.3,tgt:lead,tx:lead.x,ty:lead.y,spd:6.5,dmg:T.dmg[t.lv],splash:T.splash[t.lv],a:0,spin:0,d0,gone:0});
+      S.shots.push({k:'cone',x:t.x,y:t.y-.3,tgt:lead,tx:lead.x,ty:lead.y,spd:6.5,dmg:DM,splash:T.splash[t.lv]*(1+(K.splash||0)),a:0,spin:0,d0,gone:0});
     } else if (t.type==='squirrel'){
       t.look=Math.sign(lead.x-t.x)||t.look;
-      S.shots.push({k:'acorn',x:t.x,y:t.y-.1,tgt:lead,tx:lead.x,ty:lead.y,spd:9,dmg:T.dmg[t.lv],bounce:T.bounce[t.lv],hits:[],a:0,spin:0});
+      S.shots.push({k:'acorn',x:t.x,y:t.y-.1,tgt:lead,tx:lead.x,ty:lead.y,spd:9,dmg:DM,bounce:T.bounce[t.lv]+(K.bounce||0),hits:[],a:0,spin:0});
     } else if (t.type==='ladybug'){
       const tgt=lead; t.look=Math.sign(tgt.x-t.x)||t.look;
-      S.shots.push({k:'lady',x:t.x,y:t.y-.15,tgt,tx:tgt.x,ty:tgt.y,spd:6,dmg:T.dmg[t.lv]*(ENEMY[tgt.type].hp<=16?2:1),a:0,spin:0});
+      S.shots.push({k:'lady',x:t.x,y:t.y-.15,tgt,tx:tgt.x,ty:tgt.y,spd:6,dmg:DM*(ENEMY[tgt.type].hp<=16?2:1),a:0,spin:0});
     } else {
       const tgt = t.type==='owl' ? inR.reduce((a,b)=>b.hp>a.hp?b:a) : lead;
       t.look=Math.sign(tgt.x-t.x)||t.look;
-      S.shots.push({k:t.type==='owl'?'feather':'carrot',x:t.x,y:t.y-.15,tgt,tx:tgt.x,ty:tgt.y,spd:t.type==='owl'?10:7,dmg:T.dmg[t.lv],a:0,spin:0});
+      S.shots.push({k:t.type==='owl'?'feather':'carrot',x:t.x,y:t.y-.15,tgt,tx:tgt.x,ty:tgt.y,spd:t.type==='owl'?10:7,dmg:DM,pierce:K.pierce||0,a:0,spin:0});
     }
     emit('shoot', t.type);
   }
@@ -361,7 +371,7 @@ export function update(dt){
       S.mode='won'; emit('win', { stars, lives:S.lives, maxLives:S.maxLives, lost, gi:G.LV.gi }); return;
     }
     const bonus=8+S.wave*2; let inc=0;
-    for (const t of S.towers) if (t.type==='sunflower'){ const v=Math.round(TYPES.sunflower.income[t.lv]*(t.tile==='sunny'?SUNNY_SEEDS:1)*(t.dry?.7:1)); inc+=v; floatText(t.x,t.y-.5,'+'+v,'#c98a12',1.3); t.hop=1; }
+    for (const t of S.towers) if (t.type==='sunflower'){ const v=Math.round(TYPES.sunflower.income[t.lv]*(1+(sk('sunflower').income||0))*(t.tile==='sunny'?SUNNY_SEEDS:1)*(t.dry?.7:1)); inc+=v; floatText(t.x,t.y-.5,'+'+v,'#c98a12',1.3); t.hop=1; }
     S.seeds+=bonus+inc;
     emit('waveClear', { wave:S.wave, seeds:bonus+inc, fromFlowers:inc });
     if (G.LV.endless && S.wave%5===0){ S.boonOffer=boonChoices(); emit('boons', S.boonOffer); }   // a gift after every boss

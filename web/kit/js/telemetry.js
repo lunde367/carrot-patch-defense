@@ -13,7 +13,7 @@ import { platform, devMode } from './native.js';
 
 const ALLOWED = {   // event → the only fields it may carry
   app_open:[], tutorial_done:[], level_start:['gi','diff'], level_win:['gi','diff','stars','lost'], level_lose:['gi','diff','wave'],
-  endless_run:['wave','diff'], challenge:['gi','n'], shed_buy:['perk','tier'], extra_used:['kind'], remove_ads:['step'],
+  endless_run:['wave','diff'], challenge:['gi','n'], shed_buy:['perk','tier'], skill_buy:['type','branch','step'], extra_used:['kind'], remove_ads:['step'],
   rating:['answer'], story_end:[],
 };
 const WORDS = /^[a-z0-9_]{1,24}$/;
