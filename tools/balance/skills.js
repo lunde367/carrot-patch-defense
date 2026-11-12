@@ -3,8 +3,8 @@
 //
 //   node tools/balance/skills.js                 every level
 //   node tools/balance/skills.js --from 2 --to 8 --runs 30
-//   node tools/balance/skills.js --tough         the same, in Tough mode
-import { G, TOUGH, startLevel, startWave, update, starsFor } from '../../web/js/engine/game.js';
+//   node tools/balance/skills.js --diff hard     the same, on another difficulty
+import { G, DIFFICULTY, startLevel, startWave, update, starsFor } from '../../web/js/engine/game.js';
 import { TYPES } from '../../web/js/data/towers.js';
 import { LEVELS } from '../../web/js/data/levels.js';
 import { perkValues } from '../../web/js/data/perks.js';
@@ -13,7 +13,7 @@ import { STRATEGIES, preparePath, maybeSpray, maybeFertilize } from './bots.js';
 
 const arg = (name, def) => { const i=process.argv.indexOf('--'+name); return i>0 ? +process.argv[i+1] : def; };
 const RUNS = arg('runs', 20), FROM = arg('from', 0), TO = arg('to', LEVELS.length-1), DT = 1/30;
-if (process.argv.includes('--tough')) G.tough = TOUGH;   // --tough plays in Tough mode
+{ const i=process.argv.indexOf('--diff'); if (i>0) G.diff = DIFFICULTY[process.argv[i+1]].hp; }   // --diff easy|normal|hard
 const mulberry32 = a => () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
 
 function play(gi, seed, skills){

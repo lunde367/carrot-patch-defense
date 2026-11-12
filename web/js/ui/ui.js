@@ -1,5 +1,5 @@
 // Everything the player sees and taps outside the board: HUD, tray, panels and overlays.
-import { G, TOUGH, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, sceneryPiece, clearScenery } from '../engine/game.js';
+import { G, DIFFICULTY, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, sceneryPiece, clearScenery } from '../engine/game.js';
 import { SCENERY_NAMES } from '../data/scenery.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
 import { path } from '../engine/path.js';
@@ -44,7 +44,7 @@ export function play(gi, bonusSeeds=0, { quiet=false }={}){
   stopTutorial(); quietStart = quiet;
   // Test mode plays with every Garden Shed upgrade owned.
   const owned = devMode ? ALL_PERKS : Save.data.perks;
-  G.tough = Save.data.settings.tough ? TOUGH : 1;
+  G.diffId = diffOf(); G.diff = DIFFICULTY[G.diffId].hp;
   startLevel(gi, fast3Open() ? Save.data.settings.speed : Math.min(2, Save.data.settings.speed), bonusSeeds, perkValues(owned));
 }
 on('levelStart', (...a) => { drawLivesIcon(); return onLevelStart(...a); });
@@ -323,6 +323,8 @@ function showDiary(){
 }
 
 // ---------- Settings ----------
+// The chosen difficulty ('easy' | 'normal' | 'hard'); saves from the old Tough switch count as hard.
+const diffOf = () => { const s=Save.data.settings; return DIFFICULTY[s.diff] ? s.diff : s.tough ? 'hard' : 'normal'; };
 function showSettings(){
   const s=Save.data.settings;
   const toggle=(id,label,on,note)=>`<div class="set-row"><span><b>${label}</b>${note?`<small>${note}</small>`:''}</span>
@@ -333,7 +335,8 @@ function showSettings(){
       ${toggle('t-music','Music',s.music)}
     </div>
     <div class="set-group">
-      ${toggle('t-tough','Tough mode',s.tough,'For grown-up gardeners. Pests are much hardier, so you’ll need your Sprayer and Fertilizer. Starts with your next level.')}
+      <div class="set-row diff-row"><span><b>Difficulty</b><small>${DIFFICULTY[diffOf()].note} Changes start with your next level.</small></span>
+        <div class="seg" role="radiogroup" aria-label="Difficulty">${Object.entries(DIFFICULTY).map(([k,d])=>`<button role="radio" aria-checked="${k===diffOf()}" data-go="diff" data-diff="${k}">${d.name}</button>`).join('')}</div></div>
     </div>
     <div class="set-group">
       <div class="set-row"><span><b>Tutorial</b><small>Play the guided first level again.</small></span>
@@ -423,7 +426,7 @@ async function onOverlayClick(ev){
       const s=Save.data.settings, k=b.dataset.go==='t-sfx'?'sfx':'music'; s[k]=!s[k];
       Save.commit(); Audio.setSettings(s); paintSound(); showSettings(); if (k==='sfx' && s.sfx) Audio.play('tap'); return;
     }
-    case 't-tough': { const s=Save.data.settings; s.tough=!s.tough; Save.commit(); showSettings(); return; }
+    case 'diff': { const s=Save.data.settings; s.diff=b.dataset.diff; delete s.tough; Save.commit(); showSettings(); return; }
     case 'replay-tutorial': Save.data.tutorialDone=false; Save.commit(); return play(0);
     case 'shed': leaveLevel(); return showShed();
     case 'refund': Save.data.perks={}; Save.commit(); return showShed();

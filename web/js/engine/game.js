@@ -41,9 +41,13 @@ const bossBite = () => Math.max(3, Math.round(G.S.maxLives*.25));
 export const heatAt = w => (G.LV.heat || G.CH.heat || []).includes(w);
 export const rainAt = w => (G.LV.rain || G.CH.rain || []).includes(w);
 export const swarmAt = w => (G.LV.swarm || G.CH.swarm || []).includes(w);
-// Tough mode (a Settings switch): pests have this much more health. G.tough is 1 when it's off.
-export const TOUGH = 1.3;
-const hpMul = () => G.LV.hpMul*(G.tough||1);
+// Difficulty (chosen in Settings): pest health is multiplied by `hp`. G.diff is the multiplier in play.
+export const DIFFICULTY = {
+  easy:   { hp:.8,  name:'Easy',   note:'Pests are softer. Great for little gardeners.' },
+  normal: { hp:1,   name:'Normal', note:'The garden as it was meant to be played.' },
+  hard:   { hp:1.3, name:'Hard',   note:'For grown-up gardeners. You’ll need your Sprayer and Fertilizer.' },
+};
+const hpMul = () => G.LV.hpMul*(G.diff||1);
 const hpScale = w => (1+.2*(w-1)+.015*(w-1)*(w-1))*hpMul();
 function makeWave(w){
   const pool=G.LV.pool.filter(p=>p[1]<=w), sum=pool.reduce((a,p)=>a+p[2],0);

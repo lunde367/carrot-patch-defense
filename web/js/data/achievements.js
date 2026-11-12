@@ -51,10 +51,10 @@ export const ACHIEVEMENTS = [
   { id:'fert',       name:'Green Thumb',      desc:'Use Fertilizer 25 times.',                          stat:'ferts', goal:25 },
   { id:'scare',      name:'Shoo!',            desc:'Scare away 50 birds with Scarecrows.',              stat:'scares', goal:50 },
   { id:'shed10',     name:'Well Stocked',     desc:'Buy 10 Garden Shed upgrades.',                      check:s=>shedTiers(s)>=10 },
-  // tough mode
-  { id:'tough1',     name:'Tough Cookie',     desc:'Win a level in Tough mode.',                        check:(s,e)=>e.type==='win' && e.tough },
-  { id:'tough10',    name:'Tough as Nails',   desc:'Win 10 levels in Tough mode.',                      stat:'toughWins', goal:10 },
-  { id:'tough3',     name:'Thorny Customer',  desc:'Get 3 stars on a 12-wave level in Tough mode.',     check:(s,e)=>e.type==='win' && e.tough && e.waves>=12 && e.stars===3 },
+  // hard difficulty
+  { id:'tough1',     name:'Tough Cookie',     desc:'Win a level on Hard.',                        check:(s,e)=>e.type==='win' && e.tough },
+  { id:'tough10',    name:'Tough as Nails',   desc:'Win 10 levels on Hard.',                      stat:'toughWins', goal:10 },
+  { id:'tough3',     name:'Thorny Customer',  desc:'Get 3 stars on a 12-wave level on Hard.',     check:(s,e)=>e.type==='win' && e.tough && e.waves>=12 && e.stars===3 },
   // big numbers
   { id:'bosses20',   name:'Boss of Bosses',   desc:'Squash 20 bosses.',                                 stat:'bossKills', goal:20 },
   { id:'pests5k',    name:'Pest Patrol',      desc:'Squash 5,000 pests.',                               stat:'kills', goal:5000 },
