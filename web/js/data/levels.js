@@ -219,7 +219,7 @@ LEVELS.forEach(l => { l.hpMul = +((TOUGHNESS[l.gi] ?? 1+l.gi*.14) * (l.gi>=2 && 
 // It is not part of LEVELS (so stars, unlocks and "beat every level" ignore it).
 const last = LEVELS[LEVELS.length-1];
 export const ENDLESS = {
-  endless:true, gi:LEVELS.length, li:2, ci:CHAPTERS.length, name:'Endless Garden', season:'forever', waves:Infinity, lives:10, hpMul:2.2, resist:0,
+  endless:true, gi:LEVELS.length, li:2, ci:CHAPTERS.length, name:'Endless Garden', season:'forever', waves:Infinity, lives:10, hpMul:2.2, resist:0, growth:1.11,
   cols:last.cols, rows:last.rows, lanes:last.lanes,
   ch:{ id:'endless', name:'Endless Garden', crop:'pumpkin', cropPlural:'pumpkins', pests:'Everything, forever', grass:['#9cd68a','#92cc80'], act:4, mood:'regrow', noSpray:true, levels:[] },
   pool:[['slug',1,3],['caterpillar',1,2,.5],['mouse',2,2],['snail',3,1.5],['aphid',4,2.5,.5],['moth',5,2],['beetle',6,1.5],['vole',7,2],

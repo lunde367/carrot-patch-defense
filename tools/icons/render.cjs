@@ -6,6 +6,7 @@ const base = process.env.ART_URL || 'http://localhost:8767/tools/icons/art.html'
 const jobs = [
   ['assets/icon.png', 'icon', 1024], ['web/icons/icon-512.png', 'icon', 512], ['web/icons/icon-192.png', 'icon', 192],
   ['web/icons/apple-touch-icon.png', 'icon', 180], ['web/icons/favicon-32.png', 'icon', 32],
+  ['assets/icon-foreground.png', 'foreground', 1024], ['assets/icon-background.png', 'background', 1024],
   ['assets/splash.png', 'splash', 2732], ['assets/splash-dark.png', 'splash&dark=1', 2732],
 ];
 (async () => {
@@ -13,7 +14,7 @@ const jobs = [
   for (const [out, kind, size] of jobs){
     await p.setViewportSize({ width:size, height:size });
     await p.goto(`${base}?kind=${kind}&size=${size}`); await p.waitForFunction(() => document.title === 'ready');
-    await (await p.$('#c')).screenshot({ path: out, omitBackground: false });
+    await (await p.$('#c')).screenshot({ path: out, omitBackground: kind==='foreground' });
     console.log('saved', out);
   }
   await b.close();

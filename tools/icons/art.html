@@ -27,6 +27,9 @@ function splashScene(){
   g.save(); g.beginPath(); g.roundRect(x,y,w,w,w*.22); g.clip();
   g.translate(x,y); g.scale(w/S,w/S); iconScene(); g.restore();
 }
-if (kind === 'icon') iconScene(); else splashScene();
+// Android adaptive icon: the art sits inside the middle two thirds (the launcher crops the rest).
+function foreground(){ g.clearRect(0,0,S,S); const k=.6, w=S*k, x=(S-w)/2; g.save(); g.beginPath(); g.roundRect(x,x,w,w,w*.2); g.clip(); g.translate(x,x); g.scale(k,k); iconScene(); g.restore(); }
+function background(){ g.fillStyle='#a6cf8a'; g.fillRect(0,0,S,S); }
+if (kind === 'icon') iconScene(); else if (kind === 'foreground') foreground(); else if (kind === 'background') background(); else splashScene();
 document.title = 'ready';
 </script></body></html>
