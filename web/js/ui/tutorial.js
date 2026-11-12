@@ -1,10 +1,11 @@
+import { emit } from '../../kit/js/events.js';
 // First-level tutorial, run by the kit's coach. Each step waits for the player to do one thing.
 import { createCoach } from '../../kit/js/coach.js';
 import { G, upCostOf } from '../engine/game.js';
 import { Save } from '../save.js';
 
 const coach = createCoach({
-  onFinish(){ Save.data.tutorialDone = true; Save.commit(); G.hint = null; allowed = null; onAllow(); },
+  onFinish(){ Save.data.tutorialDone = true; Save.commit(); emit('tutorialDone'); G.hint = null; allowed = null; onAllow(); },
 });
 
 export const tutorialActive = () => coach.active;

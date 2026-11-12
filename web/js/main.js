@@ -12,6 +12,9 @@ import { initLifecycle } from '../kit/js/lifecycle.js';
 import { initBoard, resize, draw } from './render/board.js';
 import { initUI, play, showMenu, lastOpenLevel, refresh, pause, resume } from './ui/ui.js';
 import { initAchievements } from './ui/achievements.js';
+import { haptic, setHaptics } from '../kit/js/haptics.js';
+import { initTelemetry, track } from '../kit/js/telemetry.js';
+import { TELEMETRY, VERSION } from './data/config.js';
 
 // Engine events → sound effects
 on('shoot', type => Audio.play(SHOT_SOUND[type]));
@@ -45,6 +48,21 @@ on('boss', type => Audio.play(ENEMY[type] && ENEMY[type].voice ? 'boss-'+ENEMY[t
 on('waveStart', () => Audio.play('wave'));
 on('waveClear', () => Audio.play('chime'));
 
+// Touch feedback
+on('plant', () => haptic('light')); on('upgrade', () => haptic('light')); on('undo', () => haptic('light'));
+on('leak', lost => haptic(lost>1 ? 'heavy' : 'medium')); on('spray', () => haptic('medium'));
+on('kill', ({ boss }) => { if (boss) haptic('heavy'); });
+on('win', () => haptic('success')); on('lose', () => haptic('warn'));
+
+// Anonymous play data (see kit/js/telemetry.js): counts only, nothing that identifies anyone.
+const diff = () => G.diffId || 'normal';
+on('waveStart', ({ wave }) => { if (wave===1 && !G.LV.endless) track('level_start', { gi:G.LV.gi, diff:diff() }); });
+on('win', w => track('level_win', { gi:w.gi, diff:diff(), stars:w.stars, lost:w.lost }));
+on('lose', ({ wave }) => G.LV.endless ? track('endless_run', { wave:wave-1, diff:diff() }) : track('level_lose', { gi:G.LV.gi, diff:diff(), wave }));
+on('challenge', n => track('challenge', { gi:G.LV.gi, n }));
+on('ending', () => track('story_end'));
+on('tutorialDone', () => track('tutorial_done'));
+
 let last=performance.now(), clock=0;
 function frame(now){
   const dt=Math.min(.05,(now-last)/1000); last=now;
@@ -64,6 +82,8 @@ async function boot(){
   if (starsLeft() < 0){ Save.data.perks = {}; Save.commit(); }
   bindSave(Save);
   Audio.init(Save.data.settings);
+  setHaptics(Save.data.settings.haptics!==false);
+  initTelemetry({ ...TELEMETRY, version:VERSION, enabled:Save.data.settings.share!==false }); track('app_open');
   initBoard(document.getElementById('cv'), document.getElementById('board'));
   initUI();
   initAchievements();

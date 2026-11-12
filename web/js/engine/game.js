@@ -22,7 +22,11 @@ export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
   setScenery(scen, bonusFor(LV, onPath, scen));
   newShots = [];                                   // drop shots left over from a game that ended mid-wave
   const maxLives = G.LV.lives + (perks.lives||0);
+  if (LV.endless) perks = { ...perks };            // Endless Garden gifts change these numbers during a run
   G.S = { mode:'play', paused:false, seeds:120+gi*15+bonusSeeds+perks.seeds, lives:maxLives, maxLives, perks, wave:0,
+    track:{ kinds:{}, peak:0, maxLv:0, spray:0, fert:0 },                         // what the player did (for challenge stars)
+    scorch:[],                                                                    // dead patches the spray leaves behind (Part 2 on)
+    eseed:Math.floor(Math.random()*1e9), boons:[], boonOffer:null,                // Endless Garden: weather seed, gifts taken, gifts on offer
     fence:perks.fence, headStartUsed:false,
     sprayOn: gi >= SPRAY.unlock && !G.LV.ch.noSpray, sprayCd:0, aiming:false,   // Part 4: the sprayer is put away for good
     fertOn: gi >= FERT.unlock, fertCd:0, fertT:0,                                 // Compost: cooldown, and time left while it's working
@@ -41,9 +45,12 @@ export const starsFor = (lost, max) => { const [a,b]=starLimits(max); return los
 // A boss that gets through eats a quarter of the crops (5 of 20, 3 of 10).
 const bossBite = () => Math.max(3, Math.round(G.S.maxLives*.25));
 export const bossWave = w => G.LV.endless ? w%5===0 : w===G.LV.waves;
-export const heatAt = w => (G.LV.heat || G.CH.heat || []).includes(w);
-export const rainAt = w => (G.LV.rain || G.CH.rain || []).includes(w);
-export const swarmAt = w => (G.LV.swarm || G.CH.swarm || []).includes(w);
+// Endless Garden weather: from wave 3 on, about half the waves bring rain, a heat wave or a swarm.
+const eventAt = w => { if (w<3) return null; const r=((Math.imul((w*2654435761)^G.S.eseed, 1597334677)>>>0)%1000)/1000; return r<.18?'rain':r<.36?'heat':r<.54?'swarm':null; };
+const weather = (kind, w) => G.LV.endless ? eventAt(w)===kind : (G.LV[kind] || G.CH[kind] || []).includes(w);
+export const heatAt = w => weather('heat', w);
+export const rainAt = w => weather('rain', w);
+export const swarmAt = w => weather('swarm', w);
 // Difficulty (chosen in Settings): pest health is multiplied by `hp`. G.diff is the multiplier in play.
 export const DIFFICULTY = {
   easy:   { hp:.8,  name:'Easy',   note:'Pests are softer. Great for little gardeners.' },
@@ -68,7 +75,7 @@ function makeWave(w){
   return q;
 }
 export function startWave(){
-  const S=G.S; if (!S||S.active||S.mode!=='play'||S.paused) return false;
+  const S=G.S; if (!S||S.active||S.mode!=='play'||S.paused||S.boonOffer) return false;
   S.wave++; S.spawnQ=makeWave(S.wave); S.spawnT=0; S.active=true; S.sel=null;
   // Heat wave (Act 2 gardens): defenders slow down unless a Sprinkler is close enough to cool them.
   S.heat = heatAt(S.wave);
@@ -121,12 +128,20 @@ export function plantAt(c,r){
   const lv = head ? S.perks.headLv : 0;
   const t={ type:S.build, c, r, x:c+.5, y:r+.5, lv, cd:0, hop:1, look:1, spent:cost, tile:bonusAt(c,r) };
   t.cool = !S.heat || watered(t);
-  S.towers.push(t); emit('plant', t); return { ok:true, tower:t };
+  t.undo={ peak:S.track.peak, head, cost };                                // enough to take the planting back
+  S.towers.push(t); S.track.kinds[t.type]=(S.track.kinds[t.type]||0)+1; S.track.peak=Math.max(S.track.peak, S.towers.length); emit('plant', t); return { ok:true, tower:t };
 }
 export function upgrade(t){
   const S=G.S; if (!t||t.lv>=2) return false;
   const cost=upCostOf(t); if (S.seeds<cost) return false;
-  S.seeds-=cost; t.spent+=cost; t.lv++; t.hop=1; emit('upgrade', t); return true;
+  S.seeds-=cost; t.spent+=cost; t.lv++; t.hop=1; S.track.maxLv=Math.max(S.track.maxLv, t.lv); emit('upgrade', t); return true;
+}
+// Take back a defender that was just planted: all its seeds return, as if it never happened.
+export function undoPlant(t){
+  const S=G.S; if (!t || !t.undo || !S.towers.includes(t) || t.spent!==t.undo.cost || t.lv!==(t.undo.head?S.perks.headLv:0)) return false;
+  S.seeds+=t.spent; S.towers=S.towers.filter(x=>x!==t); if (S.sel===t) S.sel=null;
+  S.track.kinds[t.type]--; S.track.peak=t.undo.peak; if (t.undo.head) S.headStartUsed=false;
+  emit('undo', t); return true;
 }
 export function sell(t){
   const S=G.S; if (!t) return 0;
@@ -140,7 +155,7 @@ export const sprayStats = () => { const p=G.S.perks;
 export const fertReady = () => G.S.fertOn && G.S.fertCd<=0 && G.S.fertT<=0 && G.S.mode==='play' && G.S.active;
 export function fertilize(){
   const S=G.S; if (!fertReady()) return false;
-  S.fertT=S.perks.fertTime; S.fertCd=FERT.recharge*S.perks.fertRecharge;
+  S.fertT=S.perks.fertTime; S.fertCd=FERT.recharge*S.perks.fertRecharge; S.track.fert++;
   for (const t of S.towers) puffs(t.x, t.y-.2, 3, .6);
   emit('fert'); return true;
 }
@@ -151,6 +166,29 @@ export function revive(){
   S.revived=true; S.mode='play'; S.lives=Math.ceil(S.maxLives/2);
   S.enemies=[]; S.shots=[]; S.spawnQ=[]; S.active=false; S.heat=false; S.rain=false; S.fertT=0;
   S.wave=Math.max(0, S.wave-1); emit('revive'); return true;
+}
+// ---------- Endless Garden gifts ----------
+// After every boss (every 5th wave) the player picks one of three. They last for the rest of the run.
+export const BOONS = {
+  seeds:  { name:'Seed Sack',      desc:'+90 seeds right now.',                          take:S => { S.seeds+=90; } },
+  heal:   { name:'Second Harvest', desc:'Get 3 crops back.',                             take:S => { S.lives=Math.min(S.maxLives, S.lives+3); }, ok:S => S.lives<S.maxLives },
+  fast:   { name:'Morning Dew',    desc:'All defenders work 8% faster.',                 take:S => { S.perks.rateMul*=1.08; } },
+  reach:  { name:'Tall Stakes',    desc:'All defenders reach 6% farther.',               take:S => { S.perks.rangeMul*=1.06; } },
+  rich:   { name:'Fat Seed Heads', desc:'Pests drop 15% more seeds.',                    take:S => { S.perks.rewardMul*=1.15; } },
+  cheap:  { name:'Seed Swap',      desc:'Defenders and upgrades cost 8% less.',          take:S => { S.perks.costMul*=.92; } },
+  fence:  { name:'Mended Fence',   desc:'The fence stops the next 3 pests.',             take:S => { S.fence+=3; } },
+  grow:   { name:'Growth Spurt',   desc:'Your two best defenders that can still grow gain a level, free.',
+            take:S => { for (const t of S.towers.filter(t=>t.lv<2).sort((a,b)=>b.spent-a.spent).slice(0,2)){ t.lv++; t.hop=1; } }, ok:S => S.towers.some(t=>t.lv<2) },
+  heap:   { name:'Bigger Heap',    desc:'Compost is ready now and comes back 20% sooner.', take:S => { S.fertCd=0; S.perks.fertRecharge*=.8; }, ok:S => S.fertOn },
+};
+function boonChoices(){
+  const ids=Object.keys(BOONS).filter(id => !BOONS[id].ok || BOONS[id].ok(G.S)), out=[];
+  while (out.length<3 && ids.length) out.push(ids.splice(Math.floor(Math.random()*ids.length), 1)[0]);
+  return out;
+}
+export function takeBoon(id){
+  const S=G.S; if (!S.boonOffer || !S.boonOffer.includes(id)) return false;
+  BOONS[id].take(S); S.boons.push(id); S.boonOffer=null; emit('boon', id); return true;
 }
 // ---------- Clearing scenery ----------
 // Any rock, stump, fire or pile of litter can be cleared away for seeds, freeing its tiles.
@@ -185,7 +223,8 @@ export function spray(x, y){
     if (e.hp<=0){ e.hp=1; damage(e, 999); }              // reuse the normal squash (seeds, puffs, events)
   }
   for (const t of S.towers) if (PLANTS.includes(t.type) && Math.hypot(t.x-x, t.y-y) <= st.radius*SPRAY.drift){ t.wilt=st.wilt; plants++; }
-  S.sprayCd=st.recharge; S.aiming=false;
+  S.sprayCd=st.recharge; S.aiming=false; S.track.spray++;
+  if (G.CH.act>=2 && S.scorch.length<40) S.scorch.push({ x, y, r:st.radius*.7, seed:S.scorch.length*7+3 });   // once the magic wears off, every spray leaves a dead patch
   S.fx.push({k:'spray',x,y,r:st.radius*SPRAY.drift,life:.9,max:.9});
   if (G.LV.resist>0 && pests) floatText(x, y-st.radius*.6, `resisted ${Math.round(G.LV.resist*100)}%`, '#8a6bb0', 1.1);
   emit('spray', { pests, plants });
@@ -325,5 +364,6 @@ export function update(dt){
     for (const t of S.towers) if (t.type==='sunflower'){ const v=Math.round(TYPES.sunflower.income[t.lv]*(t.tile==='sunny'?SUNNY_SEEDS:1)*(t.dry?.7:1)); inc+=v; floatText(t.x,t.y-.5,'+'+v,'#c98a12',1.3); t.hop=1; }
     S.seeds+=bonus+inc;
     emit('waveClear', { wave:S.wave, seeds:bonus+inc, fromFlowers:inc });
+    if (G.LV.endless && S.wave%5===0){ S.boonOffer=boonChoices(); emit('boons', S.boonOffer); }   // a gift after every boss
   }
 }

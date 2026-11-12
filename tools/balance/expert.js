@@ -11,7 +11,7 @@
 // practices each a few times on a level, and then plays the one that went best.
 // Prints the expert next to the balanced bot: wins, three-star rate, and crops lost on average.
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { G, DIFFICULTY, startLevel, startWave, update, starsFor } from '../../web/js/engine/game.js';
+import { G, DIFFICULTY, startLevel, startWave, update, starsFor, takeBoon } from '../../web/js/engine/game.js';
 import { TYPES } from '../../web/js/data/towers.js';
 import { LEVELS, ENDLESS } from '../../web/js/data/levels.js';
 import { perkValues } from '../../web/js/data/perks.js';
@@ -32,6 +32,7 @@ function play(level, seed, who, maxWaves=Infinity){
   const S = G.S, avail = Object.keys(TYPES).filter(k => TYPES[k].unlock <= gi), waves = Math.min(level.waves, maxWaves);
   const plan = who==='value' ? 'expert' : 'balanced', sharp = who!=='balanced';
   for (let w=0; w<waves; w++){
+    if (S.boonOffer) takeBoon(S.boonOffer[Math.floor(rnd()*S.boonOffer.length)]);   // Endless Garden gift: any of the three
     STRATEGIES[plan](avail, w+1, rnd);
     if (!startWave()) break;
     let t=0, next=0, buy=2;

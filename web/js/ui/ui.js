@@ -1,5 +1,5 @@
 // Everything the player sees and taps outside the board: HUD, tray, panels and overlays.
-import { G, DIFFICULTY, bossWave, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, canClear, sceneryPiece, clearScenery } from '../engine/game.js';
+import { G, DIFFICULTY, BOONS, takeBoon, undoPlant, bossWave, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, canClear, sceneryPiece, clearScenery } from '../engine/game.js';
 import { SCENERY_NAMES } from '../data/scenery.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
 import { path } from '../engine/path.js';
@@ -8,6 +8,11 @@ import { ENEMY } from '../data/enemies.js';
 import { PARTS, CHAPTERS, LEVELS, ENDLESS, WAVES, ROWS, COLS } from '../data/levels.js';
 import { drawDiaryScene } from '../render/art-diary.js';
 import { TOWER_FACTS, pestFact } from '../data/facts.js';
+import { haptic, setHaptics } from '../../kit/js/haptics.js';
+import { shouldAskRating, answerRating } from '../../kit/js/rating.js';
+import { track, setTelemetry } from '../../kit/js/telemetry.js';
+import { VERSION } from '../data/config.js';
+import { challengesFor, challengeText, challengeMet, CHALLENGE_TOTAL } from '../data/challenges.js';
 import { drawEnemy } from '../render/art-enemies.js';
 import { PERKS, perkValues, ALL_PERKS, PRODUCTS } from '../data/perks.js';
 import { Save, starsLeft, starsEarned, endlessStars } from '../save.js';
@@ -56,6 +61,7 @@ const onLevelStart = (LV => {
   setHome(false); hideOverlay(); disarmRestart(); resize(); renderBar(); renderInfo(); dirty();
   msg(LV.endless ? `Endless Garden. Best so far: wave ${Save.data.endless.best}.` : `${LV.ch.name} ${LV.li+1}: ${LV.name}. Plant your defenders, then tap Start wave.`);
   paintDiff();
+  requestAnimationFrame(() => { refresh(); resize(); });   // the skill buttons may have just appeared beside the message
   if (quietStart){ quietStart=false; return; }                         // started silently behind the menu
   if (LV.gi===0 && !Save.data.tutorialDone){                           // the tutorial comes first, after the diary's opening page
     const p0=diaryEntry('start-cabbage');
@@ -69,7 +75,8 @@ const onLevelStart = (LV => {
   if (firstOfPart && LV.ch.act>1 && !Save.data.parts[LV.ch.act]) intro.push(['part', LV.ch.act]);
   if (page && !Save.data.diary[page.key]) intro.push(['diary', page.key]);
   if (!Save.data.settings.diffAsked && !devMode) intro.push(['diff']);          // asked once: who's gardening?
-  if (!Save.data.intros[LV.gi] && !(Save.data.stars[LV.gi]>0)) intro.push(['level']);                           // what this level is about, the first time
+  if (!Save.data.intros[LV.gi] && !(Save.data.stars[LV.gi]>0)) intro.push(['level']);
+  if (!LV.endless && Save.data.stars[LV.gi]>0 && !chalShown.has(LV.gi) && Object.keys(chalGot(LV.gi)).length<challengesFor(LV).length) intro.push(['chal']);   // replaying a beaten level: its challenges                           // what this level is about, the first time
   if (!devMode){
     for (const k of TRAY) if (towerOpen(k) && TYPES[k].unlock>0 && !Save.data.seen[k]) intro.push(['defender', k]);
     if (G.S.sprayOn && !Save.data.seen.spray) intro.push(['spray']);
@@ -78,6 +85,26 @@ const onLevelStart = (LV => {
   nextIntro();
 });
 let intro = [], afterDiary = null;
+// ---------- Challenge stars ----------
+const CH_ICON = '✦';
+const chalGot = gi => Save.data.chal[gi] || {};
+export const chalCount = () => Object.values(Save.data.chal).reduce((n,o) => n+Object.keys(o).length, 0);
+const chalList = (L, fresh=[]) => `<ul class="chal-list">${challengesFor(L).map(id => { const got=chalGot(L.gi)[id];
+  return `<li class="${got?'got':''}"><i>${CH_ICON}</i><span>${challengeText(id, L)}${fresh.includes(id)?' <b>New!</b>':''}</span></li>`; }).join('')}</ul>`;
+const chalShown = new Set();          // levels whose challenge card was shown this session
+function showChalCard(){
+  const LV=G.LV; chalShown.add(LV.gi); G.S.paused=true;
+  overlay(`<div class="panel newdef levelcard"><span class="tag">Challenge stars · ${Object.keys(chalGot(LV.gi)).length} of ${challengesFor(LV).length}</span>
+    <h3>${LV.name}</h3><p>You’ve beaten this level, so three extra goals are open. Win while meeting any of them to earn its star.</p>${chalList(LV)}</div>
+    <div class="row"><button class="btn main" data-go="level-ok">Let’s go</button></div>`);
+}
+// Endless Garden: after every boss, pick one of three gifts.
+function showBoons(ids){
+  G.S.paused=true;
+  overlay(`<div class="panel newdef"><span class="tag">Wave ${G.S.wave} cleared</span><h3>Pick a gift</h3>
+    <p>It lasts for the rest of this run.</p>
+    <div class="diff-pick">${ids.map(id=>`<button class="btn ghost" data-go="boon-pick" data-boon="${id}"><b>${BOONS[id].name}</b><small>${BOONS[id].desc}</small></button>`).join('')}</div></div>`);
+}
 function nextIntro(){
   const card = intro.shift();
   if (!card){ if (G.S && G.S.mode==='play'){ G.S.paused=false; hideOverlay(); dirty(); } return; }
@@ -86,6 +113,7 @@ function nextIntro(){
   else if (card[0]==='defender') showNewDefender(card[1]);
   else if (card[0]==='fert') showFertIntro();
   else if (card[0]==='level') showLevelCard();
+  else if (card[0]==='chal') showChalCard();
   else if (card[0]==='diff') showDiffChoice();
   else showSprayIntro();
 }
@@ -113,16 +141,19 @@ function paintDiff(){ const b=$('diffBadge'); b.hidden = G.diffId==='normal' || 
 function showPartCard(n){
   const P=PARTS[n-1]; Save.data.parts[n]=true; Save.commit();
   if (G.S) G.S.paused=true;
-  overlay(`<div class="part-card" style="--part:${P.tint}">${P.before?`<p class="part-before">${P.before}</p>`:''}<span>Part ${n}</span><h2>${P.name}</h2></div>
+  overlay(`<div class="part-card" style="--part:${P.tint}">${P.before?`<p class="part-before">${P.before}</p>`:''}<canvas class="diary-art part-art" data-scene="part-${n}"></canvas><span>Part ${n}</span><h2>${P.name}</h2></div>
     <div class="row"><button class="btn main" data-go="part-ok">Begin</button></div>`);
-  $('over').classList.add('part-over');
+  $('over').classList.add('part-over'); paintScenes($('over'));
   Audio.play('wave');
 }
+const esc = t => String(t).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+const gardener = () => esc((Save.data.settings.name || 'Robin').trim() || 'Robin');
+const diaryText = d => d.key==='start-cabbage' ? `This diary belongs to ${gardener()}. ${d.text}` : d.text;
 const paintScenes = root => { for (const cv of root.querySelectorAll('canvas[data-scene]')) if (!drawDiaryScene(cv, cv.dataset.scene)) cv.remove(); };
 function showDiaryPage(key, cont='Continue'){
   const d=diaryEntry(key); Save.data.diary[key]=true; Save.commit(); emit('diary', key);
   if (G.S) G.S.paused=true;
-  overlay(`<div class="diary-page"><canvas class="diary-art" data-scene="${key}"></canvas><span class="diary-tag">From the garden diary</span><h3>${d.title}</h3><p>${d.text}</p></div>
+  overlay(`<div class="diary-page"><canvas class="diary-art" data-scene="${key}"></canvas><span class="diary-tag">From the garden diary</span><h3>${d.title}</h3><p>${diaryText(d)}</p></div>
     <div class="row"><button class="btn main" data-go="diary-ok">${cont}</button></div>`);
   paintScenes($('over'));
   Audio.play('page');
@@ -156,7 +187,7 @@ const starsToday = () => Save.data.adStars.day===today() ? Save.data.adStars.n :
 async function earn(placement, label){
   if (noAds()) return true;
   const S=G.S, was=S && S.paused; if (S) S.paused=true;
-  const ok = await Ads.showRewarded(placement, label);
+  const ok = await Ads.showRewarded(placement, label); if (ok) track('extra_used', { kind:String(placement).toLowerCase().replace(/[^a-z0-9_]/g,'_').slice(0,24) });
   if (S) S.paused=was; dirty(); return ok;
 }
 const tv = () => noAds() ? '' : '<span class="tv">AD</span>';
@@ -268,7 +299,8 @@ export function showMenu(){
     }
     const lvls = ch.levels.map(l => { const ok=unlocked(l.gi), st=Save.data.stars[l.gi]||0;
       return `<button class="lv${G.LV&&G.LV.gi===l.gi?' cur':''}" data-lv="${l.gi}" ${ok?'':'disabled'}>${l.waves>WAVES?`<i class="lv-long">${l.waves} waves</i>`:''}<b>${l.li+1}. ${l.name}</b>
-        ${ok?`<span class="stars">${starStr(st)}</span>`:'<span class="lv-lock">Locked</span>'}</button>`; }).join('');
+        ${ok?`<span class="stars">${starStr(st)}</span>`:'<span class="lv-lock">Locked</span>'}
+        ${st>0?`<span class="lv-chal">${challengesFor(l).map(id=>`<i class="${chalGot(l.gi)[id]?'got':''}">${CH_ICON}</i>`).join('')}</span>`:''}</button>`; }).join('');
     return `<div class="chap"><header><canvas data-crop="${ch.crop}" width="80" height="80"></canvas>
       <span><b>${ch.name}</b><small>${ch.pests}</small></span></header><div class="lvls">${lvls}</div></div>`;
   };
@@ -341,7 +373,7 @@ function showShed(){
 function buyPerk(id){
   const p=PERKS.find(x=>x.id===id), tier=Save.data.perks[id]||0, cost=p.costs[tier];
   if (cost==null || cost>starsLeft()){ Audio.play('denied'); return; }
-  Save.data.perks[id]=tier+1; Save.commit(); Audio.play('sparkle'); const y=window.scrollY; showShed(); window.scrollTo(0,y); emit('perk', id);
+  Save.data.perks[id]=tier+1; Save.commit(); Audio.play('sparkle'); const y=window.scrollY; showShed(); window.scrollTo(0,y); emit('perk', id); track('shed_buy', { perk:id, tier:tier+1 });
 }
 
 // ---------- Achievements ----------
@@ -380,10 +412,10 @@ function showDiary(at){
   if (wrote){ Save.commit(); emit('diary'); }
   jPage = Math.max(0, Math.min(pages.length-1, at==null ? pages.length-1 : at));
   const d = pages[jPage];
-  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button><h2>Garden diary</h2><span class="star-count">${pages.length}/${DIARY.length}</span></div>
+  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button><h2>${gardener()}’s diary</h2><span class="star-count">${pages.length}/${DIARY.length}</span></div>
     ${d ? `<div class="journal"><div class="j-rings" aria-hidden="true">${'<i></i>'.repeat(7)}</div>
         <div class="j-page" id="jPage"><canvas class="diary-art" data-scene="${d.key}"></canvas>
-          <h3>${d.title}</h3><p>${d.text}</p><span class="j-num">Page ${jPage+1}</span></div></div>
+          <h3>${d.title}</h3><p>${diaryText(d)}</p><span class="j-num">Page ${jPage+1}</span></div></div>
       <div class="j-nav"><button class="btn ghost" data-go="j-prev" ${jPage===0?'disabled':''}>‹ Earlier</button>
         <button class="btn ghost" data-go="j-next" ${jPage>=pages.length-1?'disabled':''}>Later ›</button></div>
       ${pages.length<DIARY.length?'<p class="home-note">More pages get written as you play.</p>':''}`
@@ -429,6 +461,7 @@ function showStats(){
   const games=(s.wins||0)+(s.losses||0);
   const rows=[
     ['Levels beaten', `${beaten} of ${LEVELS.length}`], ['Stars earned', n(starsEarned())],
+    ['Challenge stars', `${chalCount()} of ${CHALLENGE_TOTAL}`],
     ['Three-star levels', `${LEVELS.filter(l=>Save.data.stars[l.gi]===3).length} of ${LEVELS.length}`],
     ['Games won', n(s.wins)], ['Games lost', n(s.losses)], ['Win rate', games ? Math.round(s.wins/games*100)+'%' : '—'],
     ['Pests squashed', n(s.kills)], ['Bosses beaten', n(s.bossKills)], ['Seeds from Sunflowers', n(s.flowerSeeds)],
@@ -452,6 +485,12 @@ function showSettings(){
     <div class="set-group">
       ${toggle('t-sfx','Sound effects',s.sfx)}
       ${toggle('t-music','Music',s.music)}
+      ${toggle('t-haptics','Vibration',s.haptics!==false,'A small buzz when you plant, and when pests reach the crops.')}
+    </div>
+    <div class="set-group">
+      <div class="set-row"><span><b>Gardener’s name</b><small>The name on the diary.</small></span>
+        <input class="name-in" id="gName" maxlength="12" value="${gardener()}" aria-label="Gardener’s name" autocomplete="off" spellcheck="false"></div>
+      ${toggle('t-share','Share anonymous play data',s.share!==false,'Only counts like “level 7 won with 3 stars”. Never your name, your device or anything that could identify you.')}
     </div>
     <div class="set-group">
       <div class="set-row diff-row"><span><b>Difficulty</b><small>${DIFFICULTY[diffOf()].note} Changes start with your next level.</small></span>
@@ -473,7 +512,8 @@ function showSettings(){
       <div class="set-row"><span><b>Reset progress</b><small>Erase all stars, upgrades, unlocks and achievements.</small></span>
         <button class="reset-btn" data-go="reset">Reset</button></div>
     </div>`:''}
-    <p class="version">Carrot Patch Defense · version 0.4</p>`);
+    <p class="version">Carrot Patch Defense · version ${VERSION}</p>`);
+  const gn=$('gName'); if (gn) gn.onchange=()=>{ Save.data.settings.name=gn.value.replace(/[<>&"']/g,'').trim().slice(0,12) || 'Robin'; Save.commit(); };
 }
 
 on('win', w => {
@@ -484,7 +524,12 @@ on('win', w => {
 function recordWin({ stars, gi }){
   if (recordWin.done===gi) return; recordWin.done=gi;
   const before=Save.data.stars[gi]||0;
-  recordWin.before=before;
+  recordWin.before=before; recordWin.fresh=[];
+  if (before>0){                                    // a replay: any challenge met for the first time earns its star
+    const got=Save.data.chal[gi] || (Save.data.chal[gi]={});
+    for (const id of challengesFor(LEVELS[gi])) if (!got[id] && challengeMet(id, G.S)){ got[id]=true; recordWin.fresh.push(id); }
+    if (recordWin.fresh.length) emit('challenge', recordWin.fresh.length);
+  }
   Save.data.stars[gi]=Math.max(before, stars); Save.data.stats.wins++; Save.commit();
 }
 on('levelStart', () => { recordWin.done=null; });
@@ -498,10 +543,15 @@ function showWin(w, recorded=false){
   overlay(`<h2>${LV.name} saved!</h2><div class="stars">${starStr(stars)}</div>
     <p>You beat the ${ENEMY[LV.boss].name} with ${lives} of ${maxLives} ${LV.ch.cropPlural} left.${stars<3?` Lose ${starLimits(maxLives)[0]} or fewer for three stars.`:''}</p>
     ${gained?`<p>+${gained} ★ for the Garden Shed (★ ${starsLeft()} to spend).</p>`:''}
+    ${before>0 ? `<div class="chal-box"><b>Challenge stars${recordWin.fresh.length?` · +${recordWin.fresh.length} ${CH_ICON}`:''}</b>${chalList(LV, recordWin.fresh)}</div>`
+      : `<p class="pause-intro">${CH_ICON} Three challenge stars are now open on this level. Play it again to try for them.</p>`}
     ${unlocks.length&&before===0?`<p>Next level unlocks the ${unlocks.map(k=>TYPES[k].name).join(' and ')}!</p>`:''}
     <div class="row">${next?`<button class="btn main" data-go="next">${next.ci!==LV.ci?`On to ${next.ch.name}`:'Next level'}</button>`:''}
     ${gained?'<button class="btn ghost" data-go="shed">Garden Shed</button>':''}
     <button class="btn ghost" data-go="retry">Play again</button><button class="btn ghost" data-go="menu">All gardens</button></div>
+    ${stars===3 && LV.li===LV.ch.levels.length-1 && shouldAskRating(Save, { wins:Save.data.stats.wins }) ? `<div class="rate-box" id="rateBox"><b>Enjoying the garden?</b>
+      <span>A rating helps other families find it.</span><div class="row"><button class="btn main small" data-go="rate" data-a="ok">OK</button>
+      <button class="btn ghost small" data-go="rate" data-a="later">Not now</button><button class="btn ghost small" data-go="rate" data-a="never">Never ask me again</button></div></div>` : ''}
     ${next?'':`<div class="row"><button class="btn main" data-go="ending">${Save.data.ended?'See the ending again':'Finish the story'}</button></div>`}`);
   dirty();
 }
@@ -558,6 +608,8 @@ export function pause(){
   if (!S.active && S.wave===0) return;           // nothing to protect yet
   S.paused=true;
   overlay(`<h2>Paused</h2><p>${G.LV.name}, wave ${S.wave}${G.LV.endless?'':` of ${G.LV.waves}`}${G.diffId!=='normal'?` · ${DIFFICULTY[G.diffId].name}`:''}</p><p class="pause-intro">${G.LV.intro}</p>
+    ${G.LV.endless ? (S.boons.length?`<p class="pause-intro"><b>Gifts:</b> ${S.boons.map(id=>BOONS[id].name).join(', ')}</p>`:'')
+      : Save.data.stars[G.LV.gi]>0 ? `<div class="chal-box">${chalList(G.LV)}</div>` : ''}
     <div class="row"><button class="btn main" data-go="resume">Resume</button><button class="btn ghost" data-go="menu">All gardens</button></div>`);
   dirty();
 }
@@ -600,6 +652,10 @@ async function onOverlayClick(ev){
       msg('Save the Sprayer for when pests get close to your crops.'); return nextIntro(); }
     case 'part-ok': return nextIntro();
     case 'level-ok': return nextIntro();
+    case 'rate': { const a=b.dataset.a; answerRating(Save, a); track('rating', { answer:a }); const box=$('rateBox'); if (box) box.innerHTML = a==='ok' ? '<b>Thank you!</b>' : '<span>No problem.</span>'; return; }
+    case 't-haptics': { const s=Save.data.settings; s.haptics=s.haptics===false; setHaptics(s.haptics); Save.commit(); haptic('medium'); showSettings(); return; }
+    case 't-share': { const s=Save.data.settings; s.share=s.share===false; setTelemetry(s.share); Save.commit(); showSettings(); return; }
+    case 'boon-pick': { const id=b.dataset.boon; if (takeBoon(id)){ G.S.paused=false; hideOverlay(); Audio.play('sparkle'); msg(`${BOONS[id].name}: ${BOONS[id].desc}`); dirty(); } return; }
     case 'ending': return showEnding();
     case 'endless': return play(ENDLESS.gi);
     case 'guide': return showGuide(b.dataset.tab||'defenders');
@@ -811,9 +867,13 @@ function onBoardUp(ev){
   G.preview=null; dirty();
   if (S && S.mode==='play' && !S.paused && S.build===p.type) tryPlant(p.c, p.r);
 }
+// For a few seconds after planting, an Undo button gives every seed back.
+let undoT=null, lastPlanted=null;
+function offerUndo(t){ if (tutorialActive()) return; lastPlanted=t; $('undo').hidden=false; clearTimeout(undoT); undoT=setTimeout(endUndo, 5000); }
+function endUndo(){ clearTimeout(undoT); lastPlanted=null; $('undo').hidden=true; }
 function tryPlant(c,r){
   const S=G.S, res=plantAt(c,r);
-  if (res.ok){ if (!tutorialActive()) msg(tileNote(res.tower) || (S.wave===0&&S.towers.length===1?'Nice. Plant more, or tap Start wave when ready.':`${TYPES[res.tower.type].name} planted.`)); dirty(); return; }
+  if (res.ok){ offerUndo(res.tower); if (!tutorialActive()) msg(tileNote(res.tower) || (S.wave===0&&S.towers.length===1?'Nice. Plant more, or tap Start wave when ready.':`${TYPES[res.tower.type].name} planted.`)); dirty(); return; }
   Audio.play('denied');
   if (res.reason==='seeds') msg(`Not enough seeds. ${res.name} costs ${res.cost}.`);
   else if (res.reason==='scenery') msg('Something’s in the way. Tap it to clear it for seeds.');
@@ -880,6 +940,8 @@ export function initUI(){
     else { Audio.play('denied'); msg(`Not enough seeds. It costs ${clearCost(o)}.`); } };
   $('spClose').onclick=()=>{ G.S.selScen=null; renderInfo(); };
   $('iUp').onclick=()=>{ const t=G.S.sel; if (upgrade(t)){ renderInfo(); msg(`${TYPES[t.type].name} upgraded to level ${t.lv+1}.`); } };
+  $('undo').onclick=()=>{ const t=lastPlanted; endUndo(); if (undoPlant(t)){ Audio.play('sell'); msg('Taken back. Your seeds are returned.'); renderBar(); renderInfo(); dirty(); } };
+  on('levelStart', endUndo); on('upgrade', endUndo); on('sell', endUndo);
   $('iSell').onclick=()=>{ const v=sell(G.S.sel); renderInfo(); msg(`Sold for ${v} seeds.`); };
   $('seedsChip').onclick=()=>{ if (devMode && G.S){ G.S.seeds+=200; msg('Test mode: +200 seeds.'); } };
   paintDev();
@@ -897,6 +959,7 @@ export function initUI(){
   on('heat', hot => msg(hot ? `Heat wave! ${hot} defender${hot>1?'s are':' is'} overheating. Defenders near a Sprinkler stay cool.` : 'Heat wave! Your Sprinklers are keeping everyone cool.'));
   on('fence', left => msg(left ? `Your Sturdy Fence stopped a pest! It can stop ${left} more this level.` : 'Your Sturdy Fence stopped a pest! That was its last one this level.'));
   on('waveClear', () => { if (G.S) { G.S.aiming=false; G.aim=null; } });
+  on('boons', ids => showBoons(ids));
   on('waveClear', ({ wave }) => { if (G.LV.endless && wave>Save.data.endless.best){ Save.data.endless.best=wave; Save.commit(); emit('endlessBest', wave); } });
   on('waveClear', ({ wave, seeds, fromFlowers }) => msg(`Wave ${wave} cleared. +${seeds} seeds${fromFlowers?` (${fromFlowers} from sunflowers)`:''}.`));
 }

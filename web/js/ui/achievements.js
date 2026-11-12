@@ -41,6 +41,7 @@ export function initAchievements(){
   on('scare', n => { if (n){ bump('scares', n); evaluate({ type:'scare' }); } });
   on('diary', () => evaluate({ type:'diary' }));
   on('ending', () => evaluate({ type:'ending' }));
+  on('challenge', () => setTimeout(() => evaluate({ type:'challenge' }), 700));
   on('endlessBest', () => evaluate({ type:'endless' }));
   on('upgrade', t => evaluate({ type:'upgrade', lv:t.lv }));
   on('fence', () => evaluate({ type:'fence' }));

@@ -2,7 +2,7 @@
 import { G, towerAt, rangeOf, HILL } from '../engine/game.js';
 import { path, buildable, pointAt } from '../engine/path.js';
 import { drawScenery, drawBonus } from './art-scenery.js';
-import { COLS, ROWS } from '../data/levels.js';
+import { COLS, ROWS, CHAPTERS } from '../data/levels.js';
 import { TYPES } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
 import { ell, rng } from '../../kit/js/draw.js';
@@ -32,7 +32,7 @@ export function resize(){
   const gap=parseFloat(getComputedStyle(app).rowGap)||0;
   const pad=el=>{ const cs=getComputedStyle(el); return parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom); };
   const reserved = kids.reduce((h,el)=>h+el.offsetHeight,0) + gap*kids.length + pad(document.body) + pad(document.documentElement) + 6;
-  const fitW = Math.min(app.clientWidth, 560) / COLS;
+  const fitW = Math.min(app.clientWidth, 860) / COLS;       // tablets get a bigger board
   const fitH = (vh - reserved) / ROWS;
   tile = Math.max(22, Math.floor(Math.min(fitW, fitH)));
   W=tile*COLS; H=tile*ROWS; dpr=Math.min(2, window.devicePixelRatio||1);
@@ -59,11 +59,16 @@ export function rebuild(){
   for (let r=0;r<ROWS-1;r++) for (let c=0;c<COLS;c++){ b.fillStyle=CH.grass[(r+c)%2]; b.fillRect(c*s,r*s,s,s); }
   const gy=(ROWS-1)*s; b.fillStyle='#8a5e3c'; b.fillRect(0,gy,W,s);
   b.strokeStyle='#76502f'; b.lineWidth=2; for (let i=1;i<3;i++){ b.beginPath(); b.moveTo(0,gy+i*s/3); b.lineTo(W,gy+i*s/3); b.stroke(); }
+  // The ground tells the story: flowers thin out through Part 2, are gone in Part 3, and come back
+  // thicker with every level of Part 4. Early Part 4 still has bare patches where nothing grows yet.
+  const bloom = storyGround(LV);
+  if (bloom.bare){ const Rb=rng(91+LV.gi*5); for (let i=0;i<bloom.bare;i++){ const x=Rb()*W, y=Rb()*(ROWS-1)*s, rr=s*(.5+Rb()*.6);
+    ell(b,x,y,rr*1.3,rr*.8,'rgba(150,120,80,.28)'); ell(b,x+rr*.3,y+rr*.1,rr*.7,rr*.45,'rgba(140,108,70,.22)'); } }
   const R=rng(7+LV.gi*13);
   for (let r=0;r<ROWS-1;r++) for (let c=0;c<COLS;c++){
-    if (path.cells.has(c+','+r)||path.blocked.has(c+','+r)||path.bonus.has(c+','+r)||R()>.22) continue;
+    if (path.cells.has(c+','+r)||path.blocked.has(c+','+r)||path.bonus.has(c+','+r)||R()>.22*bloom.tufts) continue;
     const x=c*s+s*(.2+R()*.6), y=r*s+s*(.2+R()*.6);
-    if (R()<.5){ b.strokeStyle=CH.mood==='withered'?'#9a8a62':'#7fb064'; b.lineWidth=1.5; b.beginPath();
+    if (R()<bloom.grass){ b.strokeStyle=CH.mood==='withered'?'#9a8a62':'#7fb064'; b.lineWidth=1.5; b.beginPath();
       for (const o of [-.06,0,.06]){ b.moveTo(x,y); b.lineTo(x+o*s*1.5,y-s*.13); } b.stroke(); }
     else if (CH.mood==='withered'){ R(); b.strokeStyle='rgba(90,70,45,.55)'; b.lineWidth=1.2; b.beginPath(); b.moveTo(x-s*.07,y); b.lineTo(x+s*.02,y-s*.05); b.lineTo(x+s*.08,y+s*.02); b.stroke(); }   // dry cracks, no blossoms
     else { const col=['#f7d6e0','#fff3b0','#e2d3f5'][Math.floor(R()*3)];
@@ -115,10 +120,31 @@ export function rebuild(){
     b.beginPath(); b.moveTo(x,gy+s*.02); b.lineTo(x+s*.08,gy-s*.12); b.lineTo(x+s*.16,gy+s*.02); b.lineTo(x+s*.16,gy+s*.2); b.lineTo(x,gy+s*.2); b.closePath(); b.fill(); b.stroke(); } }
 }
 
+// How lush the ground is for this level: { tufts: how many decorations, grass: share that are plain grass
+// (the rest are flowers), bare: brown patches, bees: bees in the air }.
+function storyGround(LV){
+  const act=LV.ch.act, part=CHAPTERS.filter(c=>c.act===act).flatMap(c=>c.levels), i=Math.max(0, part.indexOf(LV)), t=part.length>1 ? i/(part.length-1) : 1;
+  if (LV.endless) return { tufts:1.7, grass:.35, bare:0, bees:4 };
+  if (act===1) return { tufts:1, grass:.5, bare:0, bees:LV.gi<3?2:1 };
+  if (act===2) return { tufts:1-.35*t, grass:.55+.4*t, bare:Math.round(t*4), bees:0 };          // the blossoms quietly disappear
+  if (act===3) return { tufts:.9, grass:.5, bare:4+Math.round(t*4), bees:0 };
+  return { tufts:.7+1.1*t, grass:.7-.4*t, bare:Math.round((1-t)*5), bees:Math.round(t*5) };   // Part 4: it all comes back
+}
+// A bee wandering over the board (purely for show).
+function drawBees(n, clock, s){
+  for (let i=0;i<n;i++){ const a=clock*(.35+i*.07)+i*2.1, x=W*(.5+.42*Math.sin(a*1.3+i)), y=(ROWS-1)*s*(.5+.4*Math.sin(a*.9+i*1.7)), w=Math.sin(clock*40+i)*s*.03;
+    ell(g,x,y+s*.16,s*.05,s*.02,'rgba(0,0,0,.12)');
+    ell(g,x-s*.02,y-s*.045,s*.035,s*.03+w,'rgba(255,255,255,.75)'); ell(g,x+s*.025,y-s*.045,s*.035,s*.03-w,'rgba(255,255,255,.75)');
+    ell(g,x,y,s*.055,s*.04,'#f2c230','#5a4210',1); g.fillStyle='#5a4210'; g.fillRect(x-s*.012,y-s*.036,s*.022,s*.072); }
+}
 export function draw(clock){
   const S=G.S; if (!S || !tile) return;
   const s=tile;
   g.setTransform(1,0,0,1,0,0); g.drawImage(bgc,0,0); g.setTransform(dpr,0,0,dpr,0,0);
+  // dead patches left by the spray
+  for (const p of S.scorch){ const R=rng(p.seed), rr=p.r*s;
+    ell(g,p.x*s,p.y*s,rr,rr*.86,'rgba(120,92,52,.2)');
+    for (let i=0;i<5;i++){ const a=R()*6.28, d=R()*rr*.7; ell(g,p.x*s+Math.cos(a)*d,p.y*s+Math.sin(a)*d,rr*.28,rr*.2,'rgba(96,72,40,.14)'); } }
 
   if (S.heat){ const p=.5+.5*Math.sin(clockReal()*2.2);
     g.fillStyle=`rgba(255,140,40,${.10+.05*p})`; g.fillRect(0,0,W,(ROWS-1)*s);
@@ -204,6 +230,7 @@ export function draw(clock){
     for (let i=0;i<4;i++){ const x=((tt*12+i*W/2.3)%(W*1.6))-W*.3, y=H*(.15+i*.22);
       const gr=g.createRadialGradient(x,y,0,x,y,W*.45); gr.addColorStop(0,'rgba(170,160,120,.32)'); gr.addColorStop(1,'rgba(170,160,120,0)');
       g.fillStyle=gr; g.fillRect(0,0,W,H); } }
+  if (!S.rain){ const bz=storyGround(G.LV).bees; if (bz) drawBees(bz, clockReal(), s); }
   if (S.rain){   // falling rain
     g.strokeStyle='rgba(200,225,245,.6)'; g.lineWidth=1.2;
     for (let i=0;i<70;i++){ const x=((i*53.7)%W + tt*20)%W, y=((i*97.3 + tt*420)%(H+30))-15; g.beginPath(); g.moveTo(x,y); g.lineTo(x-3,y+12); g.stroke(); }

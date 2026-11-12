@@ -13,7 +13,12 @@ const MOOD = {
 };
 // Each item: [kind, id, x (0..1 across the page), size (1 = normal)]. Extras: sun, rain, spray, creek.
 const SCENES = {
-  'start-cabbage':    ['happy',  [['crop','cabbage',.2,1],['crop','cabbage',.36,1],['pest','babyslug',.55,1],['tower','bunny',.8,1.1]]],
+  'start-cabbage':    ['happy',  [['face',.14,1],['crop','cabbage',.36,1],['crop','cabbage',.5,1],['pest','babyslug',.67,.45],['tower','bunny',.86,1.1]]],
+  // the pictures on the four part cards
+  'part-1':           ['happy',  [['sun'],['crop','cabbage',.14,1],['tower','bunny',.32,1.1],['crop','strawberry',.5,1],['tower','sunflower',.68,1],['crop','carrot',.86,1]]],
+  'part-2':           ['hot',    [['sun',1.7],['crop','tomato',.16,.9],['spray',.36,1.4],['pest','stinkbug',.56,1],['crop','corn',.74,.9],['pest','locust',.9,1]]],
+  'part-3':           ['dust',   [['scen','tire',.16,1.1],['scen','fire',.36,1.1],['crop','wheat',.56,.8],['scen','litter',.74,1],['pest','dustbeetle',.9,1]]],
+  'part-4':           ['rain',   [['rain'],['creek'],['scen','sapling',.16,1.3],['scen','clover',.34,1.1],['crop','radish',.52,1],['scen','sapling',.72,1.6],['tower','barrel',.9,1]]],
   'after-cabbage':    ['happy',  [['sun'],['crop','cabbage',.16,1.1],['crop','cabbage',.32,1.2],['crop','cabbage',.48,1.1],['tower','bunny',.68,1],['tower','bunny',.86,1.1]]],
   'start-strawberry': ['happy',  [['crop','strawberry',.18,1],['crop','strawberry',.34,1],['spray',.6,1.2],['tower','bunny',.84,1]]],
   'after-strawberry': ['happy',  [['crop','strawberry',.16,1.1],['crop','strawberry',.3,1.1],['crop','strawberry',.44,1.1],['spray',.68,1.5]]],
@@ -51,6 +56,19 @@ function sprayer(c, x, y, s){   // the yellow bottle from the spray button
   c.restore();
 }
 
+function gardenerFace(c, x, y, s){   // the diary's owner: straw hat, freckles, a big smile
+  c.save(); c.translate(x, y); c.lineJoin='round'; c.lineCap='round';
+  ell(c, 0, -s*.02, s*.3, s*.07, 'rgba(30,20,10,.2)');
+  c.fillStyle='#5f9a45'; c.strokeStyle='#33582a'; c.lineWidth=Math.max(1.5,s*.035); c.beginPath(); c.roundRect(-s*.26,-s*.3,s*.52,s*.3,s*.1); c.fill(); c.stroke();   // shoulders
+  ell(c, 0, -s*.52, s*.25, s*.26, '#f1c9a0', '#8a5a34', Math.max(1.5,s*.035));                                                   // face
+  ell(c, -s*.09, -s*.55, s*.025, s*.03, '#3b2a1c'); ell(c, s*.09, -s*.55, s*.025, s*.03, '#3b2a1c');
+  ell(c, -s*.15, -s*.46, s*.045, s*.03, 'rgba(226,120,110,.5)'); ell(c, s*.15, -s*.46, s*.045, s*.03, 'rgba(226,120,110,.5)');
+  c.strokeStyle='#3b2a1c'; c.lineWidth=Math.max(1.2,s*.03); c.beginPath(); c.arc(0, -s*.47, s*.09, .25, Math.PI-.25); c.stroke();
+  ell(c, 0, -s*.72, s*.4, s*.085, '#e6c56a', '#8a6a24', Math.max(1.5,s*.035));                                                    // hat brim
+  c.fillStyle='#edd07c'; c.strokeStyle='#8a6a24'; c.beginPath(); c.roundRect(-s*.2,-s*.95,s*.4,s*.25,s*.1); c.fill(); c.stroke();
+  c.fillStyle='#c2456b'; c.fillRect(-s*.2,-s*.79,s*.4,s*.05);
+  c.restore();
+}
 export function drawDiaryScene(canvas, key){
   const sc = SCENES[key]; if (!sc) return false;
   const d = Math.min(2, window.devicePixelRatio||1), W = 280, H = 110;
@@ -70,6 +88,7 @@ export function drawDiaryScene(canvas, key){
     else if (kind==='creek'){ c.strokeStyle='#7fb8d8'; c.lineWidth=7; c.lineCap='round'; c.beginPath(); c.moveTo(-5,H-8); c.bezierCurveTo(W*.3,H-18,W*.6,H+2,W+5,H-10); c.stroke();
       c.strokeStyle='rgba(255,255,255,.5)'; c.lineWidth=1.5; c.beginPath(); c.moveTo(20,H-11); c.lineTo(48,H-13); c.moveTo(150,H-7); c.lineTo(180,H-8); c.stroke(); }
     else if (kind==='spray') sprayer(c, id*W, gy+8, s*(fx||1)*.8);
+    else if (kind==='face') gardenerFace(c, id*W, gy+6, s*(fx||1)*1.25);
     else if (kind==='crop') drawCrop(c, id, fx*W, gy+2, s*1.5*k);
     else if (kind==='tower'){ c.translate(fx*W, gy-s*k*.22); DRAW[id](c, s*k, 0, 0, 1, 1); }
     else if (kind==='pest'){ const E=ENEMY[id]; if (E){ const sz=24*k/E.size; c.translate(fx*W, gy - (E.fly ? 16 : 6)); drawEnemy(c, { type:id, size:E.size, ph:1.2, fly:!!E.fly, face:-1, hp:1, max:1 }, sz); } }

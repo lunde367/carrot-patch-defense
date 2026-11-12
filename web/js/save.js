@@ -13,6 +13,8 @@ const defaults = () => ({
   stats: { wins:0, losses:0, kills:0, bossKills:0, flowerSeeds:0 },
   ach: {},                                     // achievements earned, id → date
   diary: {},                                   // diary pages read
+  rating: {},                                  // the 'enjoying the game?' question: asks, last, never, done
+  chal: {},                                    // challenge stars earned: level index → { challenge id: true }
   intros: {},                                  // levels whose intro card was shown
   ended: false,
   endless: { best:0, runs:0 },                 // Endless Garden: best wave cleared, games played                                // the ending has been seen
@@ -30,7 +32,7 @@ function migrate(d, base){
     stars: Array.isArray(d.stars) ? d.stars : [],
     perks: { ...(d.perks||{}) }, seen: { ...(d.seen||{}) },
     settings: { ...base.settings, ...(d.settings||{}) },
-    owned: { ...(d.owned||{}) }, stats: { ...base.stats, ...(d.stats||{}) }, ach: { ...(d.ach||{}) }, diary: { ...(d.diary||{}) }, parts: { ...(d.parts||{}) }, intros: { ...(d.intros||{}) }, endless: { ...base.endless, ...(d.endless||{}) }, fold: { ...(d.fold||{}) }, pests: d.pests ? { ...d.pests } : null, adStars: { ...base.adStars, ...(d.adStars||{}) } };
+    owned: { ...(d.owned||{}) }, stats: { ...base.stats, ...(d.stats||{}) }, ach: { ...(d.ach||{}) }, diary: { ...(d.diary||{}) }, parts: { ...(d.parts||{}) }, intros: { ...(d.intros||{}) }, chal: { ...(d.chal||{}) }, rating: { ...(d.rating||{}) }, endless: { ...base.endless, ...(d.endless||{}) }, fold: { ...(d.fold||{}) }, pests: d.pests ? { ...d.pests } : null, adStars: { ...base.adStars, ...(d.adStars||{}) } };
   if (!d.v || d.v < 2){
     // v1 players already know the basics; introduce only defenders they haven't reached.
     out.tutorialDone = out.stars.some(Boolean);
