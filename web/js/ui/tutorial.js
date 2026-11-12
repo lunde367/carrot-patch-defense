@@ -50,7 +50,7 @@ export function stopShedTour(){ shedCoach.stop(); }
 export function startShedTour(inShed){
   const steps = [
     { text:'You earned stars! Spend them in the Garden Shed on upgrades that help in every level.',
-      target:'.shed-btn', until:'shedOpen' },
+      target:'.nav-shed', until:'shedOpen' },
     { text:'This is how many stars you have to spend. Beat levels with more crops left to earn up to 3 stars each.',
       target:'.star-count', button:'Next' },
     { text:'Each upgrade costs stars, shown on its button. Tap one you can afford to buy it.',

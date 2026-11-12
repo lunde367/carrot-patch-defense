@@ -38,7 +38,9 @@ const highest = () => { let gi=0; while (gi+1<LEVELS.length && (Save.data.stars[
 export const unlocked = gi => devMode || gi <= highest();
 export const lastOpenLevel = highest;
 // A defender is available once the player has reached the level that unlocks it.
-const towerOpen = key => devMode || TYPES[key].unlock <= highest();
+// A defender is open once it has been introduced. It's introduced the first time you play its own level
+// or a later one, never while replaying an earlier level.
+const towerOpen = key => devMode || TYPES[key].unlock===0 || !!Save.data.seen[key] || (!!G.LV && !!G.S && G.S.mode==='play' && TYPES[key].unlock <= G.LV.gi);
 const unlockLevelName = key => LEVELS[TYPES[key].unlock].name;
 
 function drawIcon(canvas, key, size){
@@ -79,7 +81,7 @@ const onLevelStart = (LV => {
   if (!Save.data.intros[LV.gi] && !(Save.data.stars[LV.gi]>0)) intro.push(['level']);
   if (!LV.endless && Save.data.stars[LV.gi]>0 && !chalShown.has(LV.gi) && Object.keys(chalGot(LV.gi)).length<challengesFor(LV).length) intro.push(['chal']);   // replaying a beaten level: its challenges                           // what this level is about, the first time
   if (!devMode){
-    for (const k of TRAY) if (towerOpen(k) && TYPES[k].unlock>0 && !Save.data.seen[k]) intro.push(['defender', k]);
+    for (const k of TRAY) if (TYPES[k].unlock<=LV.gi && TYPES[k].unlock>0 && !Save.data.seen[k]) intro.push(['defender', k]);
     if (G.S.sprayOn && !Save.data.seen.spray) intro.push(['spray']);
     if (G.S.fertOn && !Save.data.seen.fert) intro.push(['fert']);
   }
@@ -166,7 +168,25 @@ function showDiaryPage(key, cont='Continue'){
 function overlay(html){ const o=$('over'); o.classList.remove('part-over'); o.innerHTML=html; o.hidden=false; o.scrollTop=0; }
 // The home screen (garden picker and shed) replaces the game view entirely.
 function setHome(on){ document.querySelector('.app').classList.toggle('home-mode', on); $('home').hidden=!on; }
-function home(html){ hideOverlay(); setHome(true); $('home').innerHTML=html; window.scrollTo(0,0); }
+// Every menu screen sits under one of three bottom tabs. A screen says where it lives by setting `tabAt`
+// first: ['gardens'], ['upgrades','shed'|'skills'], ['journal','diary'|'guide'|'achievements'|'stats'], or null (Settings).
+let tabAt = null;
+const SUBS = {
+  upgrades:() => [['shed', `Garden Shed ★ ${starsLeft()}`], ...((Save.data.stars[0]||0)>0 || devMode ? [['skills', `Skills ${CH_ICON} ${chalLeft()}`]] : [])],
+  journal:() => [['diary','Diary'], ['guide','Guide'], ['achievements','Awards'], ['stats','Stats']],
+};
+function home(html){
+  hideOverlay(); setHome(true);
+  const [tab, sub] = tabAt || []; tabAt = null;
+  const subs = SUBS[tab] ? SUBS[tab]() : [];
+  if (subs.length>1) html = html.replace('</div>', `</div><div class="seg sub-tabs" role="tablist">${subs.map(([go,label])=>`<button role="tab" aria-checked="${go===sub}" data-go="${go}">${label}</button>`).join('')}</div>`);
+  const pip = starsLeft()>0 ? `<i>★ ${starsLeft()}</i>` : '';
+  $('home').innerHTML = html + `<nav class="home-nav" aria-label="Main">
+    <button data-go="menu" class="${tab==='gardens'?'on':''}">${ICON.map}<span>Gardens</span></button>
+    <button data-go="shed" class="nav-shed ${tab==='upgrades'?'on':''}">${ICON.shed}<span>Upgrades</span>${pip}</button>
+    <button data-go="diary" class="${tab==='journal'?'on':''}">${ICON.book}<span>Journal</span></button></nav>`;
+  window.scrollTo(0,0);
+}
 function leaveLevel(){ const S=G.S; if (S){ S.mode='menu'; S.active=false; S.sel=null; S.build=null; S.paused=false; } stopTutorial(); }
 function hideOverlay(){ $('over').hidden=true; }
 
@@ -324,21 +344,14 @@ export function showMenu(){
       <div class="part-body">${chs.map(c => chapHtml(c, CHAPTERS.indexOf(c))).join('')}</div></section>`;
   }).join('');
   const hi=LEVELS[highest()], allDone=(Save.data.stars[LEVELS.length-1]||0)>0;
-  home(`<div class="home-head"><h2><small class="where">Part ${hi.ch.act} · ${PARTS[hi.ch.act-1].name}</small>${hi.ch.name}</h2>
-      <button class="shed-btn" data-go="shed">${ICON.shed}Garden Shed <b>★ ${starsLeft()}</b></button></div>
-    ${(Save.data.stars[0]||0)>0 || devMode ? `<button class="skills-btn" data-go="skills"><span><b>Defender skills</b><small>Spend challenge stars to make each defender special.</small></span><b class="sk-left">${CH_ICON} ${chalLeft()}</b></button>` : ''}
+  tabAt=['gardens'];
+  home(`<div class="home-head"><h2>Your gardens</h2>
+      <button class="btn ghost icon" data-go="settings" aria-label="Settings">${ICON.gear}</button></div>
     ${allDone ? `<p class="home-note">The story is finished. Every garden is open to replay.</p>`
       : `<button class="btn main continue" data-lv="${hi.gi}">${(Save.data.stars[0]||0)>0?'Continue':'Start'} · ${hi.ch.name} ${hi.li+1}: ${hi.name}</button>`}
     ${html}
     ${storyDone()?`<button class="endless-card" data-go="endless"><span><small>After the story</small><b>Endless Garden</b><em>Waves never stop. A boss every 5th wave.</em></span><span class="e-best"><small>Best</small><b>${Save.data.endless.best}</b></span></button>`:''}
-    ${devMode?'<p class="devnote">Test mode is on: every level and defender is unlocked. Tap the title 7 times to turn it off.</p>':''}
-    <div class="home-tools">
-      <button class="tool-btn wide" data-go="achievements">${ICON.trophy}<span>Achievements</span><b>${achievementCount()}/${ACHIEVEMENTS.length}</b></button>
-      <button class="tool-btn" data-go="diary">${ICON.book}<span>Diary</span></button>
-      <button class="tool-btn" data-go="guide">${ICON.map}<span>Field guide</span></button>
-      <button class="tool-btn" data-go="stats">${ICON.trophy}<span>Stats</span></button>
-      <button class="tool-btn" data-go="settings">${ICON.gear}<span>Settings</span></button>
-    </div>`);
+    ${devMode?'<p class="devnote">Test mode is on: every level and defender is unlocked. Tap the title 7 times to turn it off.</p>':''}`);
   for (const c2 of $('home').querySelectorAll('canvas[data-crop]')){ const c=c2.getContext('2d'); c.setTransform(2,0,0,2,0,0); drawCrop(c,c2.dataset.crop,20,24,66); }
   stopShedTour();
   if (!devMode && !Save.data.shedTour && Save.data.tutorialDone && starsLeft()>0) startShedTour(false);
@@ -359,7 +372,8 @@ function showShed(){
   const rows = PERKS.filter(p => !p.post && (!p.spray || sprayUnlocked()) && (!p.fert || fertUnlocked())).map(perkRow).join('');
   const postRows = storyDone() ? PERKS.filter(p => p.post).map(perkRow).join('') : '';
   const anyOwned = Object.values(Save.data.perks).some(Boolean);
-  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button>
+  tabAt=['upgrades','shed'];
+  home(`<div class="home-head">
       <h2>Garden Shed</h2><span class="star-count">★ ${left}</span></div>
     <p class="home-note">Spend stars on upgrades that help in every level. Earn more stars by beating levels with more crops left.</p>
     ${devMode?'<p class="devnote">Test mode: you play with every upgrade already owned, whatever you buy here.</p>':''}
@@ -395,7 +409,8 @@ function showAchievements(){
     if (!list.length) return '';
     return `<h3 class="ach-group">${name}<small>${list.filter(a=>Save.data.ach[a.id]).length}/${list.length}</small></h3>${list.map(row).join('')}`;
   }).join('');
-  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button>
+  tabAt=['journal','achievements'];
+  home(`<div class="home-head">
       <h2>Achievements</h2><span class="star-count">${achievementCount()}/${ACHIEVEMENTS.length}</span></div>
     <div class="achs">${rows}</div>`);
 }
@@ -416,7 +431,8 @@ function showDiary(at){
   if (wrote){ Save.commit(); emit('diary'); }
   jPage = Math.max(0, Math.min(pages.length-1, at==null ? pages.length-1 : at));
   const d = pages[jPage];
-  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button><h2>${gardener()}’s diary</h2><span class="star-count">${pages.length}/${DIARY.length}</span></div>
+  tabAt=['journal','diary'];
+  home(`<div class="home-head"><h2>${gardener()}’s diary</h2><span class="star-count">${pages.length}/${DIARY.length}</span></div>
     ${d ? `<div class="journal"><div class="j-rings" aria-hidden="true">${'<i></i>'.repeat(7)}</div>
         <div class="j-page" id="jPage"><canvas class="diary-art" data-scene="${d.key}"></canvas>
           <h3>${d.title}</h3><p>${diaryText(d)}</p><span class="j-num">Page ${jPage+1}</span></div></div>
@@ -442,11 +458,12 @@ function showSkills(){
   const cards=open.map(k => { const T=TYPES[k], own=Save.data.skills[k]||{};
     const rows=SKILLS[k].map(br => { const n=own[br.id]||0, max=n>=SKILL_COSTS.length, cost=SKILL_COSTS[n];
       return `<div class="sk-branch"><span><b>${br.name}</b><span class="tiers">${SKILL_COSTS.map((_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>
-          <small>${max ? br.desc(n-1) : `${n?'Next: ':''}${br.desc(n)}`}</small></span>
+          <small>${max ? br.desc(n-1) : `${br.desc(n)}${n===SKILL_COSTS.length-1 || !n ? '' : ' (again)'}`}</small></span>
         ${max ? '<span class="sk-max">Full</span>' : `<button class="btn ${left>=cost?'main':'ghost'} small" data-go="skill-buy" data-type="${k}" data-br="${br.id}" ${left>=cost?'':'disabled'}>${CH_ICON} ${cost}</button>`}</div>`; }).join('');
     return `<div class="sk-card"><header><canvas data-tower="${k}"></canvas><b>${T.name}</b></header>${rows}</div>`; }).join('');
-  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button><h2>Defender skills</h2><span class="star-count">${CH_ICON} ${left}</span></div>
-    <p class="home-note">Earn challenge stars (${CH_ICON}) by replaying levels you’ve beaten and meeting their extra goals. You have earned ${chalCount()} of ${CHALLENGE_TOTAL}; every skill together costs ${SKILL_TOTAL}, so choose your favorites.</p>
+  tabAt=['upgrades','skills'];
+  home(`<div class="home-head"><h2>Defender skills</h2><span class="star-count">${CH_ICON} ${left}</span></div>
+    <p class="home-note">Earn ${CH_ICON} by replaying levels you’ve beaten and meeting their extra goals. ${chalCount()} of ${CHALLENGE_TOTAL} earned.</p>
     <div class="sk-list">${cards}</div>
     ${open.length<TRAY.length?`<p class="home-note">${TRAY.length-open.length} more defender${TRAY.length-open.length>1?'s':''} to unlock.</p>`:''}
     <div class="row"><button class="btn ghost small" data-go="skill-refund" ${skillsSpent(Save.data.skills)?'':'disabled'}>Refund all skills</button></div>`);
@@ -465,7 +482,8 @@ function showGuide(tab){
           <ul>${pestTraits(t).map(x=>`<li>${x}</li>`).join('')}</ul><p class="g-fact">${pestFact(t)}</p></div>`; }).join('')
     : TRAY.map(k => { const T=TYPES[k]; if (!towerOpen(k)) return `<div class="g-card unknown"><span class="g-q">?</span><b>Unlocks in ${LEVELS[T.unlock].ch.name}</b></div>`;
         return `<div class="g-card"><canvas data-tower="${k}"></canvas><b>${T.name}</b><p>${T.desc}</p><p class="g-fact">${TOWER_FACTS[k]||''}</p></div>`; }).join('');
-  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button><h2>Field guide</h2></div>
+  tabAt=['journal','guide'];
+  home(`<div class="home-head"><h2>Field guide</h2></div>
     <div class="seg" role="tablist"><button role="tab" aria-checked="${tab!=='pests'}" data-go="guide" data-tab="defenders">Defenders ${TRAY.filter(towerOpen).length}/${TRAY.length}</button>
       <button role="tab" aria-checked="${tab==='pests'}" data-go="guide" data-tab="pests">Pests ${seen.length}/${pestIds.length}</button></div>
     <div class="guide">${cards}</div>`);
@@ -492,7 +510,8 @@ function showStats(){
     ['Diary pages written', `${DIARY.filter(pageWritten).length} of ${DIARY.length}`],
     ['Endless Garden best wave', n(Save.data.endless.best)], ['Endless Garden runs', n(Save.data.endless.runs)],
   ];
-  home(`<div class="home-head"><button class="btn ghost icon" data-go="menu" aria-label="Back to gardens">${ICON.back}</button><h2>Stats</h2></div>
+  tabAt=['journal','stats'];
+  home(`<div class="home-head"><h2>Stats</h2></div>
     <div class="stats-list">${rows.map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>`);
 }
 

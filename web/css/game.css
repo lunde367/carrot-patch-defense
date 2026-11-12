@@ -352,3 +352,15 @@ canvas{ display:block }
 .sk-branch > span{ display:flex; flex-direction:column; gap:3px; min-width:0 } .sk-branch small{ color:var(--muted); font-size:.82rem; line-height:1.3 }
 .sk-branch .btn{ flex:none; white-space:nowrap } .sk-max{ font-size:.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.06em }
 .sk-branch .tiers{ display:flex; gap:4px } .sk-branch .tiers i{ display:block; width:20px; height:5px; border-radius:3px; background:var(--line) } .sk-branch .tiers i.on{ background:#3a9cc4 }
+
+/* three bottom tabs for every menu screen */
+.home{ padding-bottom:calc(78px + env(safe-area-inset-bottom, 0px)) }
+.home-nav{ position:fixed; left:0; right:0; bottom:0; z-index:20; display:grid; grid-template-columns:repeat(3,1fr); gap:4px; background:var(--bg);
+  border-top:1px solid var(--line); padding:6px max(10px, env(safe-area-inset-left, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-right, 0px)) }
+.home-nav button{ position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; font:inherit; font-size:.74rem; font-weight:800; color:var(--muted);
+  background:none; border:0; border-radius:var(--r-md); padding:7px 4px; cursor:pointer }
+.home-nav button svg{ width:24px; height:24px }
+.home-nav button.on{ color:var(--ink); background:var(--surface); box-shadow:0 0 0 1px var(--line) }
+.home-nav button i{ position:absolute; top:2px; left:calc(50% + 10px); font-style:normal; font-size:.62rem; background:var(--accent); color:var(--accent-ink); border-radius:var(--r-pill); padding:1px 6px; white-space:nowrap }
+.sub-tabs button{ font-size:.82rem; padding:8px 2px; white-space:nowrap }
+.home-head h2{ flex:1 }

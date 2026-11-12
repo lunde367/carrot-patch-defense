@@ -4,33 +4,32 @@
 import { TYPES } from './towers.js';
 
 export const SKILL_COSTS = [1, 2, 3];
-const pct = v => Math.round(v*100);
 const branch = (id, name, key, vals, text, extra) => ({ id, name, steps:vals.map((v,i) => ({ [key]:v, ...(extra && i===vals.length-1 ? extra.fx : {}) })),
   desc:i => text(vals[i]) + (extra && i===vals.length-1 ? ' ' + extra.text : '') });
 
 export const SKILLS = {
-  bunny:     [ branch('a','Quick Paws','rate',[.03,.06,.09], v=>`Throws ${pct(v)}% faster.`),
-               branch('b','Big Carrots','dmg',[.04,.08,.12], v=>`Carrots hit ${pct(v)}% harder.`, { fx:{ pierce:.35 }, text:'Each carrot also clips a second pest nearby.' }) ],
-  sprinkler: [ branch('a','Wide Arc','range',[.03,.06,.09], v=>`Reaches ${pct(v)}% farther.`),
-               branch('b','Cold Water','slow',[.1,.2,.3], v=>`Pests stay slowed ${pct(v)}% longer.`, { fx:{ dmg:.12 }, text:'The splash also hits 12% harder.' }) ],
-  pine:      [ branch('a','Heavy Cones','dmg',[.04,.08,.12], v=>`Cones hit ${pct(v)}% harder.`),
-               branch('b','Wide Burst','splash',[.04,.08,.12], v=>`Each cone bonks a ${pct(v)}% wider area.`) ],
-  sunflower: [ branch('a','Rich Soil','income',[.06,.12,.18], v=>`Drops ${pct(v)}% more seeds after each wave.`),
+  bunny:     [ branch('a','Quick Paws','rate',[.03,.06,.09], ()=>'Throws carrots faster.'),
+               branch('b','Big Carrots','dmg',[.04,.08,.12], ()=>'Carrots hit harder.', { fx:{ pierce:.35 }, text:'Each carrot also clips a second pest nearby.' }) ],
+  sprinkler: [ branch('a','Wide Arc','range',[.03,.06,.09], ()=>'Reaches farther.'),
+               branch('b','Cold Water','slow',[.1,.2,.3], ()=>'Pests stay slowed longer.', { fx:{ dmg:.12 }, text:'The splash also hits harder.' }) ],
+  pine:      [ branch('a','Heavy Cones','dmg',[.04,.08,.12], ()=>'Cones hit harder.'),
+               branch('b','Wide Burst','splash',[.04,.08,.12], ()=>'Each cone bonks a wider area.') ],
+  sunflower: [ branch('a','Rich Soil','income',[.06,.12,.18], ()=>'Drops more seeds after each wave.'),
                branch('b','Early Bloom','gift',[3,6,9], v=>`Gives ${v} seeds back the moment it’s planted.`) ],
-  rose:      [ branch('a','Sharp Thorns','dmg',[.04,.08,.12], v=>`Thorns hit ${pct(v)}% harder.`),
-               branch('b','More Blooms','rate',[.03,.06,.06], v=>`Fires ${pct(v)}% faster.`, { fx:{ multi:1 }, text:'Hits one more pest with every volley.' }) ],
-  squirrel:  [ branch('a','Hard Shells','dmg',[.04,.08,.12], v=>`Acorns hit ${pct(v)}% harder.`),
-               branch('b','Trick Shot','rate',[.03,.06,.06], v=>`Throws ${pct(v)}% faster.`, { fx:{ bounce:1 }, text:'Acorns bounce one more time.' }) ],
-  owl:       [ branch('a','Keen Eyes','range',[.03,.06,.09], v=>`Sees ${pct(v)}% farther.`),
-               branch('b','Sharp Talons','dmg',[.04,.08,.12], v=>`Strikes ${pct(v)}% harder.`) ],
-  scarecrow: [ branch('a','Loud Rattle','push',[.06,.12,.18], v=>`Scares fliers ${pct(v)}% farther back.`),
-               branch('b','Quick Turn','rate',[.06,.12,.18], v=>`Ready to scare again ${pct(v)}% sooner.`) ],
-  barrel:    [ branch('a','Long Hose','range',[.05,.1,.15], v=>`Waters ${pct(v)}% farther.`),
-               branch('b','Cool Water','cool',[.02,.04,.06], v=>`Plants it waters work ${pct(v)}% faster.`) ],
-  hive:      [ branch('a','Busy Bees','boost',[.02,.04,.06], v=>`Defenders near the hive work another ${pct(v)}% faster.`),
-               branch('b','Wide Meadow','range',[.05,.1,.15], v=>`The bees reach ${pct(v)}% farther.`) ],
-  ladybug:   [ branch('a','More Ladybugs','rate',[.03,.06,.09], v=>`Sends ladybugs ${pct(v)}% faster.`),
-               branch('b','Big Appetite','dmg',[.04,.08,.12], v=>`Each nip is ${pct(v)}% stronger.`) ],
+  rose:      [ branch('a','Sharp Thorns','dmg',[.04,.08,.12], ()=>'Thorns hit harder.'),
+               branch('b','More Blooms','rate',[.03,.06,.06], ()=>'Fires faster.', { fx:{ multi:1 }, text:'Hits one more pest with every volley.' }) ],
+  squirrel:  [ branch('a','Hard Shells','dmg',[.04,.08,.12], ()=>'Acorns hit harder.'),
+               branch('b','Trick Shot','rate',[.03,.06,.06], ()=>'Throws acorns faster.', { fx:{ bounce:1 }, text:'Acorns bounce one more time.' }) ],
+  owl:       [ branch('a','Keen Eyes','range',[.03,.06,.09], ()=>'Sees farther.'),
+               branch('b','Sharp Talons','dmg',[.04,.08,.12], ()=>'Strikes harder.') ],
+  scarecrow: [ branch('a','Loud Rattle','push',[.06,.12,.18], ()=>'Scares fliers farther back.'),
+               branch('b','Quick Turn','rate',[.06,.12,.18], ()=>'Ready to scare again sooner.') ],
+  barrel:    [ branch('a','Long Hose','range',[.05,.1,.15], ()=>'Waters farther.'),
+               branch('b','Cool Water','cool',[.02,.04,.06], ()=>'Plants it waters work faster.') ],
+  hive:      [ branch('a','Busy Bees','boost',[.02,.04,.06], ()=>'Defenders near the hive work even faster.'),
+               branch('b','Wide Meadow','range',[.05,.1,.15], ()=>'The bees reach farther.') ],
+  ladybug:   [ branch('a','More Ladybugs','rate',[.03,.06,.09], ()=>'Sends ladybugs faster.'),
+               branch('b','Big Appetite','dmg',[.04,.08,.12], ()=>'Each nip is stronger.') ],
 };
 // Owned steps, e.g. { bunny:{ a:2, b:1 } } → the numbers the game uses, e.g. { bunny:{ rate:.12, dmg:.08 } }.
 export function skillValues(owned = {}){
