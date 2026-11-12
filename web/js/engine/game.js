@@ -41,7 +41,10 @@ const bossBite = () => Math.max(3, Math.round(G.S.maxLives*.25));
 export const heatAt = w => (G.LV.heat || G.CH.heat || []).includes(w);
 export const rainAt = w => (G.LV.rain || G.CH.rain || []).includes(w);
 export const swarmAt = w => (G.LV.swarm || G.CH.swarm || []).includes(w);
-const hpScale = w => (1+.2*(w-1)+.015*(w-1)*(w-1))*G.LV.hpMul;
+// Tough mode (a Settings switch): pests have this much more health. G.tough is 1 when it's off.
+export const TOUGH = 1.3;
+const hpMul = () => G.LV.hpMul*(G.tough||1);
+const hpScale = w => (1+.2*(w-1)+.015*(w-1)*(w-1))*hpMul();
 function makeWave(w){
   const pool=G.LV.pool.filter(p=>p[1]<=w), sum=pool.reduce((a,p)=>a+p[2],0);
   const q=[], n=5+Math.floor(w*1.8);
@@ -69,7 +72,7 @@ export function startWave(){
   return true;
 }
 function spawnEnemy(type, dist, morph, lane=0){
-  const S=G.S, d=ENEMY[type], sc=d.boss?G.LV.hpMul:hpScale(Math.max(1,S.wave));
+  const S=G.S, d=ENEMY[type], sc=d.boss?hpMul():hpScale(Math.max(1,S.wave));
   const hp=Math.round(d.hp*sc), [x,y]=pointAt(dist, lane);
   const e={ type, hp, max:hp, spd:d.spd, reward:d.reward+Math.floor(G.LV.gi/2), size:d.size, armor:d.armor||0,
     dist, x, y, face:1, slow:0, hit:0, ph:Math.random()*6, bt:0, fly:!!d.fly, lane, morphAt:morph?laneTotal(lane)*morph:null, cocoon:0, scared:0, st:0 };

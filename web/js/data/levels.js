@@ -210,7 +210,11 @@ LEVELS.forEach(l => { if (l.mirrorOf==null || l.pts || l.lanes) return;
 LEVELS.forEach(l => { l.waves = l.waves || WAVES; });
 // Crops to protect: 20 in the cozy first part, 10 from Part 2 on, when things get serious.
 LEVELS.forEach(l => { l.lives = l.lives || (l.ch.act>=2 ? 10 : 20); });
-LEVELS.forEach(l => { l.hpMul = TOUGHNESS[l.gi] ?? 1+l.gi*.14; });
+// Part 1 (after the first two levels) is 5% tougher than the tuned values: players found it easy
+// without the skills. Later parts were already steep for the test bot, so they stay as tuned.
+// Players who want a real challenge turn on Tough mode in Settings.
+const HARDER = 1.05;
+LEVELS.forEach(l => { l.hpMul = +((TOUGHNESS[l.gi] ?? 1+l.gi*.14) * (l.gi>=2 && l.ch.act===1 ? HARDER : 1)).toFixed(3); });
 // How much less spray damage pests take on each level (0 = none, 0.3 = 30% less). Grows through
 // the story, the same for every player: rising in Act 2, high in Act 3, fading in Act 4.
 const SPRAY_RESIST = [0, 0, 0,   0, 0, 0,   0, 0, 0,   .4, .65, .75,   .6, .7, .75,   .75, .8, .85,

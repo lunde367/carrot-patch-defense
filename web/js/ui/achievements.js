@@ -40,7 +40,8 @@ export function initAchievements(){
   on('fence', () => evaluate({ type:'fence' }));
   on('perk', () => evaluate({ type:'perk' }));
   // win runs after the UI has saved the new stars, so garden-wide checks see them
-  on('win', w => setTimeout(() => evaluate({ type:'win', lost:w.lost, left:w.lives, speed:G.S.speed, towers:G.S.towers.length, waves:G.LV.waves, gi:w.gi }), 600));
+  on('win', () => { if (G.tough>1){ bump('toughWins'); Save.commit(); } });
+  on('win', w => setTimeout(() => evaluate({ type:'win', tough:G.tough>1, stars:w.stars, lost:w.lost, left:w.lives, speed:G.S.speed, towers:G.S.towers.length, waves:G.LV.waves, gi:w.gi }), 600));
   on('lose', () => Save.commit());
   // catch up on anything already earned before these were added (new achievements, old saves)
   setTimeout(() => evaluate({ type:'boot' }), 1500);

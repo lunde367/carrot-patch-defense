@@ -8,7 +8,7 @@ const defaults = () => ({
   perks: {},                                   // Garden Shed tiers owned, e.g. { pouch:2 }
   seen: {},                                    // defenders already introduced
   tutorialDone: false,
-  settings: { sfx:true, music:true, speed:1 },
+  settings: { sfx:true, music:true, speed:1, tough:false },
   owned: {},                                   // purchases, e.g. { remove_ads:true }
   stats: { wins:0, losses:0, kills:0, bossKills:0, flowerSeeds:0 },
   ach: {},                                     // achievements earned, id → date

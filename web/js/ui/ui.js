@@ -1,5 +1,5 @@
 // Everything the player sees and taps outside the board: HUD, tray, panels and overlays.
-import { G, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, sceneryPiece, clearScenery } from '../engine/game.js';
+import { G, TOUGH, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, sceneryPiece, clearScenery } from '../engine/game.js';
 import { SCENERY_NAMES } from '../data/scenery.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
 import { path } from '../engine/path.js';
@@ -44,6 +44,7 @@ export function play(gi, bonusSeeds=0, { quiet=false }={}){
   stopTutorial(); quietStart = quiet;
   // Test mode plays with every Garden Shed upgrade owned.
   const owned = devMode ? ALL_PERKS : Save.data.perks;
+  G.tough = Save.data.settings.tough ? TOUGH : 1;
   startLevel(gi, fast3Open() ? Save.data.settings.speed : Math.min(2, Save.data.settings.speed), bonusSeeds, perkValues(owned));
 }
 on('levelStart', (...a) => { drawLivesIcon(); return onLevelStart(...a); });
@@ -332,6 +333,9 @@ function showSettings(){
       ${toggle('t-music','Music',s.music)}
     </div>
     <div class="set-group">
+      ${toggle('t-tough','Tough mode',s.tough,'For grown-up gardeners. Pests are much hardier, so you’ll need your Sprayer and Fertilizer. Starts with your next level.')}
+    </div>
+    <div class="set-group">
       <div class="set-row"><span><b>Tutorial</b><small>Play the guided first level again.</small></span>
         <button class="btn ghost small" data-go="replay-tutorial">Replay</button></div>
     </div>
@@ -419,6 +423,7 @@ async function onOverlayClick(ev){
       const s=Save.data.settings, k=b.dataset.go==='t-sfx'?'sfx':'music'; s[k]=!s[k];
       Save.commit(); Audio.setSettings(s); paintSound(); showSettings(); if (k==='sfx' && s.sfx) Audio.play('tap'); return;
     }
+    case 't-tough': { const s=Save.data.settings; s.tough=!s.tough; Save.commit(); showSettings(); return; }
     case 'replay-tutorial': Save.data.tutorialDone=false; Save.commit(); return play(0);
     case 'shed': leaveLevel(); return showShed();
     case 'refund': Save.data.perks={}; Save.commit(); return showShed();
