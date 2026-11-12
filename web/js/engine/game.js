@@ -140,6 +140,18 @@ export function revive(){
   S.enemies=[]; S.shots=[]; S.spawnQ=[]; S.active=false; S.heat=false; S.rain=false; S.fertT=0;
   S.wave=Math.max(0, S.wave-1); emit('revive'); return true;
 }
+// ---------- Clearing scenery ----------
+// Any rock, stump, fire or pile of litter can be cleared away for seeds, freeing its tiles.
+export const clearCost = o => o.w*o.h>1 ? 60 : 30;
+export const sceneryPiece = (c,r) => path.scenery.find(o => c>=o.c && c<o.c+o.w && r>=o.r && r<o.r+o.h) || null;
+export function clearScenery(o){
+  const S=G.S; if (!o || S.mode!=='play') return false;
+  const cost=clearCost(o); if (S.seeds<cost) return false;
+  S.seeds-=cost;
+  setScenery(path.scenery.filter(x => x!==o), [...path.bonus].map(([k,kind]) => { const [c,r]=k.split(',').map(Number); return { c, r, kind }; }));
+  puffs(o.c+o.w/2, o.r+o.h/2, 10, 1.1);
+  emit('clear', o); return true;
+}
 export function addSeeds(n){ G.S.seeds+=n; emit('seeds', n); }
 export function refillSpray(){ G.S.sprayCd=0; G.S.adRefill=true; }
 

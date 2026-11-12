@@ -3,7 +3,7 @@
 import { G, plantAt, upgrade, costOf, upCostOf, towerAt, spray, sprayReady, sprayStats } from '../../web/js/engine/game.js';
 import { PLANTS, SPRAY } from '../../web/js/data/spray.js';
 import { path, pointAt, laneTotal, buildable, bonusAt } from '../../web/js/engine/path.js';
-import { HILL, fertReady, fertilize } from '../../web/js/engine/game.js';
+import { HILL, fertReady, fertilize, clearCost, clearScenery } from '../../web/js/engine/game.js';
 import { TYPES } from '../../web/js/data/towers.js';
 import { ENEMY } from '../../web/js/data/enemies.js';
 import { COLS, ROWS } from '../../web/js/data/levels.js';
@@ -53,22 +53,30 @@ function place(type, rnd){
 // Upgrade the defender standing on the most path, if affordable.
 function upgradeBest(filter=()=>true){
   const S=G.S;
-  const cands=S.towers.filter(t=>t.lv<2 && t.type!=='sunflower' && filter(t) && S.seeds>=upCostOf(t));
+  // only fighters get upgraded first; helpers (scarecrow, hive, barrel) only once every fighter is maxed
+  const fighter = t => ATTACKERS.includes(t.type);
+  let cands=S.towers.filter(t=>t.lv<2 && fighter(t) && filter(t) && S.seeds>=upCostOf(t));
+  if (!cands.length) cands=S.towers.filter(t=>t.lv<2 && t.type!=='sunflower' && !fighter(t) && filter(t) && S.seeds>=upCostOf(t) && S.towers.filter(fighter).every(f=>f.lv>=2));
   if (!cands.length) return false;
   cands.sort((a,b)=>coverage(b.c,b.r,TYPES[b.type].range[b.lv])-coverage(a.c,a.r,TYPES[a.type].range[a.lv]));
   return upgrade(cands[0]);
 }
 const count = type => G.S.towers.filter(t=>t.type===type).length;
+// does this level send any flying pests (directly, grown up, or hatched by a boss)?
+const levelHasFliers = () => { const L=G.LV, kinds=new Set([L.boss, ...L.pool.map(p=>p[0])]);
+  for (const k of [...kinds]){ const D=ENEMY[k]; if (D.adult) kinds.add(D.adult); if (D.spawns) kinds.add(D.spawns.type); }
+  return [...kinds].some(k=>ENEMY[k].fly); };
 const attackers = avail => ATTACKERS.filter(k=>avail.includes(k));
 
 // Each strategy: spend(available defenders, wave number about to start, random fn)
 export const STRATEGIES = {
   // A sensible player: a mix of defenders, one sunflower early, upgrades once there are enough.
   balanced(avail, wave){
+    maybeClear(wave);
     const atk=attackers(avail);
     for (let guard=0; guard<40; guard++){
       if (avail.includes('sunflower') && wave<=2 && count('sunflower')===0 && place('sunflower')) continue;
-      if (avail.includes('scarecrow') && wave>=2 && count('scarecrow')<Math.min(3, 1+Math.floor(wave/3)) && place('scarecrow')) continue;
+      if (avail.includes('scarecrow') && levelHasFliers() && wave>=2 && count('scarecrow')<Math.min(3, 1+Math.floor(wave/3)) && place('scarecrow')) continue;
       if (avail.includes('barrel') && G.CH.drought && wave>=2 && count('barrel')<Math.min(3, Math.floor(wave/2)) && place('barrel')) continue;
       if (avail.includes('hive') && wave>=3 && count('hive')<Math.min(2, Math.floor(wave/3)) && place('hive')) continue;
       const want = 3 + Math.floor(wave*.8);
@@ -152,4 +160,17 @@ export function maybeFertilize(){
   const S=G.S; if (!fertReady()) return;
   const live=S.enemies.filter(e=>e.hp>0);
   if (live.length>=5 || live.some(e=>ENEMY[e.type].boss)) fertilize();
+}
+
+// Clearing: early on, if a rock (or stump, fire...) sits on a clearly better spot than any open
+// one, pay to clear it. At most one a wave, and only with seeds to spare for a defender after.
+export function maybeClear(wave){
+  const S=G.S; if (wave>5) return false;
+  const R=TYPES.bunny.range[0]*S.perks.rangeMul;
+  let bestFree=0;
+  for (let r=0;r<ROWS-1;r++) for (let c=0;c<COLS;c++) if (buildable(c,r) && !S.towers.some(t=>t.c===c&&t.r===r)) bestFree=Math.max(bestFree, coverage(c,r,R));
+  let pick=null, ps=0;
+  for (const o of path.scenery){ if (o.w*o.h>1) continue; const v=coverage(o.c,o.r,R); if (v>ps){ ps=v; pick=o; } }
+  if (pick && ps>bestFree*1.15 && S.seeds>=clearCost(pick)+TYPES.bunny.cost) return clearScenery(pick);
+  return false;
 }

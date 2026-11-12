@@ -19,9 +19,9 @@ export const SCENERY = {
   newgarden:  { small:['bush','basket'],     big:{ kind:'pond',     w:2, h:2 } },
 };
 // How many small pieces each level in a garden gets (level 1, 2, 3), and whether it gets the big one.
-const SMALL = [4, 5, 6], BIG = [false, true, true];
+const SMALL = [6, 8, 10], BIG = [false, true, true];   // more scenery; any piece can be cleared for seeds
 // Share of the small pieces that go on the best spots next to the path.
-const NEAR = .5;
+const NEAR = .6;
 
 // Build the scenery list for one level. `onPath(c,r)` says whether a tile is dirt path.
 // `keep` lists tiles that must stay free (the tutorial's hint spots).
@@ -79,3 +79,12 @@ export function bonusFor(LV, onPath, scenery){
   pick(cells.filter(x => x.s<=2 && !blocked.has(x.c+','+x.r)).sort((a,b) => a.k-b.k), 'sunny');
   return out;
 }
+
+// Names for the info card when a player taps a piece, and the word for getting rid of it.
+export const SCENERY_NAMES = {
+  rock:['Rock','Clear'], bush:['Berry Bush','Clear'], pond:['Lily Pond','Fill in'], haybale:['Hay Bale','Clear'], basket:['Basket','Clear'],
+  haystack:['Haystack','Clear'], stump:['Old Stump','Dig up'], molehill:['Molehill','Flatten'], log:['Fallen Log','Haul away'],
+  pot:['Clay Pot','Clear'], crate:['Crate','Clear'], table:['Potting Table','Move'], skep:['Old Bee Hive','Clear'], applecrate:['Apple Crate','Clear'],
+  cart:['Apple Cart','Move'], shock:['Corn Stalks','Clear'], bucket:['Empty Bucket','Clear'], trough:['Dry Trough','Haul away'],
+  fire:['Fire','Put out'], litter:['Litter','Clean up'], tire:['Old Tire','Clean up'], sapling:['Young Tree','Replant'], clover:['Clover','Clear'],
+};

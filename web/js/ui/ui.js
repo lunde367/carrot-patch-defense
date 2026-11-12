@@ -1,5 +1,6 @@
 // Everything the player sees and taps outside the board: HUD, tray, panels and overlays.
-import { G, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray } from '../engine/game.js';
+import { G, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, sceneryPiece, clearScenery } from '../engine/game.js';
+import { SCENERY_NAMES } from '../data/scenery.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
 import { path } from '../engine/path.js';
 import { TYPES, TRAY, statsText } from '../data/towers.js';
@@ -18,7 +19,7 @@ import { on, emit } from '../../kit/js/events.js';
 import { $, starStr, ICON } from '../../kit/js/ui.js';
 import { DRAW } from '../render/art-towers.js';
 import { drawCrop } from '../render/art-common.js';
-import { cellAt, tileAt, resize } from '../render/board.js';
+import { cellAt, tileAt, resize, rebuild } from '../render/board.js';
 import { startTutorial, stopTutorial, tutorialActive, tutorialAllows, onTutorialAllow, startShedTour, stopShedTour } from './tutorial.js';
 import { ACHIEVEMENTS } from '../data/achievements.js';
 import { DIARY, diaryEntry } from '../data/diary.js';
@@ -504,6 +505,15 @@ function tileNote(t){
   return '';
 }
 export function renderInfo(){
+  const o=G.S&&G.S.selScen;
+  if (o && !G.S.sel){   // a piece of scenery: offer to clear it
+    const [name,verb]=SCENERY_NAMES[o.kind]||['Scenery','Clear'], cost=clearCost(o);
+    $('info').hidden=false; $('iSell').hidden=true;
+    $('iName').innerHTML=`${name}<em>${o.w*o.h>1?'Big':'In the way'}</em>`;
+    $('iDesc').textContent=`${o.w*o.h>1?'These spots are':'This spot is'} blocked. Pay seeds to free ${o.w*o.h>1?'them':'it'} up for a defender.`; $('iStats').textContent=`Costs ${cost} seeds`;
+    const up=$('iUp'); up.textContent=`${verb} · ${cost}`; up.disabled=G.S.seeds<cost; dirty(); return;
+  }
+  $('iSell').hidden=false;
   const t=G.S&&G.S.sel; $('info').hidden=!t; dirty(); if (!t) return;
   const T=TYPES[t.type];
   const extra=[tileNote(t).replace(/^.*?: /,'').replace(/^.*\. Hills.*$/,''), t.dry?'Thirsty: needs a Sprinkler nearby':''].filter(Boolean).join(' · ');
@@ -527,6 +537,7 @@ export function refresh(){
   $('restart').disabled=S.mode==='menu';
   for (const k of TRAY){ const el=$('card-'+k); if (el && towerOpen(k)) el.classList.toggle('poor', S.seeds<costOf(k)); }
   paintSpray(); paintFert(); paintOffers();
+  if (S.selScen && !S.sel){ $('iUp').disabled=S.seeds<clearCost(S.selScen); }
   if (S.sel){ const up=$('iUp');
     if (S.sel.lv>=2){ up.textContent='Max level'; up.disabled=true; }
     else { const cost=upCostOf(S.sel); up.textContent=`Upgrade · ${cost}`; up.disabled=S.seeds<cost; }
@@ -620,7 +631,7 @@ function tryPlant(c,r){
   if (res.ok){ if (!tutorialActive()) msg(tileNote(res.tower) || (S.wave===0&&S.towers.length===1?'Nice. Plant more, or tap Start wave when ready.':`${TYPES[res.tower.type].name} planted.`)); dirty(); return; }
   Audio.play('denied');
   if (res.reason==='seeds') msg(`Not enough seeds. ${res.name} costs ${res.cost}.`);
-  else if (res.reason==='scenery') msg('Something’s already there. Plant on open grass.');
+  else if (res.reason==='scenery') msg('Something’s in the way. Unpick your defender, then tap it to clear it for seeds.');
   else msg(r>=ROWS-1?'That’s your crop row. Plant on the grass.':'Keep the path clear. Plant on the grass.');
 }
 
@@ -633,14 +644,16 @@ function onBoardTap(ev){
   }
   const [c,r]=cellAt(ev.clientX, ev.clientY);
   const t=towerAt(c,r);
-  if (t){ S.sel=t; S.build=null; renderBar(); renderInfo(); Audio.play('tap'); emit('select', t); return; }
+  if (t){ S.sel=t; S.selScen=null; S.build=null; renderBar(); renderInfo(); Audio.play('tap'); emit('select', t); return; }
+  const piece=!S.build && sceneryPiece(c,r);
+  if (piece){ S.sel=null; S.selScen=piece; renderInfo(); Audio.play('tap'); return; }
   if (S.build){
     if (ev.pointerType==='mouse') return tryPlant(c,r);
     // touch: show the preview now, plant when the finger lifts (slide to adjust first)
     G.preview={ c, r, type:S.build }; try { $('cv').setPointerCapture(ev.pointerId); } catch {}
     dirty(); return;
   }
-  if (S.sel){ S.sel=null; renderInfo(); }
+  if (S.sel || S.selScen){ S.sel=null; S.selScen=null; renderInfo(); }
 }
 
 export function initUI(){
@@ -675,7 +688,12 @@ export function initUI(){
   $('restart').onclick=onRestart;
   $('sound').onclick=onSound;
   $('map').onclick=()=>{ Audio.play('tap'); showMenu(); };
-  $('iUp').onclick=()=>{ const t=G.S.sel; if (upgrade(t)){ renderInfo(); msg(`${TYPES[t.type].name} upgraded to level ${t.lv+1}.`); } };
+  $('iUp').onclick=()=>{ const S=G.S;
+    if (S.selScen && !S.sel){ const o=S.selScen, [name]=SCENERY_NAMES[o.kind]||['Scenery'];
+      if (clearScenery(o)){ S.selScen=null; rebuild(); renderInfo(); Audio.play('pop'); msg(o.kind==='fire'?'Fire’s out! That spot is free now.':o.kind==='litter'||o.kind==='tire'?'All cleaned up! That spot is free now.':`${name} cleared. That spot is free now.`); }
+      else { Audio.play('denied'); msg(`Not enough seeds. It costs ${clearCost(o)}.`); }
+      return; }
+    const t=G.S.sel; if (upgrade(t)){ renderInfo(); msg(`${TYPES[t.type].name} upgraded to level ${t.lv+1}.`); } };
   $('iSell').onclick=()=>{ const v=sell(G.S.sel); renderInfo(); msg(`Sold for ${v} seeds.`); };
   $('seedsChip').onclick=()=>{ if (devMode && G.S){ G.S.seeds+=200; msg('Test mode: +200 seeds.'); } };
   paintDev();
