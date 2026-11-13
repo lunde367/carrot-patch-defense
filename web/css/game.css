@@ -364,3 +364,36 @@ canvas{ display:block }
 .home-nav button i{ position:absolute; top:2px; left:calc(50% + 10px); font-style:normal; font-size:.62rem; background:var(--accent); color:var(--accent-ink); border-radius:var(--r-pill); padding:1px 6px; white-space:nowrap }
 .sub-tabs button{ font-size:.82rem; padding:8px 2px; white-space:nowrap }
 .home-head h2{ flex:1 }
+
+/* the diary as an open journal: drawing on the left page, words on the right */
+.diary-art{ display:block; width:100%; aspect-ratio:190/170; border-radius:0; margin:0; box-shadow:none }
+.journal{ padding-left:0; max-width:460px }
+.spread{ position:relative; display:grid; grid-template-columns:1fr 1fr; width:100%; max-width:460px; color:#3b3226; text-align:left; background:#fbf6e6; border-radius:7px;
+  box-shadow:0 10px 22px rgba(20,15,5,.3), 0 0 0 1px #d9cfb4, -3px 3px 0 #efe7d0, 3px 3px 0 #efe7d0, -6px 6px 0 #e3d9bd, 6px 6px 0 #e3d9bd; touch-action:pan-y; transform-origin:center }
+.spread::after{ content:''; position:absolute; left:50%; top:0; bottom:0; width:1px; background:rgba(90,70,40,.35) }
+.sp-page{ position:relative; min-width:0; min-height:250px; padding:12px 12px 26px; box-sizing:border-box }
+.sp-left{ display:flex; flex-direction:column; justify-content:center; gap:4px; border-radius:7px 0 0 7px; background:linear-gradient(90deg, transparent 80%, rgba(90,70,40,.13)) }
+.sp-left h3{ margin:0; text-align:center; font-size:1rem; line-height:1.2; color:#4a3b25; font-family:"Bradley Hand","Segoe Print","Chalkboard SE","Comic Sans MS",cursive; text-wrap:balance }
+.sp-right{ border-radius:0 7px 7px 0; background:linear-gradient(90deg, rgba(90,70,40,.15), transparent 16%), repeating-linear-gradient(transparent 0 23px, #e5dcc2 23px 24px); background-position:0 0, 0 12px }
+.sp-right p{ margin:0; max-width:none; font-size:.9rem; line-height:24px; font-style:italic; color:#3b3226; font-family:"Bradley Hand","Segoe Print","Chalkboard SE","Comic Sans MS",cursive }
+.spread .j-num{ right:12px; bottom:8px }
+.over .diary-tag{ color:#f4e9c8 }
+.spread.turn-next{ animation:turn-next .35s ease-out } .spread.turn-prev{ animation:turn-prev .35s ease-out }
+.part-art{ background:#fbf6e6; border-radius:8px; width:min(190px, 60%); aspect-ratio:190/170 }
+@media (prefers-reduced-motion: reduce){ .spread.turn-next, .spread.turn-prev{ animation:none } }
+
+/* result screens: the facts on one card, then one main button and three round icons */
+.panel.result{ display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; padding:16px 16px 14px; max-width:320px }
+.panel.result h3{ margin:0; font-size:1.3rem; text-wrap:balance } .panel.result p{ margin:0; color:var(--panel-muted); font-size:.92rem; line-height:1.35; max-width:none }
+.panel.result .stars{ font-size:2rem; line-height:1; letter-spacing:4px }
+.res-chips{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center }
+.res-chips span{ font-weight:800; font-size:.85rem; padding:4px 10px; border-radius:var(--r-pill); background:#fde9b8; color:#6a4a08 }
+.res-chips span.blue{ background:#d5edf7; color:#1f5f7d } .res-chips span.plain{ background:rgba(0,0,0,.06); color:var(--panel-ink) }
+.panel.result .chal-list{ width:100%; color:var(--panel-ink) } .panel.result .chal-list b{ color:#c9641a }
+.res-note{ font-size:.86rem !important }
+.res-actions{ display:flex; flex-direction:column; align-items:center; gap:10px; width:100% } .res-actions .btn.main{ min-width:200px }
+.res-icons{ display:flex; gap:12px; justify-content:center }
+.btn.round{ position:relative; width:50px; height:50px; padding:0; border-radius:50%; display:inline-flex; align-items:center; justify-content:center }
+.btn.round i{ position:absolute; top:-6px; right:-10px; font-style:normal; font-size:.62rem; font-weight:800; background:var(--accent); color:var(--accent-ink); border-radius:var(--r-pill); padding:1px 6px; white-space:nowrap }
+.panel.result .rate-box{ background:rgba(0,0,0,.05); width:100%; box-sizing:border-box }
+.over .spread{ max-width:100% } .over .sp-page{ padding:10px 9px 18px; min-height:220px } .over .sp-right p{ font-size:.82rem; line-height:22px } .over .sp-right{ background-size:auto, auto 22px; background-image:linear-gradient(90deg, rgba(90,70,40,.15), transparent 16%), repeating-linear-gradient(transparent 0 21px, #e5dcc2 21px 22px) }

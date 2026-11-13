@@ -154,11 +154,14 @@ function showPartCard(n){
 const esc = t => String(t).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
 const gardener = () => esc((Save.data.settings.name || 'Robin').trim() || 'Robin');
 const diaryText = d => d.key==='start-cabbage' ? `This diary belongs to ${gardener()}. ${d.text}` : d.text;
+// One diary entry across the two pages of an open journal: the drawing and title on the left, the words on the right.
+const spread = (d, num='') => `<div class="spread" id="jPage"><div class="sp-page sp-left"><canvas class="diary-art" data-scene="${d.key}"></canvas><h3>${d.title}</h3></div>
+  <div class="sp-page sp-right"><p>${diaryText(d)}</p>${num?`<span class="j-num">${num}</span>`:''}</div></div>`;
 const paintScenes = root => { for (const cv of root.querySelectorAll('canvas[data-scene]')) if (!drawDiaryScene(cv, cv.dataset.scene)) cv.remove(); };
 function showDiaryPage(key, cont='Continue'){
   const d=diaryEntry(key); Save.data.diary[key]=true; Save.commit(); emit('diary', key);
   if (G.S) G.S.paused=true;
-  overlay(`<div class="diary-page"><canvas class="diary-art" data-scene="${key}"></canvas><span class="diary-tag">From the garden diary</span><h3>${d.title}</h3><p>${diaryText(d)}</p></div>
+  overlay(`<span class="diary-tag">From the garden diary</span>${spread(d)}
     <div class="row"><button class="btn main" data-go="diary-ok">${cont}</button></div>`);
   paintScenes($('over'));
   Audio.play('page');
@@ -182,8 +185,8 @@ function home(html){
   if (subs.length>1) html = html.replace('</div>', `</div><div class="seg sub-tabs" role="tablist">${subs.map(([go,label])=>`<button role="tab" aria-checked="${go===sub}" data-go="${go}">${label}</button>`).join('')}</div>`);
   const pip = starsLeft()>0 ? `<i>★ ${starsLeft()}</i>` : '';
   $('home').innerHTML = html + `<nav class="home-nav" aria-label="Main">
-    <button data-go="menu" class="${tab==='gardens'?'on':''}">${ICON.map}<span>Gardens</span></button>
-    <button data-go="shed" class="nav-shed ${tab==='upgrades'?'on':''}">${ICON.shed}<span>Upgrades</span>${pip}</button>
+    <button data-go="menu" class="${tab==='gardens'?'on':''}">${IC_HOME}<span>Gardens</span></button>
+    <button data-go="shed" class="nav-shed ${tab==='upgrades'?'on':''}">${IC_SHOP}<span>Upgrades</span>${pip}</button>
     <button data-go="diary" class="${tab==='journal'?'on':''}">${ICON.book}<span>Journal</span></button></nav>`;
   window.scrollTo(0,0);
 }
@@ -433,9 +436,7 @@ function showDiary(at){
   const d = pages[jPage];
   tabAt=['journal','diary'];
   home(`<div class="home-head"><h2>${gardener()}’s diary</h2><span class="star-count">${pages.length}/${DIARY.length}</span></div>
-    ${d ? `<div class="journal"><div class="j-rings" aria-hidden="true">${'<i></i>'.repeat(7)}</div>
-        <div class="j-page" id="jPage"><canvas class="diary-art" data-scene="${d.key}"></canvas>
-          <h3>${d.title}</h3><p>${diaryText(d)}</p><span class="j-num">Page ${jPage+1}</span></div></div>
+    ${d ? `<div class="journal">${spread(d, jPage+1)}</div>
       <div class="j-nav"><button class="btn ghost" data-go="j-prev" ${jPage===0?'disabled':''}>‹ Earlier</button>
         <button class="btn ghost" data-go="j-next" ${jPage>=pages.length-1?'disabled':''}>Later ›</button></div>
       ${pages.length<DIARY.length?'<p class="home-note">More pages get written as you play.</p>':''}`
@@ -574,6 +575,15 @@ function recordWin({ stars, gi }){
   Save.data.stars[gi]=Math.max(before, stars); Save.data.stats.wins++; Save.commit();
 }
 on('levelStart', () => { recordWin.done=null; });
+// Icons for the result screens and the bottom tabs.
+const svgIcon = d => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const IC_HOME = svgIcon('<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.500V14h4v5.5"/>');
+const IC_SHOP = svgIcon('<path d="M4 9h16l-1.3 10.200a1.500 1.500 0 0 1-1.500 1.300H6.800a1.500 1.500 0 0 1-1.500-1.300L4 9Z"/><path d="M8.500 9V7.500a3.500 3.500 0 0 1 7 0V9"/>');
+// The three small round buttons under a result: gardens, upgrades, play again.
+const resultIcons = (replay=true) => `<div class="res-icons">
+  <button class="btn ghost round" data-go="menu" aria-label="All gardens" title="All gardens">${IC_HOME}</button>
+  <button class="btn ghost round" data-go="shed" aria-label="Upgrades" title="Upgrades">${IC_SHOP}${starsLeft()>0?`<i>★ ${starsLeft()}</i>`:''}</button>
+  ${replay?`<button class="btn ghost round" data-go="retry" aria-label="Play again" title="Play again">${ICON.restart}</button>`:''}</div>`;
 function showWin(w, recorded=false){
   const { stars, lives, maxLives, gi } = w;
   if (!recorded) recordWin(w);
@@ -581,19 +591,16 @@ function showWin(w, recorded=false){
   Audio.play('win');
   const next=LEVELS[gi+1], LV=G.LV, gained=Math.max(0, stars-before);
   const unlocks = next ? TRAY.filter(k => TYPES[k].unlock===next.gi) : [];
-  overlay(`<h2>${LV.name} saved!</h2><div class="stars">${starStr(stars)}</div>
-    <p>You beat the ${ENEMY[LV.boss].name} with ${lives} of ${maxLives} ${LV.ch.cropPlural} left.${stars<3?` Lose ${starLimits(maxLives)[0]} or fewer for three stars.`:''}</p>
-    ${gained?`<p>+${gained} ★ for the Garden Shed (★ ${starsLeft()} to spend).</p>`:''}
-    ${before>0 ? `<div class="chal-box"><b>Challenge stars${recordWin.fresh.length?` · +${recordWin.fresh.length} ${CH_ICON}`:''}</b>${chalList(LV, recordWin.fresh)}</div>`
-      : `<p class="pause-intro">${CH_ICON} Three challenge stars are now open on this level. Play it again to try for them.</p>`}
-    ${unlocks.length&&before===0?`<p>Next level unlocks the ${unlocks.map(k=>TYPES[k].name).join(' and ')}!</p>`:''}
-    <div class="row">${next?`<button class="btn main" data-go="next">${next.ci!==LV.ci?`On to ${next.ch.name}`:'Next level'}</button>`:''}
-    ${gained?'<button class="btn ghost" data-go="shed">Garden Shed</button>':''}
-    <button class="btn ghost" data-go="retry">Play again</button><button class="btn ghost" data-go="menu">All gardens</button></div>
-    ${stars===3 && LV.li===LV.ch.levels.length-1 && shouldAskRating(Save, { wins:Save.data.stats.wins }) ? `<div class="rate-box" id="rateBox"><b>Enjoying the garden?</b>
-      <span>A rating helps other families find it.</span><div class="row"><button class="btn main small" data-go="rate" data-a="ok">OK</button>
-      <button class="btn ghost small" data-go="rate" data-a="later">Not now</button><button class="btn ghost small" data-go="rate" data-a="never">Never ask me again</button></div></div>` : ''}
-    ${next?'':`<div class="row"><button class="btn main" data-go="ending">${Save.data.ended?'See the ending again':'Finish the story'}</button></div>`}`);
+  const fresh=recordWin.fresh.length, last=!next;
+  const rate = stars===3 && LV.li===LV.ch.levels.length-1 && shouldAskRating(Save, { wins:Save.data.stats.wins });
+  overlay(`<div class="panel result"><h3>${LV.name} saved!</h3><div class="stars">${starStr(stars)}</div>
+      <p>${lives} of ${maxLives} ${LV.ch.cropPlural} left${stars<3?`. Lose ${starLimits(maxLives)[0]} or fewer for three stars`:''}.</p>
+      ${gained||fresh||(unlocks.length&&before===0) ? `<div class="res-chips">${gained?`<span>+${gained} ★</span>`:''}${fresh?`<span class="blue">+${fresh} ${CH_ICON}</span>`:''}${unlocks.length&&before===0?`<span class="plain">Next: ${unlocks.map(k=>TYPES[k].name).join(' and ')}</span>`:''}</div>` : ''}
+      ${before>0 ? chalList(LV, recordWin.fresh) : `<p class="res-note">${CH_ICON} Challenges are now open on this level.</p>`}
+      ${rate ? `<div class="rate-box" id="rateBox"><b>Enjoying the garden?</b><span>A rating helps other families find it.</span><div class="row"><button class="btn main small" data-go="rate" data-a="ok">OK</button>
+        <button class="btn ghost small" data-go="rate" data-a="later">Not now</button><button class="btn ghost small" data-go="rate" data-a="never">Never ask me again</button></div></div>` : ''}</div>
+    <div class="res-actions">${last ? `<button class="btn main" data-go="ending">${Save.data.ended?'See the ending again':'Finish the story'}</button>`
+      : `<button class="btn main" data-go="next">${next.ci!==LV.ci?`On to ${next.ch.name}`:'Next level'}</button>`}${resultIcons()}</div>`);
   dirty();
 }
 on('lose', ({ wave }) => {
@@ -602,21 +609,18 @@ on('lose', ({ wave }) => {
   const LV=G.LV, left=starsLeft(), second = extrasHere() && !G.S.revived && !LV.endless;
   if (LV.endless){
     const E=Save.data.endless, cleared=wave-1; E.runs++; Save.commit();
-    overlay(`<h2>${cleared>=E.best && cleared>0 ? 'A new best!' : 'The garden rests'}</h2>
-      <p>You held the Endless Garden for ${cleared} wave${cleared===1?'':'s'}. Your best is ${E.best}.</p>
-      <p>Endless stars: ★ ${endlessStars()}. The next one comes at wave ${(endlessStars()+1)*3}.</p>
-      <p class="tip"><b>Tip:</b> ${lossTip()}</p>
-      <div class="row"><button class="btn main" data-go="retry">Go again</button><button class="btn ghost" data-go="shed">Garden Shed</button><button class="btn ghost" data-go="menu">All gardens</button></div>`);
+    overlay(`<div class="panel result"><h3>${cleared>=E.best && cleared>0 ? 'A new best!' : 'The garden rests'}</h3>
+        <p>You held on for ${cleared} wave${cleared===1?'':'s'}. Your best is ${E.best}.</p>
+        <div class="res-chips"><span>★ ${endlessStars()} earned</span><span class="plain">Next star at wave ${(endlessStars()+1)*3}</span></div>
+        <p class="res-note"><b>Tip:</b> ${lossTip()}</p></div>
+      <div class="res-actions"><button class="btn main" data-go="retry">Go again</button>${resultIcons(false)}</div>`);
     dirty(); return;
   }
-  overlay(`<h2>The pests got the ${LV.ch.cropPlural}</h2>
-    <p>You reached wave ${wave} of ${LV.waves} in ${LV.name}.</p>
-    <p class="tip"><b>Tip:</b> ${lossTip()}</p>
-    ${left>0?`<p>You have ★ ${left} to spend in the Garden Shed.</p>`:''}
-    <div class="row"><button class="btn main" data-go="retry">Try again</button>
-    ${second?`<button class="btn ghost offer" data-go="revive">${tv()}Keep going from wave ${wave} with ${Math.ceil(G.S.maxLives/2)} crops</button>`:''}
-    ${left>0?'<button class="btn ghost" data-go="shed">Garden Shed</button>':''}
-    <button class="btn ghost" data-go="menu">All gardens</button></div>`);
+  overlay(`<div class="panel result"><h3>The pests got the ${LV.ch.cropPlural}</h3>
+      <p>You reached wave ${wave} of ${LV.waves}.</p>
+      <p class="res-note"><b>Tip:</b> ${lossTip()}</p></div>
+    <div class="res-actions"><button class="btn main" data-go="retry">Try again</button>
+      ${second?`<button class="btn ghost offer" data-go="revive">${tv()}Keep going from wave ${wave} with ${Math.ceil(G.S.maxLives/2)} crops</button>`:''}${resultIcons(false)}</div>`);
   dirty();
 });
 

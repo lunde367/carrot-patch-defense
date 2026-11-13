@@ -69,31 +69,64 @@ function gardenerFace(c, x, y, s){   // the diary's owner: straw hat, freckles, 
   c.fillStyle='#c2456b'; c.fillRect(-s*.2,-s*.79,s*.4,s*.05);
   c.restore();
 }
+// Turn the cleanly drawn scene into a colored-pencil sketch: wobbly graphite outlines found from the
+// picture's edges, over a light hatched wash of its colors, with nothing behind it but the page.
+function pencil(src, d){
+  const w=src.width, h=src.height, a=src.getContext('2d').getImageData(0,0,w,h).data;
+  const lum=new Float32Array(w*h);
+  for (let i=0,p=0;i<w*h;i++,p+=4){ const al=a[p+3]/255; lum[i]=(.3*a[p]+.59*a[p+1]+.11*a[p+2])*al+255*(1-al); }
+  const out=new ImageData(w,h), o=out.data, L=(x,y)=>lum[Math.min(h-1,Math.max(0,y))*w+Math.min(w-1,Math.max(0,x))];
+  const hatch=Math.max(3, Math.round(2.5*d));
+  for (let y=0;y<h;y++) for (let x=0;x<w;x++){
+    // a slow wobble, as if the hand wasn't quite steady
+    const xs=Math.min(w-1,Math.max(0,x+Math.round(Math.sin(y*.07/d*2)*1.1*d))), ys=Math.min(h-1,Math.max(0,y+Math.round(Math.sin(x*.06/d*2)*1.1*d)));
+    const gx=L(xs+1,ys-1)+2*L(xs+1,ys)+L(xs+1,ys+1)-L(xs-1,ys-1)-2*L(xs-1,ys)-L(xs-1,ys+1);
+    const gy=L(xs-1,ys+1)+2*L(xs,ys+1)+L(xs+1,ys+1)-L(xs-1,ys-1)-2*L(xs,ys-1)-L(xs+1,ys-1);
+    const n=((Math.imul(x*374761393 ^ y*668265263, 1274126177)>>>0)%1000)/1000;         // paper grain
+    const line=Math.min(1, Math.pow(Math.min(1, Math.hypot(gx,gy)/150), .75)*(.72+.28*n));
+    const p=(ys*w+xs)*4, al=a[p+3]/255, g=.3*a[p]+.59*a[p+1]+.11*a[p+2];
+    const stroke=((x+y)%hatch)<hatch*.55 ? 1 : .35, cross=g<120 && ((x-y+4096)%hatch)<hatch*.4 ? .25 : 0;
+    const wash=al*Math.min(.62, (.34*stroke+cross)*(.8+.4*n));
+    // soften the colors toward gray so they read as pencil, not paint
+    const r=a[p]*.7+g*.3, gg=a[p+1]*.7+g*.3, b=a[p+2]*.7+g*.3, A=1-(1-wash)*(1-line), q=(y*w+x)*4;
+    if (A<=0.003) continue;
+    const kw=wash*(1-line)/A, kl=line/A;
+    o[q]=r*kw+58*kl; o[q+1]=gg*kw+52*kl; o[q+2]=b*kw+46*kl; o[q+3]=Math.round(A*255);
+  }
+  return out;
+}
+// Draws the scene for a diary page as a pencil sketch on a transparent background (the page shows through).
+// The picture is a little taller than wide, to sit on the left-hand page of the open journal: things stand
+// in two rows, the back row smaller.
 export function drawDiaryScene(canvas, key){
   const sc = SCENES[key]; if (!sc) return false;
-  const d = Math.min(2, window.devicePixelRatio||1), W = 280, H = 110;
-  canvas.width = W*d; canvas.height = H*d;
-  const c = canvas.getContext('2d'); c.setTransform(d,0,0,d,0,0);
-  const [top, bottom, ground] = MOOD[sc[0]], gy = H*.72, s = 46;
-  const sky = c.createLinearGradient(0,0,0,gy); sky.addColorStop(0, top); sky.addColorStop(1, bottom);
-  c.fillStyle = sky; c.fillRect(0,0,W,gy);
-  c.fillStyle = ground; c.fillRect(0,gy,W,H-gy);
-  c.fillStyle = 'rgba(0,0,0,.06)'; c.fillRect(0,gy,W,2);
+  const d = Math.min(2, window.devicePixelRatio||1), W = 190, H = 170;
+  const off = document.createElement('canvas'); off.width = W*d; off.height = H*d;
+  const c = off.getContext('2d'); c.setTransform(d,0,0,d,0,0);
+  const ground = MOOD[sc[0]][2], s = 58, rows = [H*.52, H*.92];
+  ell(c, W/2, H*.72, W*.5, H*.27, ground);                                  // a patch of ground, no frame
+  const things = sc[1].filter(it => !['sun','rain','creek'].includes(it[0]));
   for (const it of sc[1]){
-    const [kind, id, fx, k=1] = it;
-    c.save();
-    if (kind==='sun'){ const r=13*(id||1); ell(c, W-34, 26, r*1.5, r*1.5, 'rgba(255,220,120,.35)'); ell(c, W-34, 26, r, r, '#f8cf4e', '#e0a020', 1.5); }
-    else if (kind==='rain'){ c.strokeStyle='rgba(70,120,160,.55)'; c.lineWidth=1.6; c.lineCap='round';
-      for (let i=0;i<26;i++){ const x=(i*37%W), y=(i*53%Math.round(gy)); c.beginPath(); c.moveTo(x,y); c.lineTo(x-4,y+10); c.stroke(); } }
-    else if (kind==='creek'){ c.strokeStyle='#7fb8d8'; c.lineWidth=7; c.lineCap='round'; c.beginPath(); c.moveTo(-5,H-8); c.bezierCurveTo(W*.3,H-18,W*.6,H+2,W+5,H-10); c.stroke();
-      c.strokeStyle='rgba(255,255,255,.5)'; c.lineWidth=1.5; c.beginPath(); c.moveTo(20,H-11); c.lineTo(48,H-13); c.moveTo(150,H-7); c.lineTo(180,H-8); c.stroke(); }
-    else if (kind==='spray') sprayer(c, id*W, gy+8, s*(fx||1)*.8);
-    else if (kind==='face') gardenerFace(c, id*W, gy+6, s*(fx||1)*1.25);
-    else if (kind==='crop') drawCrop(c, id, fx*W, gy+2, s*1.5*k);
-    else if (kind==='tower'){ c.translate(fx*W, gy-s*k*.22); DRAW[id](c, s*k, 0, 0, 1, 1); }
-    else if (kind==='pest'){ const E=ENEMY[id]; if (E){ const sz=24*k/E.size; c.translate(fx*W, gy - (E.fly ? 16 : 6)); drawEnemy(c, { type:id, size:E.size, ph:1.2, fly:!!E.fly, face:-1, hp:1, max:1 }, sz); } }
-    else if (kind==='scen'){ const ss=s*k; c.translate(fx*W-ss/2, gy-ss*.72); drawScenery(c, { c:0, r:0, w:1, h:1, kind:id, seed:7 }, ss); }
+    const [kind, id, fx, k0=1] = it; c.save();
+    if (kind==='sun'){ const r=11*(id||1); ell(c, W-30, 26, r, r, '#f8cf4e', '#b07a10', 1.5);
+      c.strokeStyle='#b07a10'; c.lineWidth=1.5; for (let i=0;i<8;i++){ const a=i*Math.PI/4; c.beginPath(); c.moveTo(W-30+Math.cos(a)*r*1.3, 26+Math.sin(a)*r*1.3); c.lineTo(W-30+Math.cos(a)*r*1.75, 26+Math.sin(a)*r*1.75); c.stroke(); } }
+    else if (kind==='rain'){ c.strokeStyle='rgba(60,110,160,.9)'; c.lineWidth=1.6; c.lineCap='round';
+      for (let i=0;i<22;i++){ const x=(i*37%W), y=(i*53%Math.round(H*.6)); c.beginPath(); c.moveTo(x,y); c.lineTo(x-4,y+10); c.stroke(); } }
+    else if (kind==='creek'){ c.strokeStyle='#6aa8cc'; c.lineWidth=7; c.lineCap='round'; c.beginPath(); c.moveTo(4,H-6); c.bezierCurveTo(W*.3,H-18,W*.6,H+2,W-4,H-9); c.stroke(); }
+    else {
+      const n = things.length, i = things.indexOf(it), two = n>3, back = two && i%2===0, gy = rows[back?0:1], k = k0*(back?.85:1);
+      const row = two ? things.filter((_,j) => (j%2===0)===back) : things, j = row.indexOf(it);
+      const px = W*(j+1)/(row.length+1) + (two ? (back ? -8 : 8) : 0);
+      if (kind==='spray') sprayer(c, px, gy+4, s*(fx||1)*.8*(back?.82:1));
+      else if (kind==='face') gardenerFace(c, px, gy+4, s*(fx||1)*1.25*(back?.9:1));
+      else if (kind==='crop') drawCrop(c, id, px, gy, s*1.45*k);
+      else if (kind==='tower'){ c.translate(px, gy-s*k*.22); DRAW[id](c, s*k, 0, 0, 1, 1); }
+      else if (kind==='pest'){ const E=ENEMY[id]; if (E){ const sz=30*k*(E.shape==='hopper'?.72:1)/E.size; c.translate(px, gy - (E.fly ? 18 : 6)); drawEnemy(c, { type:id, size:E.size, ph:1.2, fly:!!E.fly, face:-1, hp:1, max:1 }, sz); } }
+      else if (kind==='scen'){ const ss=s*k; c.translate(px-ss/2, gy-ss*.72); drawScenery(c, { c:0, r:0, w:1, h:1, kind:id, seed:7 }, ss); }
+    }
     c.restore();
   }
+  canvas.width = off.width; canvas.height = off.height;
+  canvas.getContext('2d').putImageData(pencil(off, d), 0, 0);
   return true;
 }
