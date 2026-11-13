@@ -253,7 +253,8 @@ function damage(e,d){
   if (e.armor && d<=e.armor+1 && Math.random()<.15){ floatText(e.x,e.y-.3,'tink','#7a8a96',.5); emit('tink'); }
   else emit('hit');
   if (e.hp<=0){
-    const gain=Math.round(e.reward*S.perks.rewardMul);
+    // crowded levels pay less per pest, so more pests does not mean more seeds
+    const owed=e.reward*S.perks.rewardMul/Math.pow(crowdOf(), .55)+(S.owed||0), gain=Math.floor(owed+1e-9); S.owed=owed-gain;
     e.dead=true; S.seeds+=gain;
     floatText(e.x,e.y-.3,'+'+gain,'#c98a12'); puffs(e.x,e.y,7,1.4);
     emit('kill', { boss:!!ENEMY[e.type].boss });
@@ -283,7 +284,7 @@ export function update(dt){
   const S=G.S;
   if (S.spawnQ.length){ S.spawnT-=dt;
     // pests take turns at each entrance
-    if (S.spawnT<=0){ const it=S.spawnQ.shift(); spawnEnemy(it.t,0,it.m,(S.laneNext++)%path.lanes.length); S.spawnT=(ENEMY[it.t].gap||2)/Math.pow(crowdOf(), .75); } }
+    if (S.spawnT<=0){ const it=S.spawnQ.shift(); spawnEnemy(it.t,0,it.m,(S.laneNext++)%path.lanes.length); S.spawnT=(ENEMY[it.t].gap||2)/Math.pow(crowdOf(), .3); } }
 
   for (const e of S.enemies){
     if (e.dead) continue;
