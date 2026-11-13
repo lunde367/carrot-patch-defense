@@ -330,14 +330,12 @@ canvas{ display:block }
 /* the message row: skill buttons sit either side of the message, off the board */
 .msg-row{ display:flex; align-items:center; gap:8px; min-height:2.5em }
 .msg-row .msg{ flex:1; min-width:0 }
-.msg-row .spray-btn, .msg-row .fert-btn, .board.spray-left .msg-row .spray-btn{ position:relative; inset:auto; right:auto; left:auto; bottom:auto; width:44px; height:44px; flex:none; margin-bottom:12px }
 .msg-row .undo{ flex:none }
 .rate-box{ background:rgba(255,255,255,.14); border-radius:var(--r-md); padding:10px 12px; display:flex; flex-direction:column; gap:4px; align-items:center; font-size:.9rem }
 .rate-box .row{ flex-wrap:wrap; justify-content:center; gap:6px; margin-top:4px }
 .name-in{ font:inherit; font-weight:700; width:9.5em; padding:8px 10px; border-radius:var(--r-sm); border:2px solid var(--line); background:var(--bg); color:var(--ink) }
 .part-art{ width:min(240px, 78%); margin:0 auto 12px; box-shadow:0 0 0 2px rgba(255,255,255,.35), 0 6px 16px rgba(0,0,0,.3) }
 @media (min-width:700px){ .app:not(.home-mode){ max-width:min(94vw, 860px) } }
-@media (max-height:720px){ .msg-row .spray-btn, .msg-row .fert-btn, .board.spray-left .msg-row .spray-btn{ width:40px; height:40px; margin-bottom:8px } }
 
 /* defender skills */
 .skills-btn{ display:flex; align-items:center; justify-content:space-between; gap:10px; text-align:left; font:inherit; color:var(--ink); cursor:pointer;

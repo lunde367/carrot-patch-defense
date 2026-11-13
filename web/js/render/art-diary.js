@@ -15,10 +15,11 @@ const MOOD = {
 const SCENES = {
   'start-cabbage':    ['happy',  [['face',.14,1],['crop','cabbage',.36,1],['crop','cabbage',.5,1],['pest','babyslug',.67,.45],['tower','bunny',.86,1.1]]],
   // the pictures on the four part cards
-  'part-1':           ['happy',  [['sun'],['crop','cabbage',.14,1],['tower','bunny',.32,1.1],['crop','strawberry',.5,1],['tower','sunflower',.68,1],['crop','carrot',.86,1]]],
-  'part-2':           ['hot',    [['sun',1.7],['crop','tomato',.16,.9],['spray',.36,1.4],['pest','stinkbug',.56,1],['crop','corn',.74,.9],['pest','locust',.9,1]]],
-  'part-3':           ['dust',   [['scen','tire',.16,1.1],['scen','fire',.36,1.1],['crop','wheat',.56,.8],['scen','litter',.74,1],['pest','dustbeetle',.9,1]]],
-  'part-4':           ['rain',   [['rain'],['creek'],['scen','sapling',.16,1.3],['scen','clover',.34,1.1],['crop','radish',.52,1],['scen','sapling',.72,1.6],['tower','barrel',.9,1]]],
+  // Hand-placed: [kind, id, x, size, y] with x and y as fractions of the picture (y = where it stands).
+  'part-1':           ['happy',  [['land'],['sun'],['cloud',.24,.16,1],['fence',.6],['crop','carrot',.7,.7,.74],['crop','cabbage',.34,.75,.78],['tower','sunflower',.84,1,.9],['crop','cabbage',.16,1,.93],['tower','bunny',.52,1.35,.95]]],
+  'part-2':           ['hot',    [['land'],['sun',2.1],['heat'],['cracks'],['pest','locust',.2,.75,.42],['crop','tomato',.2,.9,.9],['pest','stinkbug',.84,.6,.84],['spray',.5,1.7,1,.94]]],
+  'part-3':           ['dust',   [['land'],['swirl',.3,.22],['swirl',.74,.3],['cracks'],['scen','stump',.6,1,.72],['crop','wheat',.36,.6,.78],['scen','litter',.86,.8,.8],['scen','tire',.2,1.15,.95],['scen','fire',.72,1.1,.96]]],
+  'part-4':           ['rain',   [['land'],['cloud',.3,.14,1.2],['cloud',.72,.2,1],['rain'],['creek'],['scen','sapling',.2,1.3,.8],['tower','barrel',.52,.8,.74],['scen','sapling',.82,1.7,.9],['crop','radish',.58,.95,.92],['scen','clover',.38,1,.94]]],
   'after-cabbage':    ['happy',  [['sun'],['crop','cabbage',.16,1.1],['crop','cabbage',.32,1.2],['crop','cabbage',.48,1.1],['tower','bunny',.68,1],['tower','bunny',.86,1.1]]],
   'start-strawberry': ['happy',  [['crop','strawberry',.18,1],['crop','strawberry',.34,1],['spray',.6,1.2],['tower','bunny',.84,1]]],
   'after-strawberry': ['happy',  [['crop','strawberry',.16,1.1],['crop','strawberry',.3,1.1],['crop','strawberry',.44,1.1],['spray',.68,1.5]]],
@@ -104,19 +105,37 @@ export function drawDiaryScene(canvas, key){
   const off = document.createElement('canvas'); off.width = W*d; off.height = H*d;
   const c = off.getContext('2d'); c.setTransform(d,0,0,d,0,0);
   const ground = MOOD[sc[0]][2], s = 58, rows = [H*.52, H*.92];
-  ell(c, W/2, H*.72, W*.5, H*.27, ground);                                  // a patch of ground, no frame
-  const things = sc[1].filter(it => !['sun','rain','creek'].includes(it[0]));
+  const placed = sc[1].some(it => it[0]==='land'), hy = H*.6;
+  if (placed){                                                              // a full picture: rolling ground up to a horizon
+    c.fillStyle = ground; c.strokeStyle = 'rgba(70,60,40,.9)'; c.lineWidth = 1.4;
+    c.beginPath(); c.moveTo(-4, hy+6); c.quadraticCurveTo(W*.25, hy-12, W*.52, hy+2); c.quadraticCurveTo(W*.8, hy+14, W+4, hy-4); c.lineTo(W+4, H+4); c.lineTo(-4, H+4); c.closePath(); c.fill(); c.stroke();
+  } else ell(c, W/2, H*.72, W*.5, H*.27, ground);                           // a diary sketch: a patch of ground, no frame
+  const PROPS = ['sun','rain','creek','land','cloud','fence','cracks','swirl','heat'];
+  const things = sc[1].filter(it => !PROPS.includes(it[0]));
   for (const it of sc[1]){
     const [kind, id, fx, k0=1] = it; c.save();
-    if (kind==='sun'){ const r=11*(id||1); ell(c, W-30, 26, r, r, '#f8cf4e', '#b07a10', 1.5);
+    if (kind==='sun'){ const r=11*(id||1), sx=(id||1)>1.9 ? W*.6 : W-30, sy=(id||1)>1.9 ? 38 : 26; c.translate(sx-(W-30), sy-26); ell(c, W-30, 26, r, r, '#f8cf4e', '#b07a10', 1.5);
       c.strokeStyle='#b07a10'; c.lineWidth=1.5; for (let i=0;i<8;i++){ const a=i*Math.PI/4; c.beginPath(); c.moveTo(W-30+Math.cos(a)*r*1.3, 26+Math.sin(a)*r*1.3); c.lineTo(W-30+Math.cos(a)*r*1.75, 26+Math.sin(a)*r*1.75); c.stroke(); } }
     else if (kind==='rain'){ c.strokeStyle='rgba(60,110,160,.9)'; c.lineWidth=1.6; c.lineCap='round';
       for (let i=0;i<22;i++){ const x=(i*37%W), y=(i*53%Math.round(H*.6)); c.beginPath(); c.moveTo(x,y); c.lineTo(x-4,y+10); c.stroke(); } }
+    else if (kind==='land'){ }
+    else if (kind==='cloud'){ const x=id*W, y=fx*H, k=k0*13; for (const [dx,dy,r] of [[-1.1,.2,.8],[0,-.25,1.05],[1.1,.2,.85],[0,.35,.9]]) ell(c, x+dx*k, y+dy*k, r*k, r*k*.72, '#ffffff'); 
+      c.strokeStyle='rgba(70,70,80,.9)'; c.lineWidth=1.3; c.beginPath(); c.moveTo(x-k*1.9,y+k*.7); c.quadraticCurveTo(x-k*2.2,y-k*.3,x-k*1.1,y-k*.4); c.quadraticCurveTo(x-k*.6,y-k*1.3,x+k*.5,y-k*.8); c.quadraticCurveTo(x+k*1.8,y-k*.9,x+k*1.9,y+k*.1); c.quadraticCurveTo(x+k*2.2,y+k*.8,x+k*1.2,y+k*.8); c.lineTo(x-k*1.9,y+k*.7); c.stroke(); }
+    else if (kind==='fence'){ const y=id*H; c.strokeStyle='rgba(110,80,40,.95)'; c.fillStyle='#f3ead2'; c.lineWidth=1.2;
+      for (let x=6;x<W-4;x+=13){ c.beginPath(); c.moveTo(x,y); c.lineTo(x,y-15); c.lineTo(x+3.5,y-19); c.lineTo(x+7,y-15); c.lineTo(x+7,y); c.closePath(); c.fill(); c.stroke(); }
+      c.beginPath(); c.moveTo(0,y-6); c.lineTo(W,y-6); c.moveTo(0,y-12); c.lineTo(W,y-12); c.stroke(); }
+    else if (kind==='cracks'){ c.strokeStyle='rgba(90,70,45,.9)'; c.lineWidth=1.2; c.lineJoin='round';
+      for (const [x,y] of [[.12,.74],[.4,.7],[.66,.76],[.9,.9],[.3,.97]]){ c.beginPath(); c.moveTo(x*W-10,y*H-3); c.lineTo(x*W-3,y*H+2); c.lineTo(x*W+2,y*H-2); c.lineTo(x*W+10,y*H+3); c.moveTo(x*W+2,y*H-2); c.lineTo(x*W+5,y*H-8); c.stroke(); } }
+    else if (kind==='swirl'){ const x=id*W, y=fx*H; c.strokeStyle='rgba(120,95,60,.9)'; c.lineWidth=1.4; c.lineCap='round';
+      for (let i=0;i<3;i++){ c.beginPath(); c.moveTo(x-22+i*5, y+i*8); c.bezierCurveTo(x-6, y-10+i*8, x+8, y+10+i*8, x+24-i*4, y-2+i*8); c.stroke(); } }
+    else if (kind==='heat'){ c.strokeStyle='rgba(190,120,40,.85)'; c.lineWidth=1.3; c.lineCap='round';
+      for (const x of [.1,.34,.7,.92]){ c.beginPath(); c.moveTo(x*W, hy-6); c.bezierCurveTo(x*W-6, hy-16, x*W+6, hy-24, x*W, hy-34); c.stroke(); } }
     else if (kind==='creek'){ c.strokeStyle='#6aa8cc'; c.lineWidth=7; c.lineCap='round'; c.beginPath(); c.moveTo(4,H-6); c.bezierCurveTo(W*.3,H-18,W*.6,H+2,W-4,H-9); c.stroke(); }
     else {
-      const n = things.length, i = things.indexOf(it), two = n>3, back = two && i%2===0, gy = rows[back?0:1], k = k0*(back?.85:1);
+      const own = it[4]!=null;                                              // hand-placed in a full picture
+      const n = things.length, i = things.indexOf(it), two = !own && n>3, back = two && i%2===0, gy = own ? it[4]*H : rows[back?0:1], k = k0*(back?.85:1);
       const row = two ? things.filter((_,j) => (j%2===0)===back) : things, j = row.indexOf(it);
-      const px = W*(j+1)/(row.length+1) + (two ? (back ? -8 : 8) : 0);
+      const px = own ? (kind==='spray'||kind==='face' ? id : fx)*W : W*(j+1)/(row.length+1) + (two ? (back ? -8 : 8) : 0);
       if (kind==='spray') sprayer(c, px, gy+4, s*(fx||1)*.8*(back?.82:1));
       else if (kind==='face') gardenerFace(c, px, gy+4, s*(fx||1)*1.25*(back?.9:1));
       else if (kind==='crop') drawCrop(c, id, px, gy, s*1.45*k);
