@@ -592,10 +592,11 @@ function showWin(w, recorded=false){
   const next=LEVELS[gi+1], LV=G.LV, gained=Math.max(0, stars-before);
   const unlocks = next ? TRAY.filter(k => TYPES[k].unlock===next.gi) : [];
   const fresh=recordWin.fresh.length, last=!next;
+  G.S.sel=null; G.S.selScen=null; G.S.build=null; renderInfo(); renderBar();      // nothing stays picked behind the result
   const rate = stars===3 && LV.li===LV.ch.levels.length-1 && shouldAskRating(Save, { wins:Save.data.stats.wins });
   overlay(`<div class="panel result"><h3>${LV.name} saved!</h3><div class="stars">${starStr(stars)}</div>
       <p>${lives} of ${maxLives} ${LV.ch.cropPlural} left${stars<3?`. Lose ${starLimits(maxLives)[0]} or fewer for three stars`:''}.</p>
-      ${gained||fresh||(unlocks.length&&before===0) ? `<div class="res-chips">${gained?`<span>+${gained} ★</span>`:''}${fresh?`<span class="blue">+${fresh} ${CH_ICON}</span>`:''}${unlocks.length&&before===0?`<span class="plain">Next: ${unlocks.map(k=>TYPES[k].name).join(' and ')}</span>`:''}</div>` : ''}
+      ${fresh||(unlocks.length&&before===0) ? `<div class="res-chips">${fresh?`<span class="blue">+${fresh} ${CH_ICON}</span>`:''}${unlocks.length&&before===0?`<span class="plain">Next: ${unlocks.map(k=>TYPES[k].name).join(' and ')}</span>`:''}</div>` : ''}
       ${before>0 ? chalList(LV, recordWin.fresh) : `<p class="res-note">${CH_ICON} Challenges are now open on this level.</p>`}
       ${rate ? `<div class="rate-box" id="rateBox"><b>Enjoying the garden?</b><span>A rating helps other families find it.</span><div class="row"><button class="btn main small" data-go="rate" data-a="ok">OK</button>
         <button class="btn ghost small" data-go="rate" data-a="later">Not now</button><button class="btn ghost small" data-go="rate" data-a="never">Never ask me again</button></div></div>` : ''}</div>
@@ -606,6 +607,7 @@ function showWin(w, recorded=false){
 on('lose', ({ wave }) => {
   stopTutorial();
   Save.data.stats.losses++; Save.commit(); Audio.play('lose');
+  G.S.sel=null; G.S.selScen=null; G.S.build=null; renderInfo(); renderBar();
   const LV=G.LV, left=starsLeft(), second = extrasHere() && !G.S.revived && !LV.endless;
   if (LV.endless){
     const E=Save.data.endless, cleared=wave-1; E.runs++; Save.commit();
