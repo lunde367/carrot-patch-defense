@@ -400,3 +400,7 @@ canvas{ display:block }
 .bar.many{ grid-auto-flow:row; grid-auto-columns:auto; grid-template-columns:repeat(var(--cols, 6), 1fr); overflow:visible }
 .bar.many .card{ flex-direction:row; align-items:center; justify-content:center; gap:3px; padding:4px 2px; min-height:40px }
 .bar.many .card canvas{ width:28px; height:28px } .bar.many .card b{ display:none } .bar.many .card span{ font-size:.8rem }
+
+/* the journal's words: plain and readable, no script font */
+.sp-right p, .over .sp-right p{ font-family:inherit; font-style:normal; font-weight:600; color:#3b3226 }
+.sp-left h3{ font-family:var(--display); font-weight:800 }

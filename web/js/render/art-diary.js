@@ -12,38 +12,39 @@ const MOOD = {
   regrow: ['#c2e4f2','#eaf7da','#a6d888'],
 };
 // Each item: [kind, id, x (0..1 across the page), size (1 = normal)]. Extras: sun, rain, spray, creek.
+// Every picture is hand-placed. Things: [kind, id, x, size, y]; the sprayer and the gardener: [kind, x, size, 1, y].
+// x and y are fractions of the picture, y being where the thing stands. Sky and ground props have their own forms:
+// ['land'] ['sun', size] ['cloud', x, y, size] ['fence', y] ['cracks'] ['swirl', x, y] ['heat'] ['rain'] ['creek'].
 const SCENES = {
-  'start-cabbage':    ['happy',  [['face',.14,1],['crop','cabbage',.36,1],['crop','cabbage',.5,1],['pest','babyslug',.67,.45],['tower','bunny',.86,1.1]]],
-  // the pictures on the four part cards
-  // Hand-placed: [kind, id, x, size, y] with x and y as fractions of the picture (y = where it stands).
   'part-1':           ['happy',  [['land'],['sun'],['cloud',.24,.16,1],['fence',.6],['crop','carrot',.7,.7,.74],['crop','cabbage',.34,.75,.78],['tower','sunflower',.84,1,.9],['crop','cabbage',.16,1,.93],['tower','bunny',.52,1.35,.95]]],
   'part-2':           ['hot',    [['land'],['sun',2.1],['heat'],['cracks'],['pest','locust',.2,.75,.42],['crop','tomato',.2,.9,.9],['pest','stinkbug',.84,.6,.84],['spray',.5,1.7,1,.94]]],
   'part-3':           ['dust',   [['land'],['swirl',.3,.22],['swirl',.74,.3],['cracks'],['scen','stump',.6,1,.72],['crop','wheat',.36,.6,.78],['scen','litter',.86,.8,.8],['scen','tire',.2,1.15,.95],['scen','fire',.72,1.1,.96]]],
-  'part-4':           ['rain',   [['land'],['cloud',.3,.14,1.2],['cloud',.72,.2,1],['rain'],['creek'],['scen','sapling',.2,1.3,.8],['tower','barrel',.52,.8,.74],['scen','sapling',.82,1.7,.9],['crop','radish',.58,.95,.92],['scen','clover',.38,1,.94]]],
-  'after-cabbage':    ['happy',  [['sun'],['crop','cabbage',.16,1.1],['crop','cabbage',.32,1.2],['crop','cabbage',.48,1.1],['tower','bunny',.68,1],['tower','bunny',.86,1.1]]],
-  'start-strawberry': ['happy',  [['crop','strawberry',.18,1],['crop','strawberry',.34,1],['spray',.6,1.2],['tower','bunny',.84,1]]],
-  'after-strawberry': ['happy',  [['crop','strawberry',.16,1.1],['crop','strawberry',.3,1.1],['crop','strawberry',.44,1.1],['spray',.68,1.5]]],
-  'after-carrot':     ['hot',    [['sun',1.3],['crop','carrot',.2,1],['crop','carrot',.36,1],['crop','carrot',.52,1],['creek']]],
-  'start-tomato':     ['hot',    [['sun',1.5],['crop','tomato',.22,1],['crop','tomato',.4,1],['tower','sprinkler',.66,1],['spray',.86,.9]]],
-  'after-tomato':     ['hot',    [['sun',1.4],['crop','tomato',.2,.9],['pest','stinkbug',.45,1],['pest','stinkbug',.6,1],['spray',.84,1.2]]],
-  'start-apple':      ['hot',    [['crop','apple',.2,1],['crop','apple',.36,1.1],['crop','apple',.52,1],['scen','skep',.8,1.2]]],
-  'start-apple-2':    ['hot',    [['scen','pot',.2,1.2],['pest','jbeetle',.45,1],['pest','jbeetle',.6,1],['pest','jbeetle',.76,1],['crop','apple',.9,.9]]],
-  'after-apple':      ['hot',    [['crop','apple',.24,.7],['crop','apple',.38,.6],['pest','aphid',.58,1],['pest','aphid',.7,1],['pest','aphid',.82,1]]],
-  'start-corn':       ['hot',    [['sun',1.6],['crop','corn',.2,1],['crop','corn',.36,1],['scen','bucket',.62,1.1],['tower','sprinkler',.84,1]]],
-  'after-corn':       ['hot',    [['pest','locust',.2,1],['pest','locust',.36,1],['pest','locust',.52,1],['spray',.8,1.3]]],
-  'start-dust':       ['dust',   [['crop','wheat',.18,1],['crop','wheat',.32,.9],['tower','barrel',.58,1.1],['scen','trough',.84,1]]],
-  'start-dust-2':     ['dust',   [['spray',.3,1.3],['scen','bucket',.62,1],['crop','wheat',.84,.8]]],
-  'after-dust':       ['dust',   [['crop','wheat',.24,1],['crop','wheat',.4,1],['scen','tire',.7,1.1]]],
-  'start-rooftop':    ['smog',   [['scen','pot',.18,1.1],['crop','pepper',.36,1],['crop','pepper',.52,1],['pest','pigeon',.8,1]]],
-  'after-rooftop':    ['smog',   [['crop','pepper',.2,1.1],['crop','pepper',.36,1.1],['scen','table',.7,1.1]]],
-  'start-vault':      ['dark',   [['scen','rock',.16,1.1],['crop','seed',.4,1.2],['crop','seed',.56,1.2],['pest','glowslug',.82,1]]],
-  'after-vault':      ['dark',   [['crop','seed',.22,1.2],['scen','sapling',.5,1.2],['scen','clover',.76,1.1]]],
-  'start-rain':       ['rain',   [['rain'],['scen','sapling',.18,1.2],['scen','sapling',.38,1.4],['crop','radish',.62,1],['tower','barrel',.84,1]]],
-  'after-rain':       ['rain',   [['creek'],['crop','radish',.2,1],['crop','radish',.36,1],['scen','sapling',.62,1.4],['scen','clover',.84,1.1]]],
-  'start-meadow':     ['regrow', [['sun'],['scen','clover',.16,1.1],['crop','bloom',.34,1.1],['crop','bloom',.5,1.1],['tower','hive',.76,1.1]]],
-  'after-meadow':     ['regrow', [['sun'],['crop','bloom',.16,1],['crop','bloom',.3,1.1],['crop','bloom',.44,1],['tower','hive',.66,1],['tower','ladybug',.86,1]]],
-  'start-newgarden':  ['regrow', [['crop','pumpkin',.2,1.1],['crop','pumpkin',.38,1.2],['scen','sapling',.62,1.5],['tower','bunny',.84,1.1]]],
-  'after-newgarden':  ['regrow', [['sun'],['creek'],['crop','pumpkin',.16,1.2],['tower','hive',.38,1],['scen','sapling',.58,1.6],['tower','bunny',.78,1.1],['scen','clover',.93,1]]],
+  'part-4':           ['rain',   [['land'],['cloud',.3,.14,1.2],['cloud',.72,.2,1],['rain'],['creek'],['scen','sapling',.2,1.3,.8],['tower','barrel',.52,.8,.74],['scen','sapling',.82,1.7,.9],['crop','radish',.58,.95,.9],['scen','clover',.38,1,.9]]],
+  'start-cabbage':    ['happy',  [['land'],['sun'],['fence',.6],['tower','bunny',.84,.85,.74],['crop','cabbage',.52,.8,.8],['crop','cabbage',.68,.95,.93],['pest','babyslug',.86,.38,.9],['face',.22,1.15,1,.97]]],
+  'after-cabbage':    ['happy',  [['land'],['sun'],['cloud',.24,.16,1],['crop','cabbage',.3,.75,.76],['tower','bunny',.86,.85,.76],['crop','cabbage',.16,1,.93],['crop','cabbage',.42,1.1,.95],['tower','bunny',.7,1.2,.95]]],
+  'start-strawberry': ['happy',  [['land'],['cloud',.28,.16,1.1],['fence',.6],['crop','strawberry',.36,.8,.78],['tower','bunny',.86,.85,.78],['crop','strawberry',.18,1,.93],['spray',.6,1.6,1,.95]]],
+  'after-strawberry': ['happy',  [['land'],['sun'],['crop','strawberry',.3,.7,.74],['crop','strawberry',.16,1,.94],['crop','strawberry',.4,1,.9],['spray',.74,1.8,1,.95]]],
+  'after-carrot':     ['hot',    [['land'],['sun',2.1],['heat'],['creek'],['crop','carrot',.2,1,.88],['crop','carrot',.42,1.05,.9],['crop','carrot',.64,.9,.86],['crop','carrot',.84,.75,.76]]],
+  'start-tomato':     ['hot',    [['land'],['sun',2.1],['heat'],['crop','tomato',.4,.8,.8],['crop','tomato',.2,1,.93],['tower','sprinkler',.68,1.15,.94],['spray',.9,1,1,.8]]],
+  'after-tomato':     ['hot',    [['land'],['sun'],['cracks'],['pest','stinkbug',.64,.5,.76],['crop','tomato',.18,.9,.92],['pest','stinkbug',.46,.62,.92],['spray',.84,1.5,1,.95]]],
+  'start-apple':      ['hot',    [['land'],['cloud',.3,.16,1.1],['crop','apple',.4,.85,.8],['crop','apple',.2,1,.93],['crop','apple',.56,.95,.94],['scen','skep',.82,1.5,.95]]],
+  'start-apple-2':    ['hot',    [['land'],['cloud',.7,.16,1],['pest','jbeetle',.52,.55,.76],['pest','jbeetle',.86,.55,.8],['scen','pot',.22,1.5,.96],['pest','jbeetle',.66,.7,.93]]],
+  'after-apple':      ['hot',    [['land'],['cloud',.3,.18,1],['crop','apple',.4,.5,.8],['pest','aphid',.74,.4,.78],['crop','apple',.22,.65,.92],['pest','aphid',.6,.45,.9],['pest','aphid',.86,.45,.92]]],
+  'start-corn':       ['hot',    [['land'],['sun',2.1],['cracks'],['crop','corn',.38,.85,.8],['tower','sprinkler',.86,.85,.78],['crop','corn',.2,1,.93],['scen','bucket',.64,1.3,.96]]],
+  'after-corn':       ['hot',    [['land'],['cracks'],['pest','locust',.24,.7,.36],['pest','locust',.6,.6,.28],['pest','locust',.84,.75,.46],['crop','corn',.18,.8,.92],['spray',.54,1.7,1,.95]]],
+  'start-dust':       ['dust',   [['land'],['swirl',.3,.2],['cracks'],['crop','wheat',.34,.7,.8],['scen','trough',.86,1,.8],['crop','wheat',.18,.9,.93],['tower','barrel',.6,1.25,.95]]],
+  'start-dust-2':     ['dust',   [['land'],['swirl',.66,.22],['cracks'],['crop','wheat',.86,.65,.78],['scen','bucket',.64,1.1,.93],['spray',.3,1.5,1,.95]]],
+  'after-dust':       ['dust',   [['land'],['swirl',.7,.24],['cracks'],['crop','wheat',.4,.8,.82],['crop','wheat',.2,1,.93],['scen','tire',.74,1.4,.96]]],
+  'start-rooftop':    ['smog',   [['land'],['cloud',.3,.15,1.2],['cloud',.74,.24,1.1],['pest','pigeon',.82,.8,.52],['crop','pepper',.58,.8,.8],['scen','pot',.2,1.3,.96],['crop','pepper',.42,.95,.93]]],
+  'after-rooftop':    ['smog',   [['land'],['cloud',.3,.16,1.2],['cloud',.74,.26,1],['crop','pepper',.38,.85,.82],['crop','pepper',.2,1,.93],['scen','table',.72,1.5,.96]]],
+  'start-vault':      ['dark',   [['land'],['cloud',.3,.18,1.1],['cloud',.72,.26,.9],['crop','seed',.6,.85,.82],['scen','rock',.18,1.4,.96],['crop','seed',.44,1,.93],['pest','glowslug',.82,.4,.9]]],
+  'after-vault':      ['dark',   [['land'],['cloud',.7,.16,1],['crop','seed',.2,1,.93],['scen','sapling',.52,1.6,.94],['scen','clover',.82,1.2,.95]]],
+  'start-rain':       ['rain',   [['land'],['cloud',.3,.14,1.2],['cloud',.72,.2,1],['rain'],['scen','sapling',.2,1.3,.82],['tower','barrel',.86,.85,.8],['scen','sapling',.44,1.8,.95],['crop','radish',.68,.95,.94]]],
+  'after-rain':       ['rain',   [['land'],['cloud',.28,.16,1.1],['creek'],['crop','radish',.38,.85,.78],['scen','clover',.86,1,.8],['crop','radish',.2,1,.88],['scen','sapling',.66,1.8,.9]]],
+  'start-meadow':     ['regrow', [['land'],['sun'],['cloud',.26,.16,1],['crop','bloom',.52,.8,.8],['scen','clover',.16,1.2,.95],['crop','bloom',.36,1,.93],['tower','hive',.8,1.25,.95]]],
+  'after-meadow':     ['regrow', [['land'],['sun'],['crop','bloom',.32,.8,.8],['tower','ladybug',.9,.8,.78],['crop','bloom',.16,1,.93],['crop','bloom',.48,1,.95],['tower','hive',.72,1.15,.93]]],
+  'start-newgarden':  ['regrow', [['land'],['sun'],['fence',.6],['crop','pumpkin',.4,.85,.82],['crop','pumpkin',.2,1.1,.94],['scen','sapling',.64,1.7,.94],['tower','bunny',.86,1,.95]]],
+  'after-newgarden':  ['regrow', [['land'],['sun'],['cloud',.26,.16,1],['creek'],['tower','hive',.4,.85,.76],['crop','pumpkin',.16,1.1,.88],['scen','sapling',.62,1.8,.9],['tower','bunny',.84,1,.9]]],
 };
 
 function sprayer(c, x, y, s){   // the yellow bottle from the spray button
@@ -89,9 +90,10 @@ function pencil(src, d){
     const stroke=((x+y)%hatch)<hatch*.55 ? 1 : .35, cross=g<120 && ((x-y+4096)%hatch)<hatch*.4 ? .25 : 0;
     const wash=al*Math.min(.62, (.34*stroke+cross)*(.8+.4*n));
     // soften the colors toward gray so they read as pencil, not paint
-    const r=a[p]*.7+g*.3, gg=a[p+1]*.7+g*.3, b=a[p+2]*.7+g*.3, A=1-(1-wash)*(1-line), q=(y*w+x)*4;
+    const r=a[p]*.7+g*.3, gg=a[p+1]*.7+g*.3, b=a[p+2]*.7+g*.3, A0=1-(1-wash)*(1-line), q=(y*w+x)*4; let A=A0;
+    const edge=Math.min(1, Math.min(x, y, w-1-x, h-1-y)/(9*d)); A*=edge*(2-edge);
     if (A<=0.003) continue;
-    const kw=wash*(1-line)/A, kl=line/A;
+    const kw=wash*(1-line)/A0, kl=line/A0;
     o[q]=r*kw+58*kl; o[q+1]=gg*kw+52*kl; o[q+2]=b*kw+46*kl; o[q+3]=Math.round(A*255);
   }
   return out;
@@ -136,12 +138,12 @@ export function drawDiaryScene(canvas, key){
       const n = things.length, i = things.indexOf(it), two = !own && n>3, back = two && i%2===0, gy = own ? it[4]*H : rows[back?0:1], k = k0*(back?.85:1);
       const row = two ? things.filter((_,j) => (j%2===0)===back) : things, j = row.indexOf(it);
       const px = own ? (kind==='spray'||kind==='face' ? id : fx)*W : W*(j+1)/(row.length+1) + (two ? (back ? -8 : 8) : 0);
-      if (kind==='spray') sprayer(c, px, gy+4, s*(fx||1)*.8*(back?.82:1));
-      else if (kind==='face') gardenerFace(c, px, gy+4, s*(fx||1)*1.25*(back?.9:1));
-      else if (kind==='crop') drawCrop(c, id, px, gy, s*1.45*k);
-      else if (kind==='tower'){ c.translate(px, gy-s*k*.22); DRAW[id](c, s*k, 0, 0, 1, 1); }
+      if (kind==='spray') sprayer(c, px, gy-(own?2:-4), s*(fx||1)*.8*(back?.82:1));
+      else if (kind==='face') gardenerFace(c, px, gy-(own?2:-4), s*(fx||1)*1.25*(back?.9:1));
+      else if (kind==='crop') drawCrop(c, id, px, gy-(own ? s*1.45*k*.14 : 0), s*1.45*k);
+      else if (kind==='tower'){ c.translate(px, gy-s*k*(own ? .44 : .22)); DRAW[id](c, s*k, 0, 0, 1, 1); }
       else if (kind==='pest'){ const E=ENEMY[id]; if (E){ const sz=30*k*(E.shape==='hopper'?.72:1)/E.size; c.translate(px, gy - (E.fly ? 18 : 6)); drawEnemy(c, { type:id, size:E.size, ph:1.2, fly:!!E.fly, face:-1, hp:1, max:1 }, sz); } }
-      else if (kind==='scen'){ const ss=s*k; c.translate(px-ss/2, gy-ss*.72); drawScenery(c, { c:0, r:0, w:1, h:1, kind:id, seed:7 }, ss); }
+      else if (kind==='scen'){ const ss=s*k; c.translate(px-ss/2, gy-ss*(own ? .9 : .72)); drawScenery(c, { c:0, r:0, w:1, h:1, kind:id, seed:7 }, ss); }
     }
     c.restore();
   }
