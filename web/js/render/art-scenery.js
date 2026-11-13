@@ -47,6 +47,29 @@ const ART = {
     c.save(); c.translate(cx+s*.24, cy+s*.16); c.rotate(.5); c.beginPath(); c.roundRect(-s*.05,-s*.08,s*.1,s*.16,s*.02); c.fillStyle='#c23a3a'; c.fill(); c.strokeStyle='#6a1a1a'; c.lineWidth=1; c.stroke(); c.restore();
     c.save(); c.translate(cx-s*.26, cy+s*.2); c.rotate(-1.2); c.beginPath(); c.roundRect(-s*.04,-s*.07,s*.08,s*.14,s*.02); c.fillStyle='#9aa6ae'; c.fill(); c.strokeStyle='#5d6870'; c.lineWidth=1; c.stroke(); c.restore();
   },
+  deadtree(c, { cx, cy, s }){   // a bare, burnt tree
+    shadow(c, cx, cy+s*.3, s*.26, s*.07);
+    c.strokeStyle='#3a2e26'; c.lineWidth=s*.09; c.beginPath(); c.moveTo(cx, cy+s*.3); c.quadraticCurveTo(cx-s*.04, cy, cx+s*.02, cy-s*.2); c.stroke();
+    c.lineWidth=s*.05; c.beginPath(); c.moveTo(cx, cy+s*.02); c.lineTo(cx-s*.2, cy-s*.16); c.moveTo(cx+s*.01, cy-s*.08); c.lineTo(cx+s*.2, cy-s*.24); c.moveTo(cx+s*.02, cy-s*.2); c.lineTo(cx-s*.08, cy-s*.36); c.stroke();
+    c.lineWidth=s*.03; c.beginPath(); c.moveTo(cx-s*.2, cy-s*.16); c.lineTo(cx-s*.28, cy-s*.28); c.moveTo(cx+s*.2, cy-s*.24); c.lineTo(cx+s*.3, cy-s*.2); c.stroke();
+  },
+  drum(c, { cx, cy, s }){   // a rusty, leaking drum
+    shadow(c, cx, cy+s*.28, s*.26, s*.07);
+    ell(c, cx+s*.16, cy+s*.3, s*.16, s*.045, 'rgba(90,120,40,.55)');                                  // a little puddle of something
+    rr(c, cx-s*.18, cy-s*.24, s*.36, s*.52, s*.06); c.fillStyle='#8a5a3a'; c.fill(); c.strokeStyle='#4a2a16'; c.lineWidth=1.6; c.stroke();
+    c.strokeStyle='#5e3a22'; c.lineWidth=1.4; for (const k of [-.08,.1]){ c.beginPath(); c.moveTo(cx-s*.18, cy+s*k); c.lineTo(cx+s*.18, cy+s*k); c.stroke(); }
+    ell(c, cx, cy-s*.24, s*.18, s*.05, '#a06a44', '#4a2a16', 1.4);
+    c.fillStyle='#e0b83a'; c.beginPath(); c.moveTo(cx, cy-s*.06); c.lineTo(cx+s*.07, cy+s*.06); c.lineTo(cx-s*.07, cy+s*.06); c.closePath(); c.fill(); c.strokeStyle='#4a2a16'; c.lineWidth=1; c.stroke();
+  },
+  wreck(c, { x, y, w, h, cx, cy, s }){   // a rusted-out car, two tiles wide
+    shadow(c, cx, cy+s*.3, w*.42, s*.09);
+    rr(c, x+w*.1, cy-s*.02, w*.8, s*.26, s*.07); c.fillStyle='#8f6a4e'; c.fill(); c.strokeStyle='#4a3220'; c.lineWidth=1.8; c.stroke();
+    c.beginPath(); c.moveTo(x+w*.28, cy-s*.02); c.lineTo(x+w*.36, cy-s*.24); c.lineTo(x+w*.64, cy-s*.24); c.lineTo(x+w*.74, cy-s*.02); c.closePath(); c.fillStyle='#7e5c44'; c.fill(); c.stroke();
+    c.fillStyle='rgba(40,50,56,.75)'; c.beginPath(); c.moveTo(x+w*.33, cy-s*.04); c.lineTo(x+w*.385, cy-s*.2); c.lineTo(x+w*.49, cy-s*.2); c.lineTo(x+w*.49, cy-s*.04); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(x+w*.52, cy-s*.04); c.lineTo(x+w*.52, cy-s*.2); c.lineTo(x+w*.62, cy-s*.2); c.lineTo(x+w*.69, cy-s*.04); c.closePath(); c.fill();
+    for (const k of [.27,.73]){ ell(c, x+w*k, cy+s*.24, s*.12, s*.12, '#2c2c30', '#151517', 1.6); ell(c, x+w*k, cy+s*.24, s*.05, s*.05, '#6a6258'); }
+    c.fillStyle='rgba(70,40,20,.5)'; for (const [a,b,r] of [[.2,.08,.05],[.58,.12,.04],[.8,.06,.045],[.44,.16,.03]]) ell(c, x+w*a, cy+s*b, s*r*1.4, s*r, 'rgba(70,40,20,.5)');
+  },
   tire(c, { cx, cy, s }){   // an old dumped tire
     shadow(c, cx, cy+s*.24, s*.32, s*.08);
     ell(c, cx, cy+s*.04, s*.3, s*.2, '#2e3034', '#141518', 1.5);

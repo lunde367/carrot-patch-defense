@@ -404,3 +404,6 @@ canvas{ display:block }
 /* the journal's words: plain and readable, no script font */
 .sp-right p, .over .sp-right p{ font-family:inherit; font-style:normal; font-weight:600; color:#3b3226 }
 .sp-left h3{ font-family:var(--display); font-weight:800 }
+
+/* bigger pictures inside the Spray and Compost buttons (the buttons keep their size) */
+.spray-btn svg{ width:46px; height:46px } .fert-btn svg{ width:41px; height:41px }

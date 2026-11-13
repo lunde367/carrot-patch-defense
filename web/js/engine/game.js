@@ -44,6 +44,8 @@ export const starLimits = max => [Math.floor(max*.2), Math.floor(max*.5)];
 export const starsFor = (lost, max) => { const [a,b]=starLimits(max); return lost<=a?3:lost<=b?2:1; };
 // A boss that gets through eats a quarter of the crops (5 of 20, 3 of 10).
 const bossBite = () => Math.max(3, Math.round(G.S.maxLives*.25));
+// More pests per wave on some levels (a level's own `crowd`, else its garden's).
+const crowdOf = () => G.LV.crowd || G.CH.crowd || 1;
 export const bossWave = w => G.LV.endless ? w%5===0 : w===G.LV.waves;
 // Endless Garden weather: from wave 3 on, about half the waves bring rain, a heat wave or a swarm.
 const eventAt = w => { if (w<3) return null; const r=((Math.imul((w*2654435761)^G.S.eseed, 1597334677)>>>0)%1000)/1000; return r<.18?'rain':r<.36?'heat':r<.54?'swarm':null; };
@@ -63,7 +65,7 @@ const hpMul = () => G.LV.hpMul*(G.diff||1);
 const hpScale = w => (1+.2*(w-1)+.015*(w-1)*(w-1))*hpMul()*(G.LV.endless ? Math.pow(G.LV.growth, w-1) : 1);
 function makeWave(w){
   const pool=G.LV.pool.filter(p=>p[1]<=w), sum=pool.reduce((a,p)=>a+p[2],0);
-  const q=[], n=5+Math.floor(w*1.8);
+  const q=[], n=Math.round((5+Math.floor(w*1.8))*crowdOf());
   for (let i=0;i<n;i++){
     let r=Math.random()*sum, p=pool[0];
     for (const x of pool){ r-=x[2]; if (r<=0){ p=x; break; } }
@@ -281,7 +283,7 @@ export function update(dt){
   const S=G.S;
   if (S.spawnQ.length){ S.spawnT-=dt;
     // pests take turns at each entrance
-    if (S.spawnT<=0){ const it=S.spawnQ.shift(); spawnEnemy(it.t,0,it.m,(S.laneNext++)%path.lanes.length); S.spawnT=ENEMY[it.t].gap||2; } }
+    if (S.spawnT<=0){ const it=S.spawnQ.shift(); spawnEnemy(it.t,0,it.m,(S.laneNext++)%path.lanes.length); S.spawnT=(ENEMY[it.t].gap||2)/Math.pow(crowdOf(), .75); } }
 
   for (const e of S.enemies){
     if (e.dead) continue;

@@ -235,6 +235,13 @@ export function draw(clock){
     g.strokeStyle='rgba(200,225,245,.6)'; g.lineWidth=1.2;
     for (let i=0;i<70;i++){ const x=((i*53.7)%W + tt*20)%W, y=((i*97.3 + tt*420)%(H+30))-15; g.beginPath(); g.moveTo(x,y); g.lineTo(x-3,y+12); g.stroke(); }
     g.fillStyle='rgba(90,130,170,.08)'; g.fillRect(0,0,W,H); }
+  if (G.CH.mood==='withered'){   // Part 3: a sick sky, ash drifting down, embers rising where it's dark
+    const id=G.CH.id, tint = id==='dust' ? 'rgba(200,120,50,.11)' : id==='vault' ? 'rgba(60,40,70,.14)' : 'rgba(110,120,90,.08)';
+    g.fillStyle=tint; g.fillRect(0,0,W,H+s);
+    g.fillStyle = id==='dust' ? 'rgba(120,90,60,.5)' : 'rgba(70,66,62,.55)';
+    for (let i=0;i<46;i++){ const x=((i*71.3 + tt*(9+i%5*3) + Math.sin(tt*.7+i)*14)%(W+20))-10, y=((i*113.7 + tt*(16+i%7*4))%(H+20))-10, r=s*(.018+(i%4)*.008); g.beginPath(); g.ellipse(x,y,r*1.4,r,i,0,6.3); g.fill(); }
+    if (id!=='rooftop'){ for (let i=0;i<14;i++){ const life=((tt*.22+i*.173)%1), x=((i*197.3)%W)+Math.sin(tt*1.3+i*2)*s*.3, y=H-life*H*.9; g.globalAlpha=(1-life)*.75; ell(g,x,y,s*.03,s*.03,'#ffb24a'); } g.globalAlpha=1; }
+  }
   if (G.CH.dark){   // the vault: dim edges, light in the middle
     const gr=g.createRadialGradient(W/2,H*.55,W*.25,W/2,H*.55,W*1.05); gr.addColorStop(0,'rgba(20,18,12,0)'); gr.addColorStop(1,'rgba(20,18,12,.55)');
     g.fillStyle=gr; g.fillRect(0,0,W,H+s); }
