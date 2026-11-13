@@ -395,3 +395,8 @@ canvas{ display:block }
 .btn.round i{ position:absolute; top:-6px; right:-10px; font-style:normal; font-size:.62rem; font-weight:800; background:var(--accent); color:var(--accent-ink); border-radius:var(--r-pill); padding:1px 6px; white-space:nowrap }
 .panel.result .rate-box{ background:rgba(0,0,0,.05); width:100%; box-sizing:border-box }
 .over .spread{ max-width:100% } .over .sp-page{ padding:10px 9px 18px; min-height:220px } .over .sp-right p{ font-size:.82rem; line-height:22px } .over .sp-right{ background-size:auto, auto 22px; background-image:linear-gradient(90deg, rgba(90,70,40,.15), transparent 16%), repeating-linear-gradient(transparent 0 21px, #e5dcc2 21px 22px) }
+
+/* a full tray: two compact rows instead of a strip that scrolls off the screen */
+.bar.many{ grid-auto-flow:row; grid-auto-columns:auto; grid-template-columns:repeat(var(--cols, 6), 1fr); overflow:visible }
+.bar.many .card{ flex-direction:row; align-items:center; justify-content:center; gap:3px; padding:4px 2px; min-height:40px }
+.bar.many .card canvas{ width:28px; height:28px } .bar.many .card b{ display:none } .bar.many .card span{ font-size:.8rem }

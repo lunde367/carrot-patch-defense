@@ -119,7 +119,8 @@ const watered = t => WATER.includes(t.type) || G.S.towers.some(o => WATER.includ
 // Bee Hive: the best boost from any hive in reach (a hive doesn't boost itself).
 const hiveBoost = t => { let b=1; for (const h of G.S.towers) if (h.type==='hive' && h!==t && Math.hypot(h.x-t.x,h.y-t.y) <= rangeOf(h)) b=Math.max(b, TYPES.hive.boost[h.lv]+(sk('hive').boost||0)); return b; };
 // Cool Water (a Rain Barrel skill): plants a barrel waters work a little faster.
-const coolBoost = t => { const k=sk('barrel').cool; return k && PLANTS.includes(t.type) && G.S.towers.some(o=>o.type==='barrel' && Math.hypot(o.x-t.x,o.y-t.y)<=rangeOf(o)) ? 1+k : 1; };
+// Plants a Rain Barrel waters work a little faster (the best barrel in reach counts), more with the Cool Water skill.
+const coolBoost = t => { if (!PLANTS.includes(t.type)) return 1; let b=0; for (const o of G.S.towers) if (o.type==='barrel' && Math.hypot(o.x-t.x,o.y-t.y)<=rangeOf(o)) b=Math.max(b, TYPES.barrel.water[o.lv]); return b ? 1+b+(sk('barrel').cool||0) : 1; };
 export const SMOG = .6;   // in smog, defenders only spot fliers within 60% of their reach
 export const RAIN_SLOW = .8;
 export const towerAt = (c,r) => G.S.towers.find(t=>t.c===c&&t.r===r);

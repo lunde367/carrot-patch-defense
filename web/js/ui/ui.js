@@ -772,6 +772,10 @@ export function renderBar(){
     bar.append(b);
   }
   dirty();
+  // more than eight defenders: two shorter rows, so every one is on screen
+  const n=bar.children.length, many=n>8, was=bar.classList.contains('many');
+  bar.classList.toggle('many', many); bar.style.setProperty('--cols', Math.ceil(n/2));
+  if (many!==was) requestAnimationFrame(resize);
 }
 // What a helpful tile (or a drought) does for this defender, in one line.
 function tileNote(t){
