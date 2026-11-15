@@ -1,6 +1,6 @@
 {
   "name": "carrot-patch-defense",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "description": "A cozy garden tower defense game.",
@@ -15,16 +15,21 @@
     "new-game": "node scripts/new-game.mjs",
     "balance": "node tools/balance/run.js",
     "icons": "node tools/icons/render.cjs",
-    "assets": "npx @capacitor/assets generate --iconBackgroundColor \"#a6cf8a\" --splashBackgroundColor \"#edf2e3\" --splashBackgroundColorDark \"#182016\""
+    "assets": "npx @capacitor/assets generate --iconBackgroundColor \"#a6cf8a\" --splashBackgroundColor \"#edf2e3\" --splashBackgroundColorDark \"#182016\"",
+    "app:setup": "node scripts/app-setup.mjs",
+    "app:prepare": "npm run fonts && npm run assets && npm run app:setup && npx cap sync"
   },
   "dependencies": {
+    "@capacitor-community/in-app-review": "^7.0.1",
     "@capacitor/app": "^7.0.0",
     "@capacitor/core": "^7.0.0",
+    "@capacitor/haptics": "^7.0.0",
     "@capacitor/preferences": "^7.0.0"
   },
   "devDependencies": {
     "@capacitor/android": "^7.0.0",
     "@capacitor/cli": "^7.0.0",
-    "@capacitor/ios": "^7.0.0"
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/assets": "^3.0.5"
   }
 }

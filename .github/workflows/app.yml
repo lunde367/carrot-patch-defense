@@ -1,0 +1,47 @@
+# Builds the phone apps in the cloud, so the game can be tried as a real app without
+# setting anything up at home.
+#   Android: makes an installable test app (.apk) you can download from the run's page.
+#   iPhone:  checks that the iPhone app builds. Putting it on a phone still needs a Mac
+#            (or an Apple developer account plus signing keys added here later).
+# Run it from the repo's Actions tab → "Build phone apps" → Run workflow.
+name: Build phone apps
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['package.json', 'capacitor.config.json', 'scripts/app-setup.mjs', '.github/workflows/app.yml', 'assets/**']
+permissions: { contents: read }
+concurrency: { group: app-build, cancel-in-progress: true }
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - run: npm install
+      - run: node scripts/fetch-fonts.mjs
+      - run: npx cap add android
+      - run: npm run assets -- --android
+      - run: node scripts/app-setup.mjs
+        env: { BUILD_NUMBER: '${{ github.run_number }}' }
+      - run: npx cap sync android
+      - run: cd android && ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with: { name: carrot-patch-android-test-app, path: android/app/build/outputs/apk/debug/*.apk }
+  iphone:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install
+      - run: node scripts/fetch-fonts.mjs
+      - run: npx cap add ios
+      - run: npm run assets -- --ios
+      - run: node scripts/app-setup.mjs
+        env: { BUILD_NUMBER: '${{ github.run_number }}' }
+      - run: npx cap sync ios
+      - run: cd ios/App && xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build | tail -n 40
