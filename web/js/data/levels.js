@@ -31,8 +31,8 @@ export const CHAPTERS = [
       intro:'Banana slugs and shield beetles are out in force. The Beetle King is coming.' },
   ]},
   { id:'strawberry', name:'Strawberry Bed', crop:'strawberry', cropPlural:'strawberries', pests:'Caterpillars & moths', grass:['#9ccc8f','#93c386'], levels:[
-    { name:'First Blossoms', season:'spring', boss:'chunkycat',
-      pts:[[6.5,-0.6],[6.5,3.5],[1.5,3.5],[1.5,6.5],[7.5,6.5],[7.5,10.5],[3.5,10.5],[3.5,13.2]],
+    { name:'First Blossoms', waves:6, season:'spring', boss:'chunkycat',
+      pts:[[7.5,-0.6],[7.5,2.5],[5.5,2.5],[5.5,5.5],[3.5,5.5],[3.5,8.5],[1.5,8.5],[1.5,13.2]],   // a short staircase across the bed
       pool:[['inchworm',1,3],['caterpillar',2,2]],
       intro:'Inchworms and caterpillars are munching the blossoms.' },
     { name:'Ripening', season:'summer', boss:'hornworm',
@@ -40,20 +40,21 @@ export const CHAPTERS = [
       pool:[['inchworm',1,1.5],['caterpillar',1,3,.55],['fuzzy',2,2]],
       intro:'Fuzzy caterpillars are armored by their hair. Others spin cocoons and fly out as moths!' },
     { name:'Berry Picking', waves:10, season:'late summer', boss:'mothqueen',
-      pts:[[3.5,-0.6],[3.5,2.5],[7.5,2.5],[7.5,4.5],[1.5,4.5],[1.5,7.5],[6.5,7.5],[6.5,10.5],[2.5,10.5],[2.5,13.2]],
+      lanes:[[[1.5,-0.6],[1.5,3.5],[4.5,3.5],[4.5,7.5],[7.5,7.5],[7.5,10.5],[3.5,10.5],[3.5,13.2]],
+             [[7.5,-0.6],[7.5,3.5],[4.5,3.5],[4.5,7.5],[7.5,7.5],[7.5,10.5],[3.5,10.5],[3.5,13.2]]],   // two ways in that meet early
       pool:[['moth',1,2.5],['fuzzy',1,1.5],['caterpillar',2,1.5,.35],['hawkmoth',3,1.5]],
       intro:'The air is full of moths. Sprinklers and pine trees can’t reach fliers.' },
   ]},
   { id:'carrot', name:'Carrot Rows', crop:'carrot', cropPlural:'carrots', pests:'Mice, moles & gophers', grass:['#b3d18a','#aac981'], levels:[
-    { name:'Sprouting', season:'spring', boss:'bigmouse',
-      pts:[[4.5,-0.6],[4.5,3.5],[1.5,3.5],[1.5,7.5],[7.5,7.5],[7.5,11.5],[4.5,11.5],[4.5,13.2]],
+    { name:'Sprouting', waves:7, season:'spring', boss:'bigmouse',
+      pts:[[-0.6,2.5],[6.5,2.5],[6.5,6.5],[2.5,6.5],[2.5,10.5],[5.5,10.5],[5.5,13.2]],   // in through the side gate
       pool:[['babymouse',1,3],['mouse',2,2]],
       intro:'Baby mice are scurrying in. They’re quick but fragile.' },
-    { name:'Deep Roots', season:'summer', boss:'molemom',
-      pts:[[1.5,-0.6],[1.5,4.5],[4.5,4.5],[4.5,1.5],[7.5,1.5],[7.5,9.5],[2.5,9.5],[2.5,13.2]],
+    { name:'Deep Roots', waves:9, season:'summer', boss:'molemom',
+      cols:11, rows:17, pts:[[1.5,-0.6],[1.5,5.5],[5.5,5.5],[5.5,1.5],[9.5,1.5],[9.5,9.5],[3.5,9.5],[3.5,13.5],[7.5,13.5],[7.5,16.2]],   // a big field with a long wander
       pool:[['mouse',1,3],['vole',2,2],['mole',3,1.5]],
       intro:'Voles are fast. Moles tunnel underground, where your defenders can’t hit them.' },
-    { name:'Big Dig', waves:10, season:'late summer', boss:'gopherboss',
+    { name:'Big Dig', waves:12, season:'late summer', boss:'gopherboss',
       pts:[[7.5,-0.6],[7.5,1.5],[1.5,1.5],[1.5,4.5],[7.5,4.5],[7.5,7.5],[1.5,7.5],[1.5,10.5],[7.5,10.5],[7.5,13.2]],
       pool:[['vole',1,2.5],['mole',1,2],['gopher',3,1.5]],
       intro:'Gophers are the toughest diggers yet, and the Grumpy Gopher leads them.' },
@@ -61,24 +62,24 @@ export const CHAPTERS = [
   // ---- Act 2: Something's Off ----
   { id:'tomato', name:'Tomato Greenhouse', crop:'tomato', cropPlural:'tomatoes', pests:'Whiteflies & stink bugs', grass:['#c3cb88','#b9c17e'],
     act:2, mood:'off', greenhouse:true, heat:[3,6], road:[.8,1], levels:[
-    { name:'Hothouse', season:'spring', boss:'sapsucker',
-      pts:[[2.5,-0.6],[2.5,2.5],[6.5,2.5],[6.5,5.5],[2.5,5.5],[2.5,8.5],[6.5,8.5],[6.5,11.5],[3.5,11.5],[3.5,13.2]],
+    { name:'Hothouse', waves:7, season:'spring', boss:'sapsucker',
+      pts:[[2.5,-0.6],[2.5,10.5],[6.5,10.5],[6.5,3.5],[4.5,3.5],[4.5,13.2]],   // down one aisle, back up the next, and out through the middle
       pool:[['whitenymph',1,3,.5],['stinknymph',2,2,.6],['whitefly',4,1.5]],
       intro:'It’s too hot outside, so the tomatoes moved into the greenhouse. Whitefly nymphs grow wings halfway down.' },
     { name:'Vine Rows', waves:9, season:'summer', boss:'shieldbug',
-      lanes:[[[1.5,-0.6],[1.5,4.5],[4.5,4.5],[4.5,7.5],[7.5,7.5],[7.5,10.5],[1.5,10.5],[1.5,13.2]],
-             [[7.5,-0.6],[7.5,4.5],[4.5,4.5],[4.5,7.5],[7.5,7.5],[7.5,10.5],[1.5,10.5],[1.5,13.2]]],
+      lanes:[[[2.5,-0.6],[2.5,5.5],[0.5,5.5],[0.5,10.5],[4.5,10.5],[4.5,13.2]],
+             [[6.5,-0.6],[6.5,5.5],[8.5,5.5],[8.5,10.5],[4.5,10.5],[4.5,13.2]]],   // two rows that stay apart until the gate
       pool:[['whitefly',1,3],['stinknymph',1,2,.5],['stinkbug',3,2]],
       intro:'Stink bugs wear tough shells. Watch for heat waves: only defenders near a Sprinkler stay cool.' },
-    { name:'Red Harvest', waves:10, heat:[3,6,9], season:'late summer', boss:'baron',
-      pts:[[5.5,-0.6],[5.5,1.5],[1.5,1.5],[1.5,4.5],[7.5,4.5],[7.5,7.5],[4.5,7.5],[4.5,10.5],[7.5,10.5],[7.5,13.2]],
+    { name:'Red Harvest', waves:11, heat:[3,6,9], season:'late summer', boss:'baron',
+      pts:[[9.6,1.5],[1.5,1.5],[1.5,5.5],[7.5,5.5],[7.5,9.5],[3.5,9.5],[3.5,13.2]],   // in through the side door
       pool:[['whitefly',1,2.5],['stinkbug',1,2],['bigstink',3,2]],
       intro:'The biggest stink bugs shrug off the spray. The Stink Bug Baron is coming for the harvest.' },
   ]},
   { id:'apple', name:'Apple Orchard', crop:'apple', cropPlural:'apples', pests:'Aphids & invasive beetles', grass:['#b2c67c','#a8bc72'],
     act:2, mood:'off', swarm:[4,7], road:[.65,1], levels:[
     { name:'Blossom Time', waves:7, swarm:[3,6], season:'spring', boss:'aphidmother',
-      pts:[[6.5,-0.6],[6.5,1.5],[1.5,1.5],[1.5,4.5],[5.5,4.5],[5.5,7.5],[2.5,7.5],[2.5,10.5],[6.5,10.5],[6.5,13.2]],
+      pts:[[1.5,-0.6],[1.5,3.5],[4.5,3.5],[4.5,7.5],[7.5,7.5],[7.5,13.2]],   // a short path between the trees
       pool:[['aphid',1,4,.5],['jbeetle',3,1.5]],
       intro:'The trees are in bloom, but there isn’t a bee in sight. Aphids come in booms: watch for swarms on waves 3 and 6.' },
     { name:'Green Apples', waves:9, season:'summer', boss:'copperking',
@@ -92,8 +93,8 @@ export const CHAPTERS = [
   ]},
   { id:'corn', name:'Corn Field', crop:'corn', cropPlural:'corn', pests:'Locusts & rootworms', grass:['#c9c486','#bfba7c'],
     act:2, mood:'off', drought:true, road:[.5,1], levels:[
-    { name:'Knee High', season:'spring', boss:'grandhopper',
-      pts:[[7.5,-0.6],[7.5,2.5],[3.5,2.5],[3.5,5.5],[7.5,5.5],[7.5,8.5],[1.5,8.5],[1.5,11.5],[4.5,11.5],[4.5,13.2]],
+    { name:'Knee High', waves:6, season:'spring', boss:'grandhopper',
+      cols:7, rows:11, pts:[[5.5,-0.6],[5.5,2.5],[1.5,2.5],[1.5,6.5],[5.5,6.5],[5.5,8.5],[3.5,8.5],[3.5,10.2]],   // a small corner of the field
       pool:[['hopperling',1,3,.55],['rootworm',2,2]],
       intro:'No rain for weeks. Plant defenders (Roses, Sunflowers, Pine Trees) need a Sprinkler nearby or they wilt in the drought.' },
     { name:'Dry Spell', waves:9, season:'summer', boss:'rootking',
@@ -206,8 +207,8 @@ export const CHAPTERS = [
 // three-star rate slopes down from about 90% early to about 25% on Big Dig even for a player who
 // never sprays. The Pesticide Sprayer then makes levels easier, a shortcut, never a requirement.
 // Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
-const TOUGHNESS = [1.15, 2.4, 2.05, 6.07, 3.84, 2.06, 4.27, 2.36, 3.32,
-                   8.4, 6.17, 5.18, 8.56, 5.48, 6.21, 5.03, 5.06, 5.21,
+const TOUGHNESS = [1.15, 2.4, 2.05, 4.05, 3.84, 1.95, 4.5, 2.57, 3.42,
+                   8.99, 3.97, 5.0, 3.81, 5.48, 6.21, 5.83, 5.06, 5.21,
                    13.28, 3.3, 6.45, 2.3, 3.74, 3.15, 11.24, 7.8, 10.15,
                    15.2, 26.97, 14.6, 13.3, 9.91, 14.66, 15.47, 8.94, 23.77];
 
