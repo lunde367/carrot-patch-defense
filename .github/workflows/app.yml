@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['package.json', 'capacitor.config.json', 'scripts/app-setup.mjs', '.github/workflows/app.yml', 'assets/**']
+    paths: ['package.json', 'capacitor.config.json', 'scripts/app-setup.mjs', '.github/workflows/app.yml', 'assets/**', 'tools/store/**']
 permissions: { contents: read }
 concurrency: { group: app-build, cancel-in-progress: true }
 jobs:
@@ -45,3 +45,15 @@ jobs:
         env: { BUILD_NUMBER: '${{ github.run_number }}' }
       - run: npx cap sync ios
       - run: cd ios/App && xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build | tail -n 40
+  # Fresh store screenshots (iPhone, iPad, Android) with the game's real fonts.
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/fetch-fonts.mjs
+      - run: npm install --no-save playwright@1.49.1 && npx playwright install --with-deps chromium
+      - run: (python3 -m http.server 8767 >/dev/null 2>&1 &) && sleep 2 && node tools/store/make.cjs
+      - uses: actions/upload-artifact@v4
+        with: { name: carrot-patch-store-pictures, path: store/ }

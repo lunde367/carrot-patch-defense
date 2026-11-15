@@ -79,27 +79,32 @@ change in `web/js/data/`. The tool lives in `tools/balance/` and never ships wit
 
 ## Turn it into an app
 
-You need Node 18+. For iPhone you also need a Mac with Xcode; for Android, Android Studio.
+**Without setting anything up:** the "Build phone apps" workflow (repo → Actions) builds both apps in
+the cloud on every app-related push, or when you press *Run workflow*. It gives you an installable
+Android test app (`carrot-patch-android-test-app`), checks that the iPhone app builds, and makes
+fresh store screenshots (`carrot-patch-store-pictures`).
+
+**On your own machine** (Node 20+; a Mac with Xcode for iPhone, Android Studio for Android):
 
 ```
 npm install
-npm run fonts                 # bundle fonts so the app works offline
 npx cap add ios               # creates the ios/ project (once)
 npx cap add android           # creates the android/ project (once)
+npm run app:prepare           # fonts, icons and splash screens, portrait lock, version number, sync
 npm run ios                   # copies web/ in and opens Xcode
 npm run android               # copies web/ in and opens Android Studio
 ```
 
-Before you publish:
-- Change `appId` in `capacitor.config.json` to something you own, like `com.yourname.carrotpatch`.
-  It can't be changed after the first store release.
-- Lock to portrait: in Xcode, uncheck Landscape under *Device Orientation*; on Android set
-  `android:screenOrientation="portrait"` on the activity in `AndroidManifest.xml`.
-- App icon and splash screens are already drawn from the game's art in `assets/` (icon.png,
-  splash.png, splash-dark.png). After `npx cap add ios/android`, run `npm run assets` to generate every
-  size the stores need. To redraw them after art changes, edit `tools/icons/art.html` and run `npm run icons`.
-
 After any change in `web/`, run `npm run sync` (or `npm run ios` / `npm run android`).
+
+Before you publish:
+- Change `appId` in `capacitor.config.json` to something you own, like `com.yourname.carrotpatch`,
+  **before** running `npx cap add`. It can't be changed after the first store release.
+- The version number comes from `package.json` (`npm run app:setup` copies it into both projects).
+- The rating question uses the stores' own rating sheet (`@capacitor-community/in-app-review`), and
+  vibration uses `@capacitor/haptics`. Both are installed by `npm install`.
+- To redraw the icon or splash after art changes, edit `tools/icons/art.html`, run `npm run icons`,
+  then `npm run assets`.
 
 ## What's already phone-ready
 

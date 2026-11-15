@@ -40,7 +40,7 @@ const SCENES = [
   ['3-dry-years', async p => battle(p, 20, 5, 10)],
   ['4-gardens', async p => { await p.evaluate(async () => (await import('/web/js/ui/ui.js')).showMenu()); }],
   ['5-diary', async p => { await p.evaluate(async () => (await import('/web/js/ui/ui.js')).showMenu()); await p.click('[data-go="diary"]'); }],
-  ['6-field-guide', async p => { await p.evaluate(async () => (await import('/web/js/ui/ui.js')).showMenu()); await p.click('[data-go="guide"]'); await p.click('[data-tab="pests"]'); }],
+  ['6-field-guide', async p => { await p.evaluate(async () => (await import('/web/js/ui/ui.js')).showMenu()); await p.click('[data-go="diary"]'); await p.click('[data-go="guide"]'); await p.click('[data-tab="pests"]', { timeout:1500 }).catch(()=>{}); }],
 ];
 (async () => {
   const b = await chromium.launch();
