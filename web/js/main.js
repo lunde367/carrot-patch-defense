@@ -7,14 +7,14 @@ import { on } from '../kit/js/events.js';
 import { ENEMY } from './data/enemies.js';
 import { Audio } from '../kit/js/audio.js';
 import { shake, confetti } from '../kit/js/fx.js';
-import { bindSave } from '../kit/js/monetization.js';
+import { bindSave, initAds } from '../kit/js/monetization.js';
 import { initLifecycle } from '../kit/js/lifecycle.js';
 import { initBoard, resize, draw } from './render/board.js';
 import { initUI, play, showMenu, lastOpenLevel, refresh, pause, resume } from './ui/ui.js';
 import { initAchievements } from './ui/achievements.js';
 import { haptic, setHaptics } from '../kit/js/haptics.js';
 import { initTelemetry, track } from '../kit/js/telemetry.js';
-import { TELEMETRY, VERSION } from './data/config.js';
+import { TELEMETRY, VERSION, ADS } from './data/config.js';
 
 // Engine events → sound effects
 on('shoot', type => Audio.play(SHOT_SOUND[type]));
@@ -80,7 +80,7 @@ async function boot(){
   await Save.load();
   // If upgrade prices went up after an update, refund rather than leave the player owing stars.
   if (starsLeft() < 0){ Save.data.perks = {}; Save.commit(); }
-  bindSave(Save);
+  bindSave(Save); initAds(ADS);
   Audio.init(Save.data.settings);
   setHaptics(Save.data.settings.haptics!==false);
   initTelemetry({ ...TELEMETRY, version:VERSION, enabled:Save.data.settings.share!==false }); track('app_open');
