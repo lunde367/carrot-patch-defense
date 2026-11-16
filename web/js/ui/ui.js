@@ -1,5 +1,5 @@
 // Everything the player sees and taps outside the board: HUD, tray, panels and overlays.
-import { G, DIFFICULTY, BOONS, takeBoon, undoPlant, bossWave, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, canClear, sceneryPiece, clearScenery } from '../engine/game.js';
+import { G, skipToWin, DIFFICULTY, BOONS, takeBoon, undoPlant, bossWave, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, canClear, sceneryPiece, clearScenery } from '../engine/game.js';
 import { SCENERY_NAMES } from '../data/scenery.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
 import { path } from '../engine/path.js';
@@ -59,7 +59,6 @@ export function play(gi, bonusSeeds=0, { quiet=false }={}){
 }
 on('levelStart', (...a) => { drawLivesIcon(); return onLevelStart(...a); });
 const onLevelStart = (LV => {
-  if (devMode && !LV.ch.noSpray) G.S.sprayOn = true;
   $('board').classList.toggle('spray-left', path.exitCol >= 5);   // keep the button off the path's end
   setHome(false); hideOverlay(); disarmRestart(); resize(); renderBar(); renderInfo(); dirty();
   msg(LV.endless ? `Endless Garden. Best so far: wave ${Save.data.endless.best}.` : `${LV.ch.name} ${LV.li+1}: ${LV.name}. Plant your defenders, then tap Start wave.`);
@@ -77,10 +76,10 @@ const onLevelStart = (LV => {
   const firstOfPart = LV.li===0 && CHAPTERS.find(c => c.act===LV.ch.act)===LV.ch;
   if (firstOfPart && LV.ch.act>1 && !Save.data.parts[LV.ch.act]) intro.push(['part', LV.ch.act]);
   if (page && !Save.data.diary[page.key]) intro.push(['diary', page.key]);
-  if (!Save.data.settings.diffAsked && !devMode) intro.push(['diff']);          // asked once: who's gardening?
+  if (!Save.data.settings.diffAsked) intro.push(['diff']);          // asked once: who's gardening?
   if (!Save.data.intros[LV.gi] && !(Save.data.stars[LV.gi]>0)) intro.push(['level']);
   if (!LV.endless && Save.data.stars[LV.gi]>0 && !chalShown.has(LV.gi) && Object.keys(chalGot(LV.gi)).length<challengesFor(LV).length) intro.push(['chal']);   // replaying a beaten level: its challenges                           // what this level is about, the first time
-  if (!devMode){
+  {   // (test mode shows these too, so the whole game can be reviewed)
     for (const k of TRAY) if (TYPES[k].unlock<=LV.gi && TYPES[k].unlock>0 && !Save.data.seen[k]) intro.push(['defender', k]);
     if (G.S.sprayOn && !Save.data.seen.spray) intro.push(['spray']);
     if (G.S.fertOn && !Save.data.seen.fert) intro.push(['fert']);
@@ -357,7 +356,7 @@ export function showMenu(){
     ${devMode?'<p class="devnote">Test mode is on: every level and defender is unlocked. Tap the title 7 times to turn it off.</p>':''}`);
   for (const c2 of $('home').querySelectorAll('canvas[data-crop]')){ const c=c2.getContext('2d'); c.setTransform(2,0,0,2,0,0); drawCrop(c,c2.dataset.crop,20,24,66); }
   stopShedTour();
-  if (!devMode && !Save.data.shedTour && Save.data.tutorialDone && starsLeft()>0) startShedTour(false);
+  if (!Save.data.shedTour && Save.data.tutorialDone && starsLeft()>0) startShedTour(false);
 }
 
 const storyDone = () => devMode || (Save.data.stars[LEVELS.length-1]||0)>0;
@@ -886,6 +885,7 @@ function paintFert(){
   const cd=b.querySelector('.ab-cd'); cd.hidden = on || ready || !S.active; cd.textContent = Math.ceil(S.fertCd);
 }
 function paintOffers(){
+  $('devSkip').hidden = !devMode || !G.S || G.S.mode!=='play' || G.S.paused || !!G.LV.endless;   // test mode: finish the level as a perfect win
   const S=G.S, ok = S && S.mode==='play' && !S.paused && extrasHere();
   const seeds=$('adSeeds'); seeds.hidden = !(ok && S.wave===0 && !S.active && !S.adSeeds);
   if (!seeds.hidden) seeds.innerHTML=`${tv()}+${EXTRAS.bonusSeeds} seeds`;
@@ -1001,6 +1001,7 @@ export function initUI(){
   $('undo').onclick=()=>{ const t=lastPlanted; endUndo(); if (undoPlant(t)){ Audio.play('sell'); msg('Taken back. Your seeds are returned.'); renderBar(); renderInfo(); dirty(); } };
   on('levelStart', endUndo); on('upgrade', endUndo); on('sell', endUndo);
   $('iSell').onclick=()=>{ const v=sell(G.S.sel); renderInfo(); msg(`Sold for ${v} seeds.`); };
+  $('devSkip').onclick=()=>{ if (devMode && G.S && !G.S.paused) skipToWin(); };
   $('seedsChip').onclick=()=>{ if (devMode && G.S){ G.S.seeds+=200; msg('Test mode: +200 seeds.'); } };
   paintDev();
   // Secret switch: tap the title 7 times quickly to turn test mode on or off.

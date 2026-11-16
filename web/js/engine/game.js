@@ -162,6 +162,12 @@ export function sell(t){
 export const sprayStats = () => { const p=G.S.perks;
   return { damage:SPRAY.power*p.sprayDmg, radius:SPRAY.radius*p.sprayRadius, recharge:SPRAY.recharge*p.sprayRecharge, wilt:SPRAY.wilt*p.sprayWilt }; };
 // ---------- Compost (called `fert` in code) ----------
+// Test mode: finish the level right now as a perfect win, so the rest of the game can be looked at quickly.
+export function skipToWin(){
+  const S=G.S; if (!S || S.mode!=='play' || G.LV.endless) return false;
+  S.enemies=[]; S.spawnQ=[]; S.shots=[]; S.active=false; S.heat=false; S.rain=false; S.wave=G.LV.waves; S.lives=S.maxLives;
+  S.mode='won'; emit('win', { stars:3, lives:S.lives, maxLives:S.maxLives, lost:0, gi:G.LV.gi }); return true;
+}
 export const fertReady = () => G.S.fertOn && G.S.fertCd<=0 && G.S.fertT<=0 && G.S.mode==='play' && G.S.active;
 export function fertilize(){
   const S=G.S; if (!fertReady()) return false;

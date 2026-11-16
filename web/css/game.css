@@ -422,3 +422,7 @@ canvas{ display:block }
 .board:not(.spray-left) .fert-btn.nudge::before{ left:auto; right:0; transform:none }
 @keyframes nudge-bob{ 50%{ margin-bottom:5px } }
 @media (prefers-reduced-motion: reduce){ .fert-btn.nudge::before{ animation:none } }
+
+/* Test mode only: finish the level as a perfect win. */
+.dev-skip{ position:absolute; right:8px; top:8px; z-index:5; border:0; border-radius:999px; padding:6px 11px; cursor:pointer;
+  background:#2b2440; color:#ffe9a8; font:800 .74rem var(--body); box-shadow:0 2px 6px rgba(0,0,0,.3) }
