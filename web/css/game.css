@@ -262,7 +262,11 @@ canvas{ display:block }
 .levelcard .lc-facts{ font-size:.85rem; color:var(--muted); font-weight:700 }
 .diff-pick{ display:flex; flex-direction:column; gap:8px; width:100% }
 .diff-pick .btn{ display:flex; flex-direction:column; gap:2px; align-items:flex-start; text-align:left; padding:10px 14px; height:auto }
-.diff-pick .btn small{ font-weight:600; opacity:.85; white-space:normal }
+.diff-pick .btn small{ font-family:var(--body); font-size:.86rem; font-weight:700; line-height:1.3; white-space:normal }
+.diff-pick .btn.main small{ color:#3a2408 }
+/* choices on a light card: dark text and a visible outline (the overlay's own ghost buttons are made for the dark backdrop) */
+.over .panel .btn.ghost{ background:#fff; border-color:var(--panel-line); color:var(--panel-ink) }
+.over .panel .btn.ghost small{ color:var(--panel-muted) }
 .diff-badge{ position:absolute; z-index:3; top:6px; left:6px; font-size:.62rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:3px 7px;
   border-radius:var(--r-pill); color:#fff; background:#4f8a3c; pointer-events:none }
 .diff-badge[data-diff="hard"]{ background:var(--berry) }

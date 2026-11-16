@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['package.json', 'capacitor.config.json', 'scripts/app-setup.mjs', '.github/workflows/app.yml', 'assets/**', 'tools/store/**']
+    paths: ['web/**', 'package.json', 'capacitor.config.json', 'scripts/app-setup.mjs', '.github/workflows/app.yml', 'assets/**', 'tools/store/**']
 permissions: { contents: read }
 concurrency: { group: app-build, cancel-in-progress: true }
 jobs:
