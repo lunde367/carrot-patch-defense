@@ -12,9 +12,14 @@ const jobs = [
 
 await mkdir(out, { recursive:true });
 for (const j of jobs){
-  const css = await (await fetch(j.css, { headers:{ 'User-Agent':UA } })).text();
-  // Google splits fonts by alphabet; keep the basic Latin block (the last one listed).
-  const urls = [...css.matchAll(/url\((https:[^)]+\.woff2)\)/g)].map(m=>m[1]);
+  // Google's font service sometimes answers with an empty page; ask again a few times before giving up.
+  let urls = [];
+  for (let attempt = 1; attempt <= 5 && !urls.length; attempt++){
+    if (attempt > 1) await new Promise(r => setTimeout(r, 2000*attempt));
+    try { const css = await (await fetch(j.css, { headers:{ 'User-Agent':UA } })).text();
+      // Google splits fonts by alphabet; keep the basic Latin block (the last one listed).
+      urls = [...css.matchAll(/url\((https:[^)]+\.woff2)\)/g)].map(m=>m[1]); } catch(e) {}
+  }
   if (!urls.length) throw new Error('No font found for '+j.file);
   const url = urls[urls.length-1];
   const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
