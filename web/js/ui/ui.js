@@ -879,6 +879,7 @@ function paintFert(){
   if (b.hidden) return;
   b.classList.toggle('solo', $('spray').hidden);
   const on=S.fertT>0, ready=fertReady(), full=FERT.recharge*S.perks.fertRecharge;
+  b.classList.toggle('nudge', ready && !((Save.data.stats||{}).ferts>0));   // never used it yet: point at it during a wave
   b.style.setProperty('--p', on ? S.fertT/S.perks.fertTime : ready ? 1 : 1 - S.fertCd/full);
   b.classList.toggle('on', on); b.classList.toggle('ready', ready);
   b.setAttribute('aria-label', on ? 'Compost: working' : ready ? 'Compost: ready' : `Compost: ready in ${Math.ceil(S.fertCd)} seconds`);
