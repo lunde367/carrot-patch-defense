@@ -180,6 +180,9 @@ canvas{ display:block }
 /* defender tray: one row of icons with prices */
 .bar{ display:grid; grid-auto-flow:column; grid-auto-columns:calc((100% - 28px) / 8); gap:4px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain }
 .bar::-webkit-scrollbar{ display:none }
+/* a sideways-scrolling row also clips upward, so leave room for the NEW badge that sits above a card */
+.bar{ padding-top:8px; margin-top:-8px; padding-right:5px; margin-right:-5px }
+.bar.many{ padding:0; margin:0 }
 .card{ position:relative; background:var(--surface); border:2px solid var(--line); border-radius:var(--r-md); padding:4px 0 5px; display:flex; flex-direction:column;
   align-items:center; gap:0; cursor:pointer; font:inherit; color:var(--ink); min-width:0; min-height:58px }
 .card canvas{ width:36px; height:36px }
