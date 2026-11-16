@@ -29,6 +29,10 @@ jobs:
       - run: node scripts/app-setup.mjs
         env: { BUILD_NUMBER: '${{ github.run_number }}' }
       - run: npx cap sync android
+      # Sign every test build with the same key. Without this each build gets a new random key,
+      # and Android refuses to update an app whose key changed ("App not installed").
+      # This key is for test builds only; the store version is signed with a private one.
+      - run: mkdir -p ~/.android && cp tools/app/test.keystore ~/.android/debug.keystore
       - run: cd android && ./gradlew assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with: { name: carrot-patch-android-test-app, path: android/app/build/outputs/apk/debug/*.apk }
