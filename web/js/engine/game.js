@@ -71,13 +71,15 @@ export const floodAt = w => !!(G.LV.flood && path.flood && G.LV.flood.waves.incl
 // Difficulty (chosen in Settings): pest health is multiplied by `hp`. The level table in levels.js is tuned
 // for the test bots at 1.0; real players proved much stronger, so Normal sits above it and Easy just below. G.diff is the multiplier in play.
 export const DIFFICULTY = {
-  easy:   { hp:.9,  name:'Easy',   note:'Pests are softer. Great for little gardeners.' },
-  normal: { hp:1.25,  name:'Normal', note:'The garden as it was meant to be played.' },
-  hard:   { hp:1.55, name:'Hard',   note:'For grown-up gardeners. You’ll need your Sprayer and Compost.' },
+  easy:   { hp:1,  name:'Easy',   note:'Pests are softer. Great for little gardeners.' },
+  normal: { hp:1.45,  name:'Normal', note:'The garden as it was meant to be played.' },
+  hard:   { hp:1.8, name:'Hard',   note:'For grown-up gardeners. You’ll need your Sprayer and Compost.' },
 };
 const hpMul = () => G.LV.hpMul*(G.diff||1);
 // In the Endless Garden pests also get a steady 9% tougher every wave, so every run ends somewhere.
-const hpScale = w => (1+.2*(w-1)+.015*(w-1)*(w-1))*hpMul()*(G.LV.endless ? Math.pow(G.LV.growth, w-1) : 1);
+// Later waves get tougher faster than the seeds come in, so a garden planted early and left alone falls behind.
+const RAMP = () => G.LV.endless ? .015 : .035;
+const hpScale = w => (1+.2*(w-1)+RAMP()*(w-1)*(w-1))*hpMul()*(G.LV.endless ? Math.pow(G.LV.growth, w-1) : 1);
 function makeWave(w){
   const pool=G.LV.pool.filter(p=>p[1]<=w), sum=pool.reduce((a,p)=>a+p[2],0);
   const q=[], n=Math.round((5+Math.floor(w*1.8))*crowdOf());
