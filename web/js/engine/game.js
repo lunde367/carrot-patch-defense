@@ -58,9 +58,10 @@ export const swarmAt = w => weather('swarm', w);
 // Dust storms (Dust Bowl Farm): for the first seconds of the wave, defenders can only see pests up close.
 export const dustAt = w => !G.LV.endless && weather('dust', w);
 const DUST_SIGHT = .55; export const DUST_TIME = 10;
-// Morning dew (Cabbage Patch): for the first seconds of the wave, slugs and snails glide faster.
+// Morning dew (Cabbage Patch): all wave long, slugs and snails glide faster, and more of them come out.
 export const dewAt = w => !G.LV.endless && weather('dew', w);
-const DEW_SPEED = 1.6; export const DEW_TIME = 12;
+const DEW_SPEED = 1.35; const DEW_EXTRA = .4;
+export const dewy = e => G.S.dewT && (ENEMY[e.type].shape==='slug' || ENEMY[e.type].shape==='snail');
 // Soft ground (Carrot Rows): for the whole wave, diggers spend more of their time underground.
 export const softAt = w => !G.LV.endless && weather('soft', w);
 // Flash flood (Rain Garden): the creek fills, and every second pest rides it as a shortcut.
@@ -86,6 +87,8 @@ function makeWave(w){
     q.push({t:p[0], m:p[3]});
   }
   // Aphid boom (Apple Orchard): a big extra burst of the garden's smallest pest.
+  // Morning dew: extra slugs and snails, mixed in.
+  if (dewAt(w)){ const slimy=pool.filter(p=>['slug','snail'].includes(ENEMY[p[0]].shape)); if (slimy.length) for (let i=0;i<Math.round(n*DEW_EXTRA);i++){ const p=slimy[i%slimy.length]; q.splice(Math.floor(Math.random()*(q.length+1)), 0, {t:p[0], m:p[3]}); } }
   if (swarmAt(w)){ const small=pool[0]; for (let i=0;i<Math.floor(n*1.5);i++) q.splice(Math.floor(Math.random()*q.length), 0, {t:small[0], m:small[3]}); }
   if (G.LV.endless){ if (w%5===0) q.push({t:G.LV.bosses[(w/5-1)%G.LV.bosses.length]}); if (q.length>60) q.splice(0, q.length-60); }
   else if (w===G.LV.waves) q.push({t:G.LV.boss});
@@ -100,7 +103,7 @@ export function startWave(){
   // Rain (Part 4): pests slow down and every plant gets a drink.
   S.rain = rainAt(S.wave); if (S.rain) emit('rain');
   S.dustT = dustAt(S.wave) ? DUST_TIME : 0; if (S.dustT) emit('dust');
-  S.dewT = dewAt(S.wave) ? DEW_TIME : 0; if (S.dewT) emit('dew');
+  S.dewT = dewAt(S.wave) ? 1 : 0; if (S.dewT) emit('dew');
   S.soft = softAt(S.wave); if (S.soft) emit('soft');
   S.flood = floodAt(S.wave); if (S.flood) emit('flood');
   if (S.heat) emit('heat', S.towers.filter(t=>!t.cool).length);
@@ -307,7 +310,6 @@ function hitShot(s){
 export function update(dt){
   const S=G.S;
   if (S.dustT>0) S.dustT=Math.max(0, S.dustT-dt);
-  if (S.dewT>0) S.dewT=Math.max(0, S.dewT-dt);
   if (S.spawnQ.length){ S.spawnT-=dt;
     // pests take turns at each entrance
     if (S.spawnT<=0){ const it=S.spawnQ.shift(); { const k=S.laneNext++; spawnEnemy(it.t,0,it.m, S.flood && k%2===0 ? path.lanes.length : k%path.lanes.length); } S.spawnT=(ENEMY[it.t].gap||2)/Math.pow(crowdOf(), .3); } }
@@ -321,7 +323,7 @@ export function update(dt){
     if (e.cocoon>0){ e.cocoon-=dt; if (e.cocoon<=0) grow(e); continue; }
     if (e.morphAt!=null && e.dist>=e.morphAt){ e.morphAt=null; e.cocoon=1.3; floatText(e.x,e.y-.35,'growing!','#8a5fb0',1); emit('cocoon'); continue; }
     if (D.burrow){ e.bt+=dt; e.under = e.bt>1 && (e.bt%4.5)>(S.soft ? 2.3 : 3); } else e.under = false;
-    let mul=(e.slow>0?.5:1)*(e.under?1.3:1)*(S.rain?RAIN_SLOW:1)*(S.dewT>0 && (D.shape==='slug'||D.shape==='snail') ? DEW_SPEED : 1);
+    let mul=(e.slow>0?.5:1)*(e.under?1.3:1)*(S.rain?RAIN_SLOW:1)*(S.dewT && (D.shape==='slug'||D.shape==='snail') ? DEW_SPEED : 1);
     if (D.hopper){ e.jump=Math.sin(e.ph*.9)>.2; mul*=e.jump?2.2:.25; }
     e.dist+=e.spd*mul*dt;
     const [x,y,f]=pointAt(e.dist, e.lane); e.x=x; e.y=y; if (f) e.face=f;

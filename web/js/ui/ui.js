@@ -1014,7 +1014,7 @@ export function initUI(){
 
   on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat && !G.S.rain && !G.S.dustT && !G.S.dewT && !G.S.soft && !G.S.flood && !swarmAt(wave) && !pestQueue.length) msg(boss ? `${G.LV.endless?'Boss wave':'Final wave'}! The ${ENEMY[(G.S.spawnQ.find(q=>ENEMY[q.t].boss)||{t:G.LV.boss}).t].name} is coming!` : wave===G.LV.waves-1 ? 'One more wave before the boss.' : 'Here they come…'); });
   on('rain', () => msg('Rain! Pests slow down in the wet, and every plant gets a drink.'));
-  on('dew', () => msg('Morning dew! Slugs and snails glide faster until it dries.'));
+  on('dew', () => msg('Morning dew! More slugs and snails, and they glide faster all wave.'));
   on('soft', () => msg('Soft ground! Diggers stay under longer this wave.'));
   on('flood', () => msg('Flash flood! Half the pests are riding the creek straight through.'));
   on('dust', () => msg('Dust storm! Your defenders can only see pests up close until it passes.'));

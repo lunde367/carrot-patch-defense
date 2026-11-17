@@ -25,7 +25,7 @@ export const CHAPTERS = [
       pts:[[7.5,-0.6],[7.5,1.5],[2.5,1.5],[2.5,4.5],[5.5,4.5],[5.5,7.5],[1.5,7.5],[1.5,10.5],[4.5,10.5],[4.5,13.2]],
       pool:[['slug',1,3],['fleagrub',1,2,.5],['snail',2,2],['fleabeetle',4,1.5]],
       intro:'Snails wear armor, so small hits barely dent them. Grubs grow into hopping flea beetles halfway down.' },
-    { name:'Harvest Time', waves:10, season:'late summer', boss:'beetleking', dew:[3,6,9],
+    { name:'Harvest Time', waves:10, season:'late summer', boss:'beetleking', dew:[4,8],
       pts:[[4.5,-0.6],[4.5,1.5],[1.5,1.5],[1.5,4.5],[7.5,4.5],[7.5,7.5],[2.5,7.5],[2.5,10.5],[7.5,10.5],[7.5,13.2]],
       pool:[['snail',1,2],['fleabeetle',1,2],['bananaslug',2,2],['beetle',3,2]],
       intro:'Banana slugs and shield beetles are out in force. The Beetle King is coming.' },

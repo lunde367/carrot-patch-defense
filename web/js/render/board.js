@@ -1,5 +1,5 @@
 // Draws the garden board. Sizes itself to fit any phone, tablet or desktop window.
-import { G, towerAt, rangeOf, HILL, DUST_TIME, DEW_TIME } from '../engine/game.js';
+import { G, towerAt, rangeOf, HILL, DUST_TIME, dewy } from '../engine/game.js';
 import { path, buildable, pointAt } from '../engine/path.js';
 import { drawScenery, drawBonus } from './art-scenery.js';
 import { COLS, ROWS, CHAPTERS } from '../data/levels.js';
@@ -156,7 +156,7 @@ export function draw(clock){
     run(.78,'rgba(74,138,176,.9)'); run(.6,'rgba(120,180,214,.9)'); run(.07,'rgba(255,255,255,.75)',[s*.34,s*.5],-tf*s*1.6); run(.05,'rgba(255,255,255,.5)',[s*.2,s*.7],-tf*s*2.3+s*.4);
   }
   if (S.soft){ g.fillStyle='rgba(70,44,20,.16)'; g.fillRect(0,0,W,(ROWS-1)*s); }   // soft ground: the whole field looks dug over and damp
-  if (S.dewT>0){ const a=Math.min(1, S.dewT/1.5, (DEW_TIME-S.dewT)/.6), td=clockReal();   // morning dew: a cool sheen and glinting drops
+  if (S.dewT){ const a=1, td=clockReal();   // morning dew: a cool sheen and glinting drops
     g.fillStyle=`rgba(150,205,225,${.24*a})`; g.fillRect(0,0,W,(ROWS-1)*s);
     for (let i=0;i<70;i++){ const x=(i*83.7%W), y=(i*131.3%((ROWS-1)*s)), tw=.5+.5*Math.sin(td*3+i*1.7), r=s*(.05+(i%3)*.018); g.globalAlpha=a*(.45+.55*tw); ell(g,x,y,r,r*1.2,'#f2fbff','#6fb4d2',1.2); ell(g,x-r*.3,y-r*.4,r*.28,r*.28,'#ffffff'); } g.globalAlpha=1; }
   if (S.heat){ const p=.5+.5*Math.sin(clockReal()*2.2);
@@ -212,6 +212,12 @@ export function draw(clock){
     g.beginPath(); g.arc(x,y,s*(.36+.08*p),0,6.28); g.fillStyle=`rgba(255,240,170,${.35+.25*p})`; g.fill();
     g.lineWidth=3; g.strokeStyle='#f0913f'; g.stroke(); }
 
+  // morning dew: fast slugs and snails leave a wet, shiny trail
+  if (S.dewT) for (const e of S.enemies){ if (e.under || !dewy(e)) continue;
+    for (let k=1;k<=7;k++){ const d=e.dist-k*.13; if (d<0) break; const [x,y]=pointAt(d, e.lane), f=1-k/8;
+      ell(g,x*s,y*s+e.size*s*.2,e.size*s*(.7+.3*f),e.size*s*(.28+.1*f),`rgba(96,128,140,${.42*f})`);
+      ell(g,x*s,y*s+e.size*s*.15,e.size*s*(.45+.2*f),e.size*s*(.12+.05*f),`rgba(205,238,255,${.7*f})`);
+      if (k%2) ell(g,x*s-e.size*s*.15,y*s+e.size*s*.2,e.size*s*.12,e.size*s*.05,`rgba(255,255,255,${.8*f})`); } }
   // towers and pests sorted by depth so nearer things overlap farther ones
   const items=[];
   for (const t of S.towers) items.push({y:t.y,t});
@@ -231,6 +237,8 @@ export function draw(clock){
       if (G.LV.resist>0 && !e.under && !e.cocoon){ const hue=(clockReal()*90+e.ph*40)%360, ly=e.fly?-s*.28:0;   // chemical sheen = spray resistant
         g.beginPath(); g.ellipse(0,ly-e.size*s*.15,e.size*s*.7,e.size*s*.3,0,3.4,6.0); g.strokeStyle=`hsla(${hue},80%,70%,.55)`; g.lineWidth=2; g.stroke(); }
       const lift=e.fly?s*.28:0;
+      if (S.dewT && !e.under && dewy(e)){ const tw=.5+.5*Math.sin(clockReal()*7+e.ph*3);   // a glint on the wet shell
+        g.globalAlpha=.55+.45*tw; ell(g,-e.size*s*.25,-e.size*s*.45,e.size*s*.12,e.size*s*.12,'#ffffff'); ell(g,-e.size*s*.25,-e.size*s*.45,e.size*s*.26,e.size*s*.04,'rgba(255,255,255,.8)'); ell(g,-e.size*s*.25,-e.size*s*.45,e.size*s*.04,e.size*s*.26,'rgba(255,255,255,.8)'); g.globalAlpha=1; }
       if (e.hit>0&&!e.under){ g.globalAlpha=e.hit*4; ell(g,0,-lift,e.size*s,e.size*s*.8,'rgba(255,255,255,.8)'); g.globalAlpha=1; }
       if (e.hp<e.max&&!e.under){ const bw=s*(ENEMY[e.type].boss?.9:.5), by=-e.size*s-8-lift; g.fillStyle='rgba(0,0,0,.35)'; g.fillRect(-bw/2,by,bw,4);
         g.fillStyle=e.hp/e.max>.4?'#7cc85a':'#e5734a'; g.fillRect(-bw/2,by,bw*e.hp/e.max,4);
