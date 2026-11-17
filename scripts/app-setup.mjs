@@ -31,6 +31,20 @@ await edit('android/app/src/main/AndroidManifest.xml', s =>
   s.includes('android:screenOrientation') ? s : s.replace(/<activity\b/, '<activity\n            android:screenOrientation="portrait"'));
 await edit('android/app/build.gradle', s =>
   s.replace(/versionName "[^"]*"/, `versionName "${version}"`).replace(/versionCode \d+/, `versionCode ${build}`));
+// Android test builds: always sign with the project's own test key. Left to itself the build machine
+// uses whatever debug key it happens to have, and Android refuses to update an app whose key changed.
+await edit('android/app/build.gradle', s => s.includes('test.keystore') ? s : s + `
+android {
+    signingConfigs {
+        debug {
+            storeFile file('../../tools/app/test.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+}
+`);
 // Android: the app's ad id (AdMob closes the app at launch without it).
 await edit('android/app/src/main/res/values/strings.xml', s => /name="admob_app_id"/.test(s)
   ? s.replace(/<string name="admob_app_id">[^<]*<\/string>/, `<string name="admob_app_id">${ADS.appId.android}</string>`)
