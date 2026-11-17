@@ -46,7 +46,7 @@ export const ENEMY = {
   longhorn:{name:'Longhorn Beetle',hp:55,armor:3,spd:.6,reward:9,size:.32,gap:1,shape:'beetle',col:'#2e2e36',dk:'#121216',spots:true,horns:true},
   aphidmother:{voice:'slurp',name:'Aphid Mother',boss:true,hp:280,spd:.42,reward:50,size:.46,shape:'aphid',col:'#7fb848',dk:'#46752a',spawns:{type:'aphid',every:2.4}},
   copperking:{voice:'click',name:'Copper Beetle',boss:true,hp:380,armor:5,spd:.45,reward:55,size:.48,shape:'beetle',col:'#c07a3e',dk:'#6a3a14',copper:true},
-  theswarm:{voice:'buzz',name:'The Swarm',boss:true,hp:480,spd:.5,reward:70,size:.5,fly:true,shape:'moth',wing:'#dfeccc',body:'#6f9e3e',dk:'#3e5e1e',spawns:{type:'wingaphid',every:2.8}},
+  theswarm:{voice:'buzz',name:'The Swarm',boss:true,hp:480,spd:.5,reward:70,size:.5,fly:true,shape:'moth',wing:'#dfeccc',body:'#6f9e3e',dk:'#3e5e1e',spawns:{type:'wingaphid',every:1.5}},
   // ---- Corn Field: locusts & rootworms (Act 2) ----
   hopperling:{name:'Grasshopper Nymph',hp:8,spd:.9,reward:2,size:.17,gap:.38,hopper:true,shape:'hopper',col:'#b7c46a',dk:'#6e7a30',adult:'locust'},
   locust:{name:'Locust',hp:16,spd:1.7,reward:4,size:.24,gap:.4,fly:true,shape:'hopper',col:'#b0924e',dk:'#5e4a20',wings:true},

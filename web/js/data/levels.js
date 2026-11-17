@@ -108,7 +108,7 @@ export const CHAPTERS = [
       intro:'The sky goes dark with locusts, and the Locust King is right behind them.' },
   ]},
   { id:'dust', name:'Dust Bowl Farm', crop:'wheat', cropPlural:'wheat', pests:'Dust beetles & sand fleas', grass:['#cdb88c','#c3ae82'],
-    act:3, mood:'withered', drought:true, road:[.35,1], crowd:1.5, dust:[4,7], levels:[
+    act:3, mood:'withered', drought:true, road:[.35,1], crowd:1.25, dust:[4,7], levels:[
     { name:'Topsoil', waves:9, season:'spring', boss:'dustdevil',
       pts:[[0.5,-0.6],[0.5,1.5],[8.5,1.5],[8.5,3.5],[0.5,3.5],[0.5,5.5],[8.5,5.5],[8.5,7.5],[0.5,7.5],[0.5,9.5],[8.5,9.5],[8.5,11.5],[4.5,11.5],[4.5,13.2]],   // one very long road, back and forth across the whole farm
       pool:[['sandflea',1,3],['dustgrub',2,2,.5]],
@@ -124,8 +124,8 @@ export const CHAPTERS = [
       intro:'Storm after storm hides the pests, and something is spinning in behind them: the Dust Devil.' },
   ]},
   { id:'rooftop', name:'Rooftop Garden', crop:'pepper', cropPlural:'peppers', pests:'Rats, pigeons & smog moths', grass:['#aeb29c','#a4a892'],
-    act:3, mood:'withered', smog:true, road:[0,1], crowd:1.6, levels:[
-    { name:'Gray Morning', waves:10, crowd:1.9, season:'spring', boss:'ratking',
+    act:3, mood:'withered', smog:true, road:[0,1], crowd:1.3, levels:[
+    { name:'Gray Morning', waves:10, crowd:1.5, season:'spring', boss:'ratking',
       cols:11, rows:17, lanes:[[[1.5,-0.6],[1.5,4.5],[5.5,4.5],[5.5,8.5],[2.5,8.5],[2.5,16.2]],
              [[9.5,-0.6],[9.5,6.5],[7.5,6.5],[7.5,12.5],[9.5,12.5],[9.5,16.2]]],
       pool:[['rat',1,3],['pigeon',3,1.5]],
@@ -140,7 +140,7 @@ export const CHAPTERS = [
       intro:'The air is thick and yellow. Out of it comes the biggest moth anyone has ever seen.' },
   ]},
   { id:'vault', name:'The Last Seed Vault', crop:'seed', cropPlural:'seed packets', pests:'Glowing mutants', grass:['#9c958a','#928b80'],
-    act:3, mood:'withered', dark:true, road:[0,1], cracked:true, crowd:1.5, levels:[
+    act:3, mood:'withered', dark:true, road:[0,1], cracked:true, crowd:1.25, levels:[
     { name:'Ashes', waves:6, season:'spring', boss:'mutantmole',
       cols:7, rows:11, pts:[[1.5,-0.6],[1.5,2.5],[5.5,2.5],[5.5,5.5],[1.5,5.5],[1.5,8.5],[3.5,8.5],[3.5,10.2]],   // a small, cramped bunker yard
       pool:[['glowslug',1,3],['glowmole',3,1.5]],
@@ -207,10 +207,10 @@ export const CHAPTERS = [
 // three-star rate slopes down from about 90% early to about 25% on Big Dig even for a player who
 // never sprays. The Pesticide Sprayer then makes levels easier, a shortcut, never a requirement.
 // Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
-const TOUGHNESS = [1.15, 2.4, 2.05, 4.05, 3.84, 1.95, 4.5, 2.57, 3.42,
-                   8.99, 3.97, 5.0, 3.81, 5.48, 6.21, 5.83, 5.06, 5.21,
-                   13.28, 3.3, 6.45, 2.3, 3.74, 3.15, 11.24, 7.8, 10.15,
-                   15.2, 26.97, 14.6, 13.3, 9.91, 14.66, 15.47, 8.94, 23.77];
+const TOUGHNESS = [1.15, 1.6, 1.4, 2.7, 2.4, 1.2, 2.9, 1.85, 2.2,
+                   5.2, 2.79, 3.29, 1.71, 2.39, 3.17, 3.34, 3.7, 3.81,
+                   7.6, 2.16, 4.14, 0.92, 2.15, 1.75, 6.6, 4.6, 5.77,
+                   11, 17, 10.5, 9.74, 7.3, 9.8, 12.28, 6.58, 15.5];
 
 // Flat list of every level in play order, each linked back to its chapter.
 export const LEVELS = [];

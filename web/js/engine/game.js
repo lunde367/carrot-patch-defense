@@ -45,7 +45,9 @@ export const starsFor = (lost, max) => { const [a,b]=starLimits(max); return los
 // A boss that gets through eats a quarter of the crops (5 of 20, 3 of 10).
 const bossBite = () => Math.max(3, Math.round(G.S.maxLives*.25));
 // More pests per wave on some levels (a level's own `crowd`, else its garden's).
-const crowdOf = () => G.LV.crowd || G.CH.crowd || 1;
+// Every wave is CROWD times its old size, and a whole wave pays INCOME of what it used to, however many pests are in it.
+const CROWD = 1.35, INCOME = .85;
+const crowdOf = () => (G.LV.crowd || G.CH.crowd || 1)*CROWD;
 export const bossWave = w => G.LV.endless ? w%5===0 : w===G.LV.waves;
 // Endless Garden weather: from wave 3 on, about half the waves bring rain, a heat wave or a swarm.
 const eventAt = w => { if (w<3) return null; const r=((Math.imul((w*2654435761)^G.S.eseed, 1597334677)>>>0)%1000)/1000; return r<.18?'rain':r<.36?'heat':r<.54?'swarm':null; };
@@ -59,9 +61,9 @@ const DUST_SIGHT = .55; export const DUST_TIME = 10;
 // Difficulty (chosen in Settings): pest health is multiplied by `hp`. The level table in levels.js is tuned
 // for the test bots at 1.0; real players proved much stronger, so Normal sits above it and Easy just below. G.diff is the multiplier in play.
 export const DIFFICULTY = {
-  easy:   { hp:.85,  name:'Easy',   note:'Pests are softer. Great for little gardeners.' },
-  normal: { hp:1.12,  name:'Normal', note:'The garden as it was meant to be played.' },
-  hard:   { hp:1.4, name:'Hard',   note:'For grown-up gardeners. You’ll need your Sprayer and Compost.' },
+  easy:   { hp:.9,  name:'Easy',   note:'Pests are softer. Great for little gardeners.' },
+  normal: { hp:1.25,  name:'Normal', note:'The garden as it was meant to be played.' },
+  hard:   { hp:1.55, name:'Hard',   note:'For grown-up gardeners. You’ll need your Sprayer and Compost.' },
 };
 const hpMul = () => G.LV.hpMul*(G.diff||1);
 // In the Endless Garden pests also get a steady 9% tougher every wave, so every run ends somewhere.
@@ -75,8 +77,8 @@ function makeWave(w){
     q.push({t:p[0], m:p[3]});
   }
   // Aphid boom (Apple Orchard): a big extra burst of the garden's smallest pest.
-  if (swarmAt(w)){ const small=pool[0]; for (let i=0;i<Math.floor(n*.9);i++) q.splice(Math.floor(Math.random()*q.length), 0, {t:small[0], m:small[3]}); }
-  if (G.LV.endless){ if (w%5===0) q.push({t:G.LV.bosses[(w/5-1)%G.LV.bosses.length]}); if (q.length>46) q.splice(0, q.length-46); }
+  if (swarmAt(w)){ const small=pool[0]; for (let i=0;i<Math.floor(n*1.5);i++) q.splice(Math.floor(Math.random()*q.length), 0, {t:small[0], m:small[3]}); }
+  if (G.LV.endless){ if (w%5===0) q.push({t:G.LV.bosses[(w/5-1)%G.LV.bosses.length]}); if (q.length>60) q.splice(0, q.length-60); }
   else if (w===G.LV.waves) q.push({t:G.LV.boss});
   return q;
 }
@@ -264,7 +266,7 @@ function damage(e,d){
   else emit('hit');
   if (e.hp<=0){
     // crowded levels pay less per pest, so more pests does not mean more seeds
-    const owed=e.reward*S.perks.rewardMul/Math.pow(crowdOf(), .55)+(S.owed||0), gain=Math.floor(owed+1e-9); S.owed=owed-gain;
+    const owed=e.reward*S.perks.rewardMul*INCOME/crowdOf()+(S.owed||0), gain=Math.floor(owed+1e-9); S.owed=owed-gain;
     e.dead=true; S.seeds+=gain;
     floatText(e.x,e.y-.3,'+'+gain,'#c98a12'); puffs(e.x,e.y,7,1.4);
     emit('kill', { boss:!!ENEMY[e.type].boss });
