@@ -21,7 +21,7 @@ export const CHAPTERS = [
       pts:[[1.5,-0.6],[1.5,2.5],[7.5,2.5],[7.5,5.5],[1.5,5.5],[1.5,9.5],[6.5,9.5],[6.5,13.2]],
       pool:[['babyslug',1,3],['fleagrub',2,2],['slug',4,1.5]],
       intro:'Baby slugs and flea beetle grubs are after the seedlings.' },
-    { name:'Leafy Heads', season:'summer', boss:'giantsnail', dew:[4],
+    { name:'Leafy Heads', season:'summer', boss:'giantsnail', dew:[3,6],
       pts:[[7.5,-0.6],[7.5,1.5],[2.5,1.5],[2.5,4.5],[5.5,4.5],[5.5,7.5],[1.5,7.5],[1.5,10.5],[4.5,10.5],[4.5,13.2]],
       pool:[['slug',1,3],['fleagrub',1,2,.5],['snail',2,2],['fleabeetle',4,1.5]],
       intro:'Snails wear armor, so small hits barely dent them. Grubs grow into hopping flea beetles halfway down.' },

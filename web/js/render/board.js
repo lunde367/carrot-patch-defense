@@ -157,7 +157,7 @@ export function draw(clock){
   }
   if (S.soft){ g.fillStyle='rgba(70,44,20,.16)'; g.fillRect(0,0,W,(ROWS-1)*s); }   // soft ground: the whole field looks dug over and damp
   if (S.dewT>0){ const a=Math.min(1, S.dewT/1.5, (DEW_TIME-S.dewT)/.6), td=clockReal();   // morning dew: a cool sheen and glinting drops
-    g.fillStyle=`rgba(150,205,225,${.16*a})`; g.fillRect(0,0,W,(ROWS-1)*s);
+    g.fillStyle=`rgba(150,205,225,${.24*a})`; g.fillRect(0,0,W,(ROWS-1)*s);
     for (let i=0;i<70;i++){ const x=(i*83.7%W), y=(i*131.3%((ROWS-1)*s)), tw=.5+.5*Math.sin(td*3+i*1.7), r=s*(.05+(i%3)*.018); g.globalAlpha=a*(.45+.55*tw); ell(g,x,y,r,r*1.2,'#f2fbff','#6fb4d2',1.2); ell(g,x-r*.3,y-r*.4,r*.28,r*.28,'#ffffff'); } g.globalAlpha=1; }
   if (S.heat){ const p=.5+.5*Math.sin(clockReal()*2.2);
     g.fillStyle=`rgba(255,140,40,${.10+.05*p})`; g.fillRect(0,0,W,(ROWS-1)*s);

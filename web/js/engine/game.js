@@ -60,10 +60,12 @@ export const dustAt = w => !G.LV.endless && weather('dust', w);
 const DUST_SIGHT = .55; export const DUST_TIME = 10;
 // Morning dew (Cabbage Patch): for the first seconds of the wave, slugs and snails glide faster.
 export const dewAt = w => !G.LV.endless && weather('dew', w);
-const DEW_SPEED = 1.6; export const DEW_TIME = 9;
+const DEW_SPEED = 1.6; export const DEW_TIME = 12;
 // Soft ground (Carrot Rows): for the whole wave, diggers spend more of their time underground.
 export const softAt = w => !G.LV.endless && weather('soft', w);
 // Flash flood (Rain Garden): the creek fills, and every second pest rides it as a shortcut.
+// What the next wave brings, for the warning shown after a wave is cleared.
+export const forecast = w => G.LV.endless ? null : heatAt(w) ? 'a heat wave' : swarmAt(w) ? 'an aphid swarm' : rainAt(w) ? 'rain' : dustAt(w) ? 'a dust storm' : dewAt(w) ? 'morning dew' : softAt(w) ? 'soft ground' : floodAt(w) ? 'a flash flood' : null;
 export const floodAt = w => !!(G.LV.flood && path.flood && G.LV.flood.waves.includes(w));
 // Difficulty (chosen in Settings): pest health is multiplied by `hp`. The level table in levels.js is tuned
 // for the test bots at 1.0; real players proved much stronger, so Normal sits above it and Easy just below. G.diff is the multiplier in play.
