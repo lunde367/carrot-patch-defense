@@ -14,7 +14,7 @@ const ATTACKERS = ['bunny','rose','squirrel','sprinkler','pine','owl','ladybug']
 let samples = [];
 export function preparePath(){
   samples = [];
-  for (let li=0; li<path.lanes.length; li++){ const T=laneTotal(li); for (let d=0.6; d<T; d+=0.25){ const [x,y]=pointAt(d,li); samples.push({x,y,w:(.6+.8*d/T)/Math.sqrt(path.lanes.length)}); } }
+  for (let li=0; li<path.all.length; li++){ const T=laneTotal(li); for (let d=0.6; d<T; d+=0.25){ const [x,y]=pointAt(d,li); samples.push({x,y,w:(.6+.8*d/T)/Math.sqrt(path.lanes.length)}); } }
 }
 function coverage(c, r, range, fliersOnly=false){
   const x=c+.5, y=r+.5; let s=0;

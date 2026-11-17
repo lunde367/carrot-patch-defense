@@ -21,11 +21,11 @@ export const CHAPTERS = [
       pts:[[1.5,-0.6],[1.5,2.5],[7.5,2.5],[7.5,5.5],[1.5,5.5],[1.5,9.5],[6.5,9.5],[6.5,13.2]],
       pool:[['babyslug',1,3],['fleagrub',2,2],['slug',4,1.5]],
       intro:'Baby slugs and flea beetle grubs are after the seedlings.' },
-    { name:'Leafy Heads', season:'summer', boss:'giantsnail',
+    { name:'Leafy Heads', season:'summer', boss:'giantsnail', dew:[4],
       pts:[[7.5,-0.6],[7.5,1.5],[2.5,1.5],[2.5,4.5],[5.5,4.5],[5.5,7.5],[1.5,7.5],[1.5,10.5],[4.5,10.5],[4.5,13.2]],
       pool:[['slug',1,3],['fleagrub',1,2,.5],['snail',2,2],['fleabeetle',4,1.5]],
       intro:'Snails wear armor, so small hits barely dent them. Grubs grow into hopping flea beetles halfway down.' },
-    { name:'Harvest Time', waves:10, season:'late summer', boss:'beetleking',
+    { name:'Harvest Time', waves:10, season:'late summer', boss:'beetleking', dew:[3,6,9],
       pts:[[4.5,-0.6],[4.5,1.5],[1.5,1.5],[1.5,4.5],[7.5,4.5],[7.5,7.5],[2.5,7.5],[2.5,10.5],[7.5,10.5],[7.5,13.2]],
       pool:[['snail',1,2],['fleabeetle',1,2],['bananaslug',2,2],['beetle',3,2]],
       intro:'Banana slugs and shield beetles are out in force. The Beetle King is coming.' },
@@ -50,11 +50,11 @@ export const CHAPTERS = [
       pts:[[-0.6,2.5],[6.5,2.5],[6.5,6.5],[2.5,6.5],[2.5,10.5],[5.5,10.5],[5.5,13.2]],   // in through the side gate
       pool:[['babymouse',1,3],['mouse',2,2]],
       intro:'Baby mice are scurrying in. They’re quick but fragile.' },
-    { name:'Deep Roots', waves:9, season:'summer', boss:'molemom',
+    { name:'Deep Roots', waves:9, season:'summer', boss:'molemom', soft:[4,7],
       cols:11, rows:17, pts:[[1.5,-0.6],[1.5,5.5],[5.5,5.5],[5.5,1.5],[9.5,1.5],[9.5,9.5],[3.5,9.5],[3.5,13.5],[7.5,13.5],[7.5,16.2]],   // a big field with a long wander
       pool:[['mouse',1,3],['vole',2,2],['mole',3,1.5]],
       intro:'Voles are fast. Moles tunnel underground, where your defenders can’t hit them.' },
-    { name:'Big Dig', waves:12, season:'late summer', boss:'gopherboss',
+    { name:'Big Dig', waves:12, season:'late summer', boss:'gopherboss', soft:[4,8],
       pts:[[7.5,-0.6],[7.5,1.5],[1.5,1.5],[1.5,4.5],[7.5,4.5],[7.5,7.5],[1.5,7.5],[1.5,10.5],[7.5,10.5],[7.5,13.2]],
       pool:[['vole',1,2.5],['mole',1,2],['gopher',3,1.5]],
       intro:'Gophers are the toughest diggers yet, and the Grumpy Gopher leads them.' },
@@ -161,13 +161,15 @@ export const CHAPTERS = [
       pool:[['puddleslug',1,3],['frog',2,2]],
       intro:'Pests slow down in the rain, and every plant gets a drink. No more spraying: the bees are back.' },
     { name:'Puddles', waves:9, season:'summer', boss:'mudcrab',
+      flood:{ waves:[4,6], pts:[[4.5,-0.6],[4.5,11.5],[6.5,11.5],[6.5,13.2]] },   // the creek runs straight down and skips the whole loop
       pts:[[4.5,-0.6],[4.5,8.5],[7.5,8.5],[7.5,4.5],[1.5,4.5],[1.5,11.5],[6.5,11.5],[6.5,13.2]],
       pool:[['puddleslug',1,2.5],['frog',1,2],['mudsnail',3,1.5]],
-      intro:'Mud snails have come up out of the puddles, and a Mud Crab is crawling up the creek.' },
+      intro:'Mud snails have come up out of the puddles. When the creek floods, half the pests ride it as a shortcut.' },
     { name:'The Flood', season:'late summer', boss:'snapper', waves:11, rain:[2,4,6,8,10],
+      flood:{ waves:[4,6,8,10], pts:[[4.5,-0.6],[4.5,13.2]] },   // the creek bursts straight down the middle
       lanes:[[[-0.6,3.5],[2.5,3.5],[2.5,9.5],[4.5,9.5],[4.5,13.2]], [[9.6,1.5],[6.5,1.5],[6.5,9.5],[4.5,9.5],[4.5,13.2]]],   // water pouring in from both banks
       pool:[['frog',1,2.5],['mudsnail',1,2],['puddleslug',1,2]],
-      intro:'The creek has burst its banks. An old snapping turtle rides the flood straight for the radishes.' },
+      intro:'The creek floods again and again, straight down the middle. An old snapping turtle is riding it in.' },
   ]},
   { id:'meadow', name:'Wildflower Meadow', crop:'bloom', cropPlural:'wildflowers', pests:'Old pests, back again', grass:['#a6d888','#9cce7e'],
     act:4, mood:'regrow', levels:[

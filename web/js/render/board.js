@@ -1,5 +1,5 @@
 // Draws the garden board. Sizes itself to fit any phone, tablet or desktop window.
-import { G, towerAt, rangeOf, HILL, DUST_TIME } from '../engine/game.js';
+import { G, towerAt, rangeOf, HILL, DUST_TIME, DEW_TIME } from '../engine/game.js';
 import { path, buildable, pointAt } from '../engine/path.js';
 import { drawScenery, drawBonus } from './art-scenery.js';
 import { COLS, ROWS, CHAPTERS } from '../data/levels.js';
@@ -77,6 +77,11 @@ export function rebuild(){
   }
   b.lineJoin='round'; b.lineCap='round';
   const line=(w,col)=>{ for (const L of path.lanes){ b.beginPath(); L.pts.forEach(([x,y],i)=>i?b.lineTo(x*s,y*s):b.moveTo(x*s,y*s)); b.strokeStyle=col; b.lineWidth=w*s; b.stroke(); } };
+  if (path.flood){   // a dry creek bed: pests only use it when it floods
+    const bed=(w,col,dash)=>{ b.beginPath(); path.flood.pts.forEach(([x,y],i)=>i?b.lineTo(x*s,y*s):b.moveTo(x*s,y*s)); b.strokeStyle=col; b.lineWidth=w*s; b.setLineDash(dash||[]); b.stroke(); b.setLineDash([]); };
+    bed(.7,'#8f9a86'); bed(.56,'#c9cdb6'); bed(.1,'#8fc0d6',[s*.3,s*.22]);
+    const RB=rng(53); for (const sg of path.flood.segs){ const n=Math.floor(sg.len*4); for (let i=0;i<n;i++){ const k=RB(); ell(b,(sg.x1+(sg.x2-sg.x1)*k+(RB()-.5)*.4)*s,(sg.y1+(sg.y2-sg.y1)*k+(RB()-.5)*.4)*s,s*.05,s*.036,'#a3a892','#7e8572',1); } }
+  }
   line(.84,'#b48d5a'); line(.68,'#dcbd8b');
   const R2=rng(31);
   for (const sg of path.lanes.flatMap(L=>L.segs)){ const n=Math.floor(sg.len*3); for (let i=0;i<n;i++){ const k=R2();
@@ -146,6 +151,14 @@ export function draw(clock){
     ell(g,p.x*s,p.y*s,rr,rr*.86,'rgba(120,92,52,.2)');
     for (let i=0;i<5;i++){ const a=R()*6.28, d=R()*rr*.7; ell(g,p.x*s+Math.cos(a)*d,p.y*s+Math.sin(a)*d,rr*.28,rr*.2,'rgba(96,72,40,.14)'); } }
 
+  if (S.flood && path.flood){   // flash flood: the creek bed runs full
+    const tf=clockReal(), run=(w,col,dash,off)=>{ g.beginPath(); path.flood.pts.forEach(([x,y],i)=>i?g.lineTo(x*s,y*s):g.moveTo(x*s,y*s)); g.strokeStyle=col; g.lineWidth=w*s; g.lineJoin='round'; g.lineCap='round'; g.setLineDash(dash||[]); g.lineDashOffset=off||0; g.stroke(); g.setLineDash([]); };
+    run(.78,'rgba(74,138,176,.9)'); run(.6,'rgba(120,180,214,.9)'); run(.07,'rgba(255,255,255,.75)',[s*.34,s*.5],-tf*s*1.6); run(.05,'rgba(255,255,255,.5)',[s*.2,s*.7],-tf*s*2.3+s*.4);
+  }
+  if (S.soft){ g.fillStyle='rgba(70,44,20,.16)'; g.fillRect(0,0,W,(ROWS-1)*s); }   // soft ground: the whole field looks dug over and damp
+  if (S.dewT>0){ const a=Math.min(1, S.dewT/1.5, (DEW_TIME-S.dewT)/.6), td=clockReal();   // morning dew: a cool sheen and glinting drops
+    g.fillStyle=`rgba(150,205,225,${.16*a})`; g.fillRect(0,0,W,(ROWS-1)*s);
+    for (let i=0;i<70;i++){ const x=(i*83.7%W), y=(i*131.3%((ROWS-1)*s)), tw=.5+.5*Math.sin(td*3+i*1.7), r=s*(.05+(i%3)*.018); g.globalAlpha=a*(.45+.55*tw); ell(g,x,y,r,r*1.2,'#f2fbff','#6fb4d2',1.2); ell(g,x-r*.3,y-r*.4,r*.28,r*.28,'#ffffff'); } g.globalAlpha=1; }
   if (S.heat){ const p=.5+.5*Math.sin(clockReal()*2.2);
     g.fillStyle=`rgba(255,140,40,${.10+.05*p})`; g.fillRect(0,0,W,(ROWS-1)*s);
     g.strokeStyle='rgba(255,200,140,.25)'; g.lineWidth=2;

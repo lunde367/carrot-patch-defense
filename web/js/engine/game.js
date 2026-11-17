@@ -17,7 +17,7 @@ export const HILL = 1.2, SUNNY_RATE = 1.15, SUNNY_SEEDS = 1.5;   // helpful tile
 
 export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
   // `gi` is a level's number, or a level object that isn't part of the story (the Endless Garden).
-  const LV = G.LV = typeof gi==='object' ? gi : LEVELS[gi]; gi = LV.gi; G.CH = LV.ch; setGrid(LV.cols, LV.rows); setPath(LV.lanes || LV.pts); G.hint = null;
+  const LV = G.LV = typeof gi==='object' ? gi : LEVELS[gi]; gi = LV.gi; G.CH = LV.ch; setGrid(LV.cols, LV.rows); setPath(LV.lanes || LV.pts, LV.flood && LV.flood.pts); G.hint = null;
   const onPath=(c,r)=>path.cells.has(c+','+r), scen=sceneryFor(LV, onPath, LV.gi===0 ? [[2,1],[4,3]] : []);
   setScenery(scen, bonusFor(LV, onPath, scen));
   newShots = [];                                   // drop shots left over from a game that ended mid-wave
@@ -58,6 +58,13 @@ export const swarmAt = w => weather('swarm', w);
 // Dust storms (Dust Bowl Farm): for the first seconds of the wave, defenders can only see pests up close.
 export const dustAt = w => !G.LV.endless && weather('dust', w);
 const DUST_SIGHT = .55; export const DUST_TIME = 10;
+// Morning dew (Cabbage Patch): for the first seconds of the wave, slugs and snails glide faster.
+export const dewAt = w => !G.LV.endless && weather('dew', w);
+const DEW_SPEED = 1.6; export const DEW_TIME = 9;
+// Soft ground (Carrot Rows): for the whole wave, diggers spend more of their time underground.
+export const softAt = w => !G.LV.endless && weather('soft', w);
+// Flash flood (Rain Garden): the creek fills, and every second pest rides it as a shortcut.
+export const floodAt = w => !!(G.LV.flood && path.flood && G.LV.flood.waves.includes(w));
 // Difficulty (chosen in Settings): pest health is multiplied by `hp`. The level table in levels.js is tuned
 // for the test bots at 1.0; real players proved much stronger, so Normal sits above it and Easy just below. G.diff is the multiplier in play.
 export const DIFFICULTY = {
@@ -91,6 +98,9 @@ export function startWave(){
   // Rain (Part 4): pests slow down and every plant gets a drink.
   S.rain = rainAt(S.wave); if (S.rain) emit('rain');
   S.dustT = dustAt(S.wave) ? DUST_TIME : 0; if (S.dustT) emit('dust');
+  S.dewT = dewAt(S.wave) ? DEW_TIME : 0; if (S.dewT) emit('dew');
+  S.soft = softAt(S.wave); if (S.soft) emit('soft');
+  S.flood = floodAt(S.wave); if (S.flood) emit('flood');
   if (S.heat) emit('heat', S.towers.filter(t=>!t.cool).length);
   if (swarmAt(S.wave)) emit('swarm');
   emit('waveStart', { wave:S.wave, boss:bossWave(S.wave) }); emit('select', null);
@@ -171,7 +181,7 @@ export const sprayStats = () => { const p=G.S.perks;
 // Test mode: finish the level right now as a perfect win, so the rest of the game can be looked at quickly.
 export function skipToWin(){
   const S=G.S; if (!S || S.mode!=='play' || G.LV.endless) return false;
-  S.enemies=[]; S.spawnQ=[]; S.shots=[]; S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.wave=G.LV.waves; S.lives=S.maxLives;
+  S.enemies=[]; S.spawnQ=[]; S.shots=[]; S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.dewT=0; S.soft=false; S.flood=false; S.wave=G.LV.waves; S.lives=S.maxLives;
   S.mode='won'; emit('win', { stars:3, lives:S.lives, maxLives:S.maxLives, lost:0, gi:G.LV.gi }); return true;
 }
 export const fertReady = () => G.S.fertOn && G.S.fertCd<=0 && G.S.fertT<=0 && G.S.mode==='play' && G.S.active;
@@ -186,7 +196,7 @@ export function fertilize(){
 export function revive(){
   const S=G.S; if (S.mode!=='lost' || S.revived) return false;
   S.revived=true; S.mode='play'; S.lives=Math.ceil(S.maxLives/2);
-  S.enemies=[]; S.shots=[]; S.spawnQ=[]; S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.fertT=0;
+  S.enemies=[]; S.shots=[]; S.spawnQ=[]; S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.dewT=0; S.soft=false; S.flood=false; S.fertT=0;
   S.wave=Math.max(0, S.wave-1); emit('revive'); return true;
 }
 // ---------- Endless Garden gifts ----------
@@ -295,9 +305,10 @@ function hitShot(s){
 export function update(dt){
   const S=G.S;
   if (S.dustT>0) S.dustT=Math.max(0, S.dustT-dt);
+  if (S.dewT>0) S.dewT=Math.max(0, S.dewT-dt);
   if (S.spawnQ.length){ S.spawnT-=dt;
     // pests take turns at each entrance
-    if (S.spawnT<=0){ const it=S.spawnQ.shift(); spawnEnemy(it.t,0,it.m,(S.laneNext++)%path.lanes.length); S.spawnT=(ENEMY[it.t].gap||2)/Math.pow(crowdOf(), .3); } }
+    if (S.spawnT<=0){ const it=S.spawnQ.shift(); { const k=S.laneNext++; spawnEnemy(it.t,0,it.m, S.flood && k%2===0 ? path.lanes.length : k%path.lanes.length); } S.spawnT=(ENEMY[it.t].gap||2)/Math.pow(crowdOf(), .3); } }
 
   for (const e of S.enemies){
     if (e.dead) continue;
@@ -307,8 +318,8 @@ export function update(dt){
       if (e.st>=D.spawns.every){ e.st=0; spawnEnemy(D.spawns.type, Math.max(0.3, e.dist-0.25), null, e.lane); puffs(e.x,e.y,4,.8); } }
     if (e.cocoon>0){ e.cocoon-=dt; if (e.cocoon<=0) grow(e); continue; }
     if (e.morphAt!=null && e.dist>=e.morphAt){ e.morphAt=null; e.cocoon=1.3; floatText(e.x,e.y-.35,'growing!','#8a5fb0',1); emit('cocoon'); continue; }
-    if (D.burrow){ e.bt+=dt; e.under = e.bt>1 && (e.bt%4.5)>3; } else e.under = false;
-    let mul=(e.slow>0?.5:1)*(e.under?1.3:1)*(S.rain?RAIN_SLOW:1);
+    if (D.burrow){ e.bt+=dt; e.under = e.bt>1 && (e.bt%4.5)>(S.soft ? 2.3 : 3); } else e.under = false;
+    let mul=(e.slow>0?.5:1)*(e.under?1.3:1)*(S.rain?RAIN_SLOW:1)*(S.dewT>0 && (D.shape==='slug'||D.shape==='snail') ? DEW_SPEED : 1);
     if (D.hopper){ e.jump=Math.sin(e.ph*.9)>.2; mul*=e.jump?2.2:.25; }
     e.dist+=e.spd*mul*dt;
     const [x,y,f]=pointAt(e.dist, e.lane); e.x=x; e.y=y; if (f) e.face=f;
@@ -383,7 +394,7 @@ export function update(dt){
   S.fx=S.fx.filter(f=>f.life>0);
 
   if (S.active && !S.spawnQ.length && !S.enemies.length && S.mode==='play'){
-    S.active=false; S.heat=false; S.rain=false; S.dustT=0;
+    S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.dewT=0; S.soft=false; S.flood=false;
     if (S.wave>=G.LV.waves){
       const lost=S.maxLives-S.lives, stars=starsFor(lost, S.maxLives);
       S.mode='won'; emit('win', { stars, lives:S.lives, maxLives:S.maxLives, lost, gi:G.LV.gi }); return;

@@ -3,7 +3,7 @@ import { COLS, ROWS } from '../data/levels.js';
 // The current level's paths. Most levels have one; some have several entrances ("lanes"),
 // which may merge or stay apart. A path may also cross itself in a loop.
 // path.pts / segs / total / exitCol describe lane 0, for code that only needs the main path.
-export const path = { lanes:[], pts:[], segs:[], total:0, cells:new Set(), exitCol:0, exitCols:new Set(), scenery:[], blocked:new Set(), bonus:new Map() };
+export const path = { all:[], flood:null, lanes:[], pts:[], segs:[], total:0, cells:new Set(), exitCol:0, exitCols:new Set(), scenery:[], blocked:new Set(), bonus:new Map() };
 
 function makeLane(pts){
   const lane = { pts, segs:[], total:0 };
@@ -15,10 +15,12 @@ function makeLane(pts){
   return lane;
 }
 // Accepts one list of points, or a list of lanes (each a list of points).
-export function setPath(ptsOrLanes){
+// `floodPts` is an optional extra route (a creek bed) that pests only use during a flash flood.
+export function setPath(ptsOrLanes, floodPts){
   const lanes = Array.isArray(ptsOrLanes[0][0]) ? ptsOrLanes : [ptsOrLanes];
   path.lanes = lanes.map(makeLane); path.cells = new Set(); path.exitCols = new Set();
-  for (const lane of path.lanes){
+  path.flood = floodPts ? makeLane(floodPts) : null; path.all = path.flood ? [...path.lanes, path.flood] : path.lanes;
+  for (const lane of path.all){
     path.exitCols.add(lane.exitCol);
     for (const s of lane.segs){
       const steps=Math.ceil(s.len*4);
@@ -27,11 +29,11 @@ export function setPath(ptsOrLanes){
   }
   const L0 = path.lanes[0]; path.pts = L0.pts; path.segs = L0.segs; path.total = L0.total; path.exitCol = L0.exitCol;
 }
-export const laneTotal = (lane=0) => (path.lanes[lane] || path.lanes[0]).total;
+export const laneTotal = (lane=0) => (path.all[lane] || path.lanes[0]).total;
 
 // Position along a lane → [x, y, horizontal direction]
 export function pointAt(d, lane=0){
-  const segs = (path.lanes[lane] || path.lanes[0]).segs;
+  const segs = (path.all[lane] || path.lanes[0]).segs;
   for (const s of segs){
     if (d <= s.start+s.len){ const k=(d-s.start)/s.len; return [s.x1+(s.x2-s.x1)*k, s.y1+(s.y2-s.y1)*k, Math.sign(s.x2-s.x1)]; }
   }
