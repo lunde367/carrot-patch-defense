@@ -34,6 +34,12 @@ jobs:
       # This key is for test builds only; the store version is signed with a private one.
       - run: mkdir -p ~/.android && cp tools/app/test.keystore ~/.android/debug.keystore
       - run: cd android && ./gradlew assembleDebug --no-daemon
+      # Print who signed the app and its version, so a failed update can be traced.
+      - run: |
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          $BT/apksigner verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk | grep -i "SHA-256"
+          $BT/aapt2 dump badging android/app/build/outputs/apk/debug/app-debug.apk | grep -E "^package|sdkVersion|targetSdk"
+          keytool -list -v -keystore ~/.android/debug.keystore -storepass android | grep "SHA256:"
       - uses: actions/upload-artifact@v4
         with: { name: carrot-patch-android-test-app, path: android/app/build/outputs/apk/debug/*.apk }
       # Also post it at a plain download link, so it can be installed straight from a phone:
