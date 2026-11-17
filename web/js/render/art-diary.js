@@ -73,37 +73,63 @@ function gardenerFace(c, x, y, s){   // the diary's owner: straw hat, freckles, 
 }
 // Turn the cleanly drawn scene into a colored-pencil sketch: wobbly graphite outlines found from the
 // picture's edges, over a light hatched wash of its colors, with nothing behind it but the page.
+// Graphite sketch: turns the flat color drawing into a gray pencil study. Lines are thin and drawn twice,
+// slightly apart, like a hand going over its own stroke. Tone is built from hatching whose direction
+// changes from one thing to the next, a second set of strokes across it in the darks, and a soft
+// smudge underneath. Shapes are darker toward their edges so they look round. Paper grain breaks it all up.
+function boxBlur(a, w, h, r){
+  const t=new Float32Array(w*h), o=new Float32Array(w*h), n=2*r+1;
+  for (let y=0;y<h;y++){ let acc=0; const row=y*w; for (let x=-r;x<=r;x++) acc+=a[row+Math.min(w-1,Math.max(0,x))];
+    for (let x=0;x<w;x++){ t[row+x]=acc/n; acc+=a[row+Math.min(w-1,x+r+1)]-a[row+Math.max(0,x-r)]; } }
+  for (let x=0;x<w;x++){ let acc=0; for (let y=-r;y<=r;y++) acc+=t[Math.min(h-1,Math.max(0,y))*w+x];
+    for (let y=0;y<h;y++){ o[y*w+x]=acc/n; acc+=t[Math.min(h-1,y+r+1)*w+x]-t[Math.max(0,y-r)*w+x]; } }
+  return o;
+}
+const hash2 = (x, y) => ((Math.imul(x*374761393 ^ y*668265263, 1274126177)>>>0)%4096)/4096;
+function vnoise(x, y){ const xi=Math.floor(x), yi=Math.floor(y), fx=x-xi, fy=y-yi, u=fx*fx*(3-2*fx), v=fy*fy*(3-2*fy);
+  const a=hash2(xi,yi), b=hash2(xi+1,yi), c=hash2(xi,yi+1), e=hash2(xi+1,yi+1); return (a+(b-a)*u)*(1-v)+(c+(e-c)*u)*v; }
 function pencil(src, d){
-  const w=src.width, h=src.height, a=src.getContext('2d').getImageData(0,0,w,h).data;
-  const lum=new Float32Array(w*h);
-  for (let i=0,p=0;i<w*h;i++,p+=4){ const al=a[p+3]/255; lum[i]=(.3*a[p]+.59*a[p+1]+.11*a[p+2])*al+255*(1-al); }
-  const out=new ImageData(w,h), o=out.data, L=(x,y)=>lum[Math.min(h-1,Math.max(0,y))*w+Math.min(w-1,Math.max(0,x))];
-  const hatch=Math.max(3, Math.round(2.5*d));
+  const w=src.width, h=src.height, a=src.getContext('2d').getImageData(0,0,w,h).data, N=w*h;
+  const lum=new Float32Array(N), ink=new Float32Array(N), hue=new Uint8Array(N);
+  for (let i=0,p=0;i<N;i++,p+=4){ const al=a[p+3]/255; lum[i]=(.3*a[p]+.59*a[p+1]+.11*a[p+2])*al+255*(1-al);
+    hue[i]=al>.5 ? ((a[p]>>5)*5+(a[p+1]>>5)*3+(a[p+2]>>5)*7)%3 : 0; }
+  const cl=(v,lo,hi)=>v<lo?lo:v>hi?hi:v, L=(x,y)=>lum[cl(y,0,h-1)*w+cl(x,0,w-1)];
+  const edge=new Float32Array(N);
   for (let y=0;y<h;y++) for (let x=0;x<w;x++){
-    // a slow wobble, as if the hand wasn't quite steady
-    const xs=Math.min(w-1,Math.max(0,x+Math.round(Math.sin(y*.07/d*2)*1.1*d))), ys=Math.min(h-1,Math.max(0,y+Math.round(Math.sin(x*.06/d*2)*1.1*d)));
-    const gx=L(xs+1,ys-1)+2*L(xs+1,ys)+L(xs+1,ys+1)-L(xs-1,ys-1)-2*L(xs-1,ys)-L(xs-1,ys+1);
-    const gy=L(xs-1,ys+1)+2*L(xs,ys+1)+L(xs+1,ys+1)-L(xs-1,ys-1)-2*L(xs,ys-1)-L(xs+1,ys-1);
-    const n=((Math.imul(x*374761393 ^ y*668265263, 1274126177)>>>0)%1000)/1000;         // paper grain
-    const line=Math.min(1, Math.pow(Math.min(1, Math.hypot(gx,gy)/150), .75)*(.72+.28*n));
-    const p=(ys*w+xs)*4, al=a[p+3]/255, g=.3*a[p]+.59*a[p+1]+.11*a[p+2];
-    const stroke=((x+y)%hatch)<hatch*.55 ? 1 : .35, cross=g<120 && ((x-y+4096)%hatch)<hatch*.4 ? .25 : 0;
-    const wash=al*Math.min(.62, (.34*stroke+cross)*(.8+.4*n));
-    // soften the colors toward gray so they read as pencil, not paint
-    const r=a[p]*.7+g*.3, gg=a[p+1]*.7+g*.3, b=a[p+2]*.7+g*.3, A0=1-(1-wash)*(1-line), q=(y*w+x)*4; let A=A0;
-    const edge=Math.min(1, Math.min(x, y, w-1-x, h-1-y)/(9*d)); A*=edge*(2-edge);
-    if (A<=0.003) continue;
-    const kw=wash*(1-line)/A0, kl=line/A0;
-    o[q]=r*kw+58*kl; o[q+1]=gg*kw+52*kl; o[q+2]=b*kw+46*kl; o[q+3]=Math.round(A*255);
+    const gx=L(x+1,y-1)+2*L(x+1,y)+L(x+1,y+1)-L(x-1,y-1)-2*L(x-1,y)-L(x-1,y+1), gy=L(x-1,y+1)+2*L(x,y+1)+L(x+1,y+1)-L(x-1,y-1)-2*L(x,y-1)-L(x+1,y-1);
+    edge[y*w+x]=Math.min(1, Math.hypot(gx,gy)/170); }
+  // tone: how dark the color was, plus a shadow that gathers near edges and under things
+  const near=boxBlur(boxBlur(edge,w,h,Math.round(3*d)),w,h,Math.round(3*d)), under=boxBlur(edge,w,h,Math.round(8*d));
+  const dark=new Float32Array(N);                                            // the drawing's own outlines
+  for (let i=0;i<N;i++){ const al=a[i*4+3]/255, dk=1-lum[i]/255; dark[i]=al*cl((135-lum[i])/70,0,1);
+    ink[i]=al*cl(Math.pow(dk,1.5)*.75 + near[i]*.55 + under[i]*.3 - .1, 0, 1)*(1-dark[i]*.6); }
+  const soft=boxBlur(ink,w,h,Math.round(1.5*d));
+  const out=new ImageData(w,h), o=out.data, per=3.4*d, ANG=[.7,-.55,1.2];
+  const at=(arr,x,y)=>arr[cl(y,0,h-1)*w+cl(x,0,w-1)];
+  for (let y=0;y<h;y++) for (let x=0;x<w;x++){
+    const i=y*w+x, grain=hash2(x,y), slow=vnoise(x/(24*d), y/(24*d));
+    // the outline, twice, with a different wobble each time: a firm line and a lighter searching one
+    const w1x=Math.round((vnoise(x/(16*d)+3, y/(16*d))-.5)*1.6*d), w1y=Math.round((vnoise(x/(16*d), y/(16*d)+7)-.5)*1.6*d);
+    const w2x=Math.round((vnoise(x/(12*d)+31, y/(12*d))-.5)*4*d), w2y=Math.round((vnoise(x/(12*d), y/(12*d)+19)-.5)*4*d);
+    const line=Math.min(1, at(dark,x+w1x,y+w1y)*.92 + at(dark,x+w2x,y+w2y)*.3 + Math.pow(at(edge,x+w1x,y+w1y),2)*.3)*(.62+.38*slow);
+    // hatching: straight strokes with gaps, wider where it is darker; a second direction comes in for the darks
+    const t=soft[i], th=ANG[hue[i]], cs=Math.cos(th), sn=Math.sin(th), wob=(vnoise(x/(10*d)+5,y/(10*d)+5)-.5)*1.2*d;
+    const u1=(x*cs+y*sn+wob)/per, k1=Math.floor(u1), f1=u1-k1, v1=(-x*sn+y*cs)/(13*d);
+    let hatch=0;
+    if (t>.11 && f1<cl(t*1.1,.15,.55) && vnoise(v1+k1*3.7, k1*1.9)>.3) hatch=(.5+.5*vnoise(v1*.6, k1*.7))*cl(.28+t*.85,0,.9);
+    if (t>.36){ const c2=Math.cos(th+1.1), s2=Math.sin(th+1.1), u2=(x*c2+y*s2-wob)/(per*1.2), k2=Math.floor(u2), f2=u2-k2, v2=(-x*s2+y*c2)/(13*d);
+      if (f2<cl((t-.3)*1.3,.14,.5) && vnoise(v2+k2*2.3, k2*1.3)>.32) hatch=Math.max(hatch, (.5+.5*vnoise(v2*.6, k2*.9))*cl(.25+t*.8,0,.88)); }
+    const smudge=cl(t*.42-.05,0,.5);
+    let A=1-(1-line)*(1-hatch*.75)*(1-smudge); A*=.7+.3*grain;
+    const fade=Math.min(1, Math.min(x, y, w-1-x, h-1-y)/(10*d)); A*=fade*(2-fade);
+    if (A<=.004) continue;
+    const q=i*4; o[q]=58; o[q+1]=58; o[q+2]=64; o[q+3]=Math.round(cl(A,0,1)*240);
   }
   return out;
 }
-// Draws the scene for a diary page as a pencil sketch on a transparent background (the page shows through).
-// The picture is a little taller than wide, to sit on the left-hand page of the open journal: things stand
-// in two rows, the back row smaller.
 export function drawDiaryScene(canvas, key){
   const sc = SCENES[key]; if (!sc) return false;
-  const d = Math.min(2, window.devicePixelRatio||1), W = 190, H = 170;
+  const d = 3, W = 190, H = 170;   // drawn large so the pencil strokes stay fine
   const off = document.createElement('canvas'); off.width = W*d; off.height = H*d;
   const c = off.getContext('2d'); c.setTransform(d,0,0,d,0,0);
   const ground = MOOD[sc[0]][2], s = 58, rows = [H*.52, H*.92];

@@ -65,7 +65,7 @@ export const CHAPTERS = [
     { name:'Hothouse', waves:7, season:'spring', boss:'sapsucker',
       pts:[[2.5,-0.6],[2.5,10.5],[6.5,10.5],[6.5,3.5],[4.5,3.5],[4.5,13.2]],   // down one aisle, back up the next, and out through the middle
       pool:[['whitenymph',1,3,.5],['stinknymph',2,2,.6],['whitefly',4,1.5]],
-      intro:'It’s too hot outside, so the tomatoes moved into the greenhouse. Whitefly nymphs grow wings halfway down.' },
+      intro:'Whitefly nymphs crawl in, then grow wings halfway down. Keep something ready that can hit fliers.' },
     { name:'Vine Rows', waves:9, season:'summer', boss:'shieldbug',
       lanes:[[[2.5,-0.6],[2.5,5.5],[0.5,5.5],[0.5,10.5],[4.5,10.5],[4.5,13.2]],
              [[6.5,-0.6],[6.5,5.5],[8.5,5.5],[8.5,10.5],[4.5,10.5],[4.5,13.2]]],   // two rows that stay apart until the gate
@@ -74,14 +74,14 @@ export const CHAPTERS = [
     { name:'Red Harvest', waves:11, heat:[3,6,9], season:'late summer', boss:'baron',
       pts:[[9.6,1.5],[1.5,1.5],[1.5,5.5],[7.5,5.5],[7.5,9.5],[3.5,9.5],[3.5,13.2]],   // in through the side door
       pool:[['whitefly',1,2.5],['stinkbug',1,2],['bigstink',3,2]],
-      intro:'The biggest stink bugs shrug off the spray. The Stink Bug Baron is coming for the harvest.' },
+      intro:'The biggest stink bugs barely feel the spray, so lean on your defenders. The Stink Bug Baron is coming.' },
   ]},
   { id:'apple', name:'Apple Orchard', crop:'apple', cropPlural:'apples', pests:'Aphids & invasive beetles', grass:['#b2c67c','#a8bc72'],
     act:2, mood:'off', swarm:[4,7], road:[.65,1], levels:[
     { name:'Blossom Time', waves:7, swarm:[3,6], season:'spring', boss:'aphidmother',
       pts:[[1.5,-0.6],[1.5,3.5],[4.5,3.5],[4.5,7.5],[7.5,7.5],[7.5,13.2]],   // a short path between the trees
       pool:[['aphid',1,4,.5],['jbeetle',3,1.5]],
-      intro:'The trees are in bloom, but there isn’t a bee in sight. Aphids come in booms: watch for swarms on waves 3 and 6.' },
+      intro:'Aphids come in booms: watch for swarms on waves 3 and 6.' },
     { name:'Green Apples', waves:9, season:'summer', boss:'copperking',
       cols:11, rows:17, pts:[[9.5,-0.6],[9.5,2.5],[1.5,2.5],[1.5,6.5],[9.5,6.5],[9.5,10.5],[1.5,10.5],[1.5,14.5],[5.5,14.5],[5.5,16.2]],
       pool:[['aphid',1,3,.5],['jbeetle',1,2],['longhorn',4,1.2]],
@@ -89,14 +89,14 @@ export const CHAPTERS = [
     { name:'Small Harvest', waves:10, swarm:[4,7,9], season:'late summer', boss:'theswarm',
       pts:[[4.5,-0.6],[4.5,1.5],[7.5,1.5],[7.5,4.5],[1.5,4.5],[1.5,7.5],[7.5,7.5],[7.5,10.5],[2.5,10.5],[2.5,13.2]],
       pool:[['aphid',1,3,.4],['wingaphid',2,2],['longhorn',2,1.5],['jbeetle',1,1.5]],
-      intro:'The apples came in small this year. Something huge is buzzing over the hill: The Swarm.' },
+      intro:'Something huge is buzzing over the hill: The Swarm. Save your Compost for it.' },
   ]},
   { id:'corn', name:'Corn Field', crop:'corn', cropPlural:'corn', pests:'Locusts & rootworms', grass:['#c9c486','#bfba7c'],
     act:2, mood:'off', drought:true, road:[.5,1], levels:[
     { name:'Knee High', waves:6, season:'spring', boss:'grandhopper',
       cols:7, rows:11, pts:[[5.5,-0.6],[5.5,2.5],[1.5,2.5],[1.5,6.5],[5.5,6.5],[5.5,8.5],[3.5,8.5],[3.5,10.2]],   // a small corner of the field
       pool:[['hopperling',1,3,.55],['rootworm',2,2]],
-      intro:'No rain for weeks. Plant defenders (Roses, Sunflowers, Pine Trees) need a Sprinkler nearby or they wilt in the drought.' },
+      intro:'Drought: plant defenders (Roses, Sunflowers, Pine Trees) wilt unless a Sprinkler is nearby.' },
     { name:'Dry Spell', waves:9, season:'summer', boss:'rootking',
       lanes:[[[-0.6,1.5],[2.5,1.5],[2.5,6.5],[4.5,6.5],[4.5,9.5],[1.5,9.5],[1.5,11.5],[7.5,11.5],[7.5,13.2]],
              [[9.6,3.5],[6.5,3.5],[6.5,6.5],[4.5,6.5],[4.5,9.5],[1.5,9.5],[1.5,11.5],[7.5,11.5],[7.5,13.2]]],
@@ -105,23 +105,23 @@ export const CHAPTERS = [
     { name:'Dust and Tassels', waves:12, season:'late summer', boss:'locustking',
       pts:[[5.5,-0.6],[5.5,1.5],[1.5,1.5],[1.5,5.5],[6.5,5.5],[6.5,8.5],[2.5,8.5],[2.5,11.5],[7.5,11.5],[7.5,13.2]],
       pool:[['locust',1,3],['cornbeetle',1,1.5],['rootworm',2,2]],
-      intro:'The sky goes dark with locusts. The spray barely slows them now. The Locust King is coming.' },
+      intro:'The sky goes dark with locusts, and the Locust King is right behind them.' },
   ]},
   { id:'dust', name:'Dust Bowl Farm', crop:'wheat', cropPlural:'wheat', pests:'Dust beetles & sand fleas', grass:['#cdb88c','#c3ae82'],
-    act:3, mood:'withered', drought:true, road:[.35,1], crowd:1.5, levels:[
+    act:3, mood:'withered', drought:true, road:[.35,1], crowd:1.5, dust:[4,7], levels:[
     { name:'Topsoil', waves:9, season:'spring', boss:'dustdevil',
       pts:[[0.5,-0.6],[0.5,1.5],[8.5,1.5],[8.5,3.5],[0.5,3.5],[0.5,5.5],[8.5,5.5],[8.5,7.5],[0.5,7.5],[0.5,9.5],[8.5,9.5],[8.5,11.5],[4.5,11.5],[4.5,13.2]],   // one very long road, back and forth across the whole farm
       pool:[['sandflea',1,3],['dustgrub',2,2,.5]],
-      intro:'The wind took the topsoil. Plant defenders need water: a Rain Barrel keeps every plant near it watered.' },
-    { name:'Dry Wind', waves:7, season:'summer', boss:'dustdevil',
+      intro:'A Rain Barrel keeps every plant near it watered. Dust storms blow through on some waves: your defenders can’t see far until they pass.' },
+    { name:'Dry Wind', waves:7, dust:[3,5], season:'summer', boss:'dustdevil',
       lanes:[[[-0.6,2.5],[3.5,2.5],[3.5,6.5],[5.5,6.5],[5.5,10.5],[4.5,10.5],[4.5,13.2]],
              [[9.6,4.5],[6.5,4.5],[6.5,6.5],[5.5,6.5],[5.5,10.5],[4.5,10.5],[4.5,13.2]]],   // blown in from both sides; short and fierce
       pool:[['sandflea',1,2.5],['dustgrub',1,2,.5],['dustbeetle',3,2]],
       intro:'Sand fleas hop in clouds, and dust beetles wear thick shells.' },
-    { name:'Dust Storm', season:'late summer', boss:'dustdevil', waves:11,
+    { name:'Dust Storm', season:'late summer', boss:'dustdevil', waves:11, dust:[2,4,6,8,10],
       cols:11, rows:17, pts:[[1.5,-0.6],[1.5,13.5],[4.5,13.5],[4.5,2.5],[7.5,2.5],[7.5,13.5],[9.5,13.5],[9.5,16.2]],   // long straight furrows
       pool:[['sandflea',1,2],['dustbeetle',1,2.5],['dustgrub',2,2,.45]],
-      intro:'The sky has gone brown. Something is spinning across the fields: the Dust Devil.' },
+      intro:'Storm after storm hides the pests, and something is spinning in behind them: the Dust Devil.' },
   ]},
   { id:'rooftop', name:'Rooftop Garden', crop:'pepper', cropPlural:'peppers', pests:'Rats, pigeons & smog moths', grass:['#aeb29c','#a4a892'],
     act:3, mood:'withered', smog:true, road:[0,1], crowd:1.6, levels:[
@@ -129,7 +129,7 @@ export const CHAPTERS = [
       cols:11, rows:17, lanes:[[[1.5,-0.6],[1.5,4.5],[5.5,4.5],[5.5,8.5],[2.5,8.5],[2.5,16.2]],
              [[9.5,-0.6],[9.5,6.5],[7.5,6.5],[7.5,12.5],[9.5,12.5],[9.5,16.2]]],
       pool:[['rat',1,3],['pigeon',3,1.5]],
-      intro:'The last green in the city is up on the roof. The smog hides fliers: defenders only spot them up close.' },
+      intro:'The smog hides fliers: defenders only spot them up close.' },
     { name:'Heavy Air', season:'summer', boss:'bigpidge',
       pts:[[7.5,-0.6],[7.5,1.5],[1.5,1.5],[1.5,11.5],[7.5,11.5],[7.5,13.2]],   // around the edge of the roof, with a wide open middle
       pool:[['rat',1,2.5],['pigeon',1,2],['smogworm',2,2,.5]],
@@ -144,7 +144,7 @@ export const CHAPTERS = [
     { name:'Ashes', waves:6, season:'spring', boss:'mutantmole',
       cols:7, rows:11, pts:[[1.5,-0.6],[1.5,2.5],[5.5,2.5],[5.5,5.5],[1.5,5.5],[1.5,8.5],[3.5,8.5],[3.5,10.2]],   // a small, cramped bunker yard
       pool:[['glowslug',1,3],['glowmole',3,1.5]],
-      intro:'Nothing grows out here anymore. These are the last seeds. The pests that are left glow in the dark.' },
+      intro:'The pests that are left glow in the dark. Keep them off the seeds.' },
     { name:'Last Light', waves:9, season:'summer', boss:'palequeen',
       pts:[[0.5,-0.6],[0.5,1.5],[2.5,1.5],[2.5,3.5],[4.5,3.5],[4.5,5.5],[6.5,5.5],[6.5,7.5],[8.5,7.5],[8.5,9.5],[5.5,9.5],[5.5,11.5],[2.5,11.5],[2.5,13.2]],   // a staircase down and back
       pool:[['glowslug',1,2],['glowworm',1,2,.5],['glowsnail',3,1.5]],
@@ -159,7 +159,7 @@ export const CHAPTERS = [
     { name:'First Rain', season:'spring', boss:'bullfrog',
       pts:[[2.5,-0.6],[2.5,3.5],[6.5,3.5],[6.5,8.5],[3.5,8.5],[3.5,13.2]],   // a short, gentle stream bed
       pool:[['puddleslug',1,3],['frog',2,2]],
-      intro:'The trees you planted are growing, and the rain is back! Pests slow down in the rain, and every plant gets a drink. No more spraying: the bees are back.' },
+      intro:'Pests slow down in the rain, and every plant gets a drink. No more spraying: the bees are back.' },
     { name:'Puddles', waves:9, season:'summer', boss:'mudcrab',
       pts:[[4.5,-0.6],[4.5,8.5],[7.5,8.5],[7.5,4.5],[1.5,4.5],[1.5,11.5],[6.5,11.5],[6.5,13.2]],
       pool:[['puddleslug',1,2.5],['frog',1,2],['mudsnail',3,1.5]],
@@ -174,7 +174,7 @@ export const CHAPTERS = [
     { name:'Clover', waves:9, season:'spring', boss:'chunkycat',
       cols:11, rows:17, pts:[[5.5,-0.6],[5.5,2.5],[9.5,2.5],[9.5,6.5],[1.5,6.5],[1.5,10.5],[9.5,10.5],[9.5,14.5],[5.5,14.5],[5.5,16.2]],   // a long wander through a big meadow
       pool:[['slug',1,2.5],['caterpillar',1,2,.5],['aphid',2,2]],
-      intro:'Clover and wildflowers everywhere. The old pests are back, just ordinary ones now. Ladybugs love aphids.' },
+      intro:'The old pests are back, just ordinary ones now. Ladybugs love aphids.' },
     { name:'Bees Again', waves:7, season:'summer', boss:'mothqueen',
       pts:[[1.5,-0.6],[1.5,5.5],[3.5,5.5],[3.5,1.5],[5.5,1.5],[5.5,5.5],[7.5,5.5],[7.5,10.5],[2.5,10.5],[2.5,13.2]],   // up and down like a comb
       pool:[['caterpillar',1,2,.5],['mouse',1,2],['snail',3,1.5]],
@@ -189,11 +189,11 @@ export const CHAPTERS = [
     act:4, mood:'regrow', levels:[
     { name:'Seedlings Again', season:'spring', boss:'beetleking', mirrorOf:0,   // the very first garden's path, turned around
       pool:[['beetle',1,2],['puddleslug',1,2],['glowslug',3,1.5]],
-      intro:'The seeds from the vault are in the ground. A few glowing pests are still out there.' },
+      intro:'A few glowing pests are still out there. Keep them off the new beds.' },
     { name:'Wild and Green', waves:10, season:'summer', boss:'giantsnail',
       pts:[[-0.6,2.5],[7.5,2.5],[7.5,6.5],[2.5,6.5],[2.5,10.5],[6.5,10.5],[6.5,13.2]],   // in through the side gate
       pool:[['caterpillar',1,2,.5],['jbeetle',1,1.5],['glowworm',2,1.5,.5],['frog',1,1.5]],
-      intro:'The garden grows wilder than before: tall grass, a pond, bees on the clover.' },
+      intro:'Everything is green again, and more pests than ever want in.' },
     { name:'The New Garden', season:'late summer', boss:'blightweak', waves:12,
       cols:11, rows:17, lanes:[[[1.5,-0.6],[1.5,5.5],[5.5,5.5],[5.5,10.5],[2.5,10.5],[2.5,7.5],[8.5,7.5],[8.5,13.5],[3.5,13.5],[3.5,16.2]],
              [[9.5,-0.6],[9.5,3.5],[5.5,3.5],[5.5,10.5],[2.5,10.5],[2.5,7.5],[8.5,7.5],[8.5,13.5],[3.5,13.5],[3.5,16.2]]],

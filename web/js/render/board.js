@@ -1,5 +1,5 @@
 // Draws the garden board. Sizes itself to fit any phone, tablet or desktop window.
-import { G, towerAt, rangeOf, HILL } from '../engine/game.js';
+import { G, towerAt, rangeOf, HILL, DUST_TIME } from '../engine/game.js';
 import { path, buildable, pointAt } from '../engine/path.js';
 import { drawScenery, drawBonus } from './art-scenery.js';
 import { COLS, ROWS, CHAPTERS } from '../data/levels.js';
@@ -235,6 +235,14 @@ export function draw(clock){
     g.strokeStyle='rgba(200,225,245,.6)'; g.lineWidth=1.2;
     for (let i=0;i<70;i++){ const x=((i*53.7)%W + tt*20)%W, y=((i*97.3 + tt*420)%(H+30))-15; g.beginPath(); g.moveTo(x,y); g.lineTo(x-3,y+12); g.stroke(); }
     g.fillStyle='rgba(90,130,170,.08)'; g.fillRect(0,0,W,H); }
+  if (S.dustT>0){   // a dust storm: a brown wall blows across and hides the pests
+    const tt2=clockReal(), a=Math.min(1, S.dustT/1.2, (DUST_TIME-S.dustT)/.8);
+    g.fillStyle=`rgba(176,140,92,${.5*a})`; g.fillRect(0,0,W,H+s);
+    g.lineCap='round';
+    for (let i=0;i<26;i++){ const y=(i*97.3%(H+s)), x=((i*211.7+tt2*(260+i%5*60))%(W*1.6))-W*.3, len=s*(1.2+(i%4)*.7);
+      g.strokeStyle=`rgba(${i%2?226:140},${i%2?200:108},${i%2?150:70},${(.22+.1*(i%3))*a})`; g.lineWidth=s*(.05+(i%3)*.035);
+      g.beginPath(); g.moveTo(x,y); g.quadraticCurveTo(x+len*.5,y+Math.sin(tt2*2+i)*s*.14,x+len,y+Math.sin(tt2*1.3+i)*s*.08); g.stroke(); }
+  }
   if (G.CH.mood==='withered'){   // Part 3: a sick sky, ash drifting down, embers rising where it's dark
     const id=G.CH.id, tint = id==='dust' ? 'rgba(200,120,50,.11)' : id==='vault' ? 'rgba(60,40,70,.14)' : 'rgba(110,120,90,.08)';
     g.fillStyle=tint; g.fillRect(0,0,W,H+s);

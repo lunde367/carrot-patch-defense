@@ -243,8 +243,10 @@ canvas{ display:block }
   background:var(--panel); color:var(--panel-ink); border:1px solid rgba(0,0,0,.15); border-radius:var(--r-pill); padding:1px 7px; white-space:nowrap; pointer-events:none }
 .ab-cd{ position:absolute; inset:0; display:grid; place-items:center; font-family:var(--display); font-size:1.15rem; color:#fff;
   text-shadow:0 1px 3px rgba(0,0,0,.6); background:rgba(30,40,20,.45); border-radius:50%; pointer-events:none }
-.spray-btn:not(.ready), .fert-btn:not(.ready):not(.on){ filter:none; opacity:1 }
-.spray-btn:not(.ready) svg, .fert-btn:not(.ready):not(.on) svg{ opacity:.55 }
+/* not usable right now (no wave yet, or recharging): the whole button goes grey, the same way for both */
+.spray-btn:not(.ready), .fert-btn:not(.ready):not(.on){ filter:grayscale(1); opacity:1; background:#b9bdb4 }
+.spray-btn:not(.ready) svg, .fert-btn:not(.ready):not(.on) svg{ opacity:.5 }
+.spray-btn:not(.ready) .ab-lbl, .fert-btn:not(.ready):not(.on) .ab-lbl{ opacity:.8 }
 
 /* the clear-this-spot bubble over the board */
 .scene-pop{ position:absolute; z-index:6; width:min(230px, 80%); background:var(--panel); color:var(--panel-ink); border-radius:var(--r-lg);
@@ -416,7 +418,7 @@ canvas{ display:block }
 .spray-btn svg{ width:46px; height:46px } .fert-btn svg{ width:41px; height:41px }
 
 /* First time with Compost: a little bouncing note on the button during a wave, until it has been used once. */
-.fert-btn.nudge::before{ content:'Tap to speed up!'; position:absolute; left:50%; bottom:calc(100% + 8px); transform:translateX(-50%); white-space:nowrap;
+.fert-btn.nudge::before{ content:'Tap: defenders work faster'; position:absolute; left:50%; bottom:calc(100% + 8px); transform:translateX(-50%); white-space:nowrap;
   background:#fff; color:#28331f; font:800 .74rem var(--body); padding:4px 9px; border-radius:999px; box-shadow:0 2px 6px rgba(0,0,0,.25); animation:nudge-bob 1s ease-in-out infinite; pointer-events:none }
 .board.spray-left .fert-btn.nudge::before{ left:0; transform:none }
 .board:not(.spray-left) .fert-btn.nudge::before{ left:auto; right:0; transform:none }
@@ -424,5 +426,5 @@ canvas{ display:block }
 @media (prefers-reduced-motion: reduce){ .fert-btn.nudge::before{ animation:none } }
 
 /* Test mode only: finish the level as a perfect win. */
-.dev-skip{ position:absolute; right:8px; top:8px; z-index:5; border:0; border-radius:999px; padding:6px 11px; cursor:pointer;
+.dev-skip{ position:absolute; right:8px; top:46px; z-index:5; border:0; border-radius:999px; padding:6px 11px; cursor:pointer;
   background:#2b2440; color:#ffe9a8; font:800 .74rem var(--body); box-shadow:0 2px 6px rgba(0,0,0,.3) }

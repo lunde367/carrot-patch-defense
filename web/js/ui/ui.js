@@ -229,8 +229,8 @@ let offerYes = null, offerNo = null;
 function showFertIntro(){
   G.S.paused=true;
   overlay(`<div class="panel newdef"><span class="tag">New tool</span><div class="spray-art fert-art">${$('fert').querySelector('svg').outerHTML}</div>
-    <h3>Compost</h3><p>Kitchen scraps and old leaves, turned into good food for your garden. Tap the green button during a wave and every defender works faster for a few seconds.</p>
-    <p>It never hurts anything. It takes a while to be ready again, so save it for a big crowd or a boss.</p></div>
+    <h3>Compost</h3><p>Garden food made from kitchen scraps. Tap it during a wave and every defender works faster for a few seconds.</p>
+    <p>It recharges slowly, so save it for a big crowd or a boss.</p></div>
     <div class="row"><button class="btn main" data-go="fert-ok">Got it</button></div>`);
   Audio.play('sparkle');
 }
@@ -716,7 +716,7 @@ async function onOverlayClick(ev){
     case 'diff-pick': { const s=Save.data.settings; s.diff=b.dataset.diff; s.diffAsked=true; delete s.tough; Save.commit();
       G.diffId=s.diff; G.diff=DIFFICULTY[s.diff].hp; paintDiff(); return nextIntro(); }
     case 'fert-ok': { Save.data.seen.fert=true; Save.commit(); G.S.paused=false; hideOverlay(); dirty();
-      msg('Save the Compost for a big crowd or a boss.'); return nextIntro(); }
+      msg('Compost can be used once a wave has started.'); return nextIntro(); }
     case 'offer-yes': return offerYes && offerYes();
     case 'offer-no': return offerNo && offerNo();
     case 'revive': { b.disabled=true; if (await earn('second_chance', 'keep going with half your crops') && revive()){ hideOverlay(); msg(`Back in! Wave ${G.S.wave+1} again, with ${G.S.lives} crops.`); Audio.play('chime'); } else b.disabled=false; return; }
@@ -1012,8 +1012,9 @@ export function initUI(){
   });
   paintSound();
 
-  on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat && !G.S.rain && !swarmAt(wave) && !pestQueue.length) msg(boss ? `${G.LV.endless?'Boss wave':'Final wave'}! The ${ENEMY[(G.S.spawnQ.find(q=>ENEMY[q.t].boss)||{t:G.LV.boss}).t].name} is coming!` : wave===G.LV.waves-1 ? 'One more wave before the boss.' : 'Here they come…'); });
+  on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat && !G.S.rain && !G.S.dustT && !swarmAt(wave) && !pestQueue.length) msg(boss ? `${G.LV.endless?'Boss wave':'Final wave'}! The ${ENEMY[(G.S.spawnQ.find(q=>ENEMY[q.t].boss)||{t:G.LV.boss}).t].name} is coming!` : wave===G.LV.waves-1 ? 'One more wave before the boss.' : 'Here they come…'); });
   on('rain', () => msg('Rain! Pests slow down in the wet, and every plant gets a drink.'));
+  on('dust', () => msg('Dust storm! Your defenders can only see pests up close until it passes.'));
   on('swarm', () => msg('Aphid boom! A huge swarm is hatching. Splash defenders and the spray shine here.'));
   on('heat', hot => msg(hot ? `Heat wave! ${hot} defender${hot>1?'s are':' is'} overheating. Defenders near a Sprinkler stay cool.` : 'Heat wave! Your Sprinklers are keeping everyone cool.'));
   on('fence', left => msg(left ? `Your Sturdy Fence stopped a pest! It can stop ${left} more this level.` : 'Your Sturdy Fence stopped a pest! That was its last one this level.'));

@@ -53,6 +53,9 @@ const weather = (kind, w) => G.LV.endless ? eventAt(w)===kind : (G.LV[kind] || G
 export const heatAt = w => weather('heat', w);
 export const rainAt = w => weather('rain', w);
 export const swarmAt = w => weather('swarm', w);
+// Dust storms (Dust Bowl Farm): for the first seconds of the wave, defenders can only see pests up close.
+export const dustAt = w => !G.LV.endless && weather('dust', w);
+const DUST_SIGHT = .55; export const DUST_TIME = 10;
 // Difficulty (chosen in Settings): pest health is multiplied by `hp`. The level table in levels.js is tuned
 // for the test bots at 1.0; real players proved much stronger, so Normal sits above it and Easy just below. G.diff is the multiplier in play.
 export const DIFFICULTY = {
@@ -85,6 +88,7 @@ export function startWave(){
   for (const t of S.towers) t.cool = !S.heat || watered(t);
   // Rain (Part 4): pests slow down and every plant gets a drink.
   S.rain = rainAt(S.wave); if (S.rain) emit('rain');
+  S.dustT = dustAt(S.wave) ? DUST_TIME : 0; if (S.dustT) emit('dust');
   if (S.heat) emit('heat', S.towers.filter(t=>!t.cool).length);
   if (swarmAt(S.wave)) emit('swarm');
   emit('waveStart', { wave:S.wave, boss:bossWave(S.wave) }); emit('select', null);
@@ -165,7 +169,7 @@ export const sprayStats = () => { const p=G.S.perks;
 // Test mode: finish the level right now as a perfect win, so the rest of the game can be looked at quickly.
 export function skipToWin(){
   const S=G.S; if (!S || S.mode!=='play' || G.LV.endless) return false;
-  S.enemies=[]; S.spawnQ=[]; S.shots=[]; S.active=false; S.heat=false; S.rain=false; S.wave=G.LV.waves; S.lives=S.maxLives;
+  S.enemies=[]; S.spawnQ=[]; S.shots=[]; S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.wave=G.LV.waves; S.lives=S.maxLives;
   S.mode='won'; emit('win', { stars:3, lives:S.lives, maxLives:S.maxLives, lost:0, gi:G.LV.gi }); return true;
 }
 export const fertReady = () => G.S.fertOn && G.S.fertCd<=0 && G.S.fertT<=0 && G.S.mode==='play' && G.S.active;
@@ -180,7 +184,7 @@ export function fertilize(){
 export function revive(){
   const S=G.S; if (S.mode!=='lost' || S.revived) return false;
   S.revived=true; S.mode='play'; S.lives=Math.ceil(S.maxLives/2);
-  S.enemies=[]; S.shots=[]; S.spawnQ=[]; S.active=false; S.heat=false; S.rain=false; S.fertT=0;
+  S.enemies=[]; S.shots=[]; S.spawnQ=[]; S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.fertT=0;
   S.wave=Math.max(0, S.wave-1); emit('revive'); return true;
 }
 // ---------- Endless Garden gifts ----------
@@ -288,6 +292,7 @@ function hitShot(s){
 // ---------- one simulation step ----------
 export function update(dt){
   const S=G.S;
+  if (S.dustT>0) S.dustT=Math.max(0, S.dustT-dt);
   if (S.spawnQ.length){ S.spawnT-=dt;
     // pests take turns at each entrance
     if (S.spawnT<=0){ const it=S.spawnQ.shift(); spawnEnemy(it.t,0,it.m,(S.laneNext++)%path.lanes.length); S.spawnT=(ENEMY[it.t].gap||2)/Math.pow(crowdOf(), .3); } }
@@ -323,7 +328,7 @@ export function update(dt){
     if (t.wilt>0){ t.wilt=Math.max(0, t.wilt-dt); continue; }          // wilted by the spray
     if (t.type==='sunflower' || T.support) continue;
     const K=sk(t.type), DM=T.dmg ? T.dmg[t.lv]*(1+(K.dmg||0)) : 0;
-    const R=rangeOf(t), seen = e => Math.hypot(e.x-t.x,e.y-t.y) <= R*(G.CH.smog && e.fly ? SMOG : 1);
+    const R=rangeOf(t), seen = e => Math.hypot(e.x-t.x,e.y-t.y) <= R*(G.CH.smog && e.fly ? SMOG : 1)*(S.dustT>0 ? DUST_SIGHT : 1);
     if (t.type==='scarecrow'){
       // Scares every flier in reach back up the path. Bosses only flinch half as far. A scared pest
       // can't be scared again for a moment, so several scarecrows can't hold one forever.
@@ -376,7 +381,7 @@ export function update(dt){
   S.fx=S.fx.filter(f=>f.life>0);
 
   if (S.active && !S.spawnQ.length && !S.enemies.length && S.mode==='play'){
-    S.active=false; S.heat=false; S.rain=false;
+    S.active=false; S.heat=false; S.rain=false; S.dustT=0;
     if (S.wave>=G.LV.waves){
       const lost=S.maxLives-S.lives, stars=starsFor(lost, S.maxLives);
       S.mode='won'; emit('win', { stars, lives:S.lives, maxLives:S.maxLives, lost, gi:G.LV.gi }); return;
