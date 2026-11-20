@@ -20,7 +20,7 @@ export const MARKUP = `
     <button class="btn ghost" id="spd" aria-label="Game speed">1×</button>
     <button class="btn ghost icon" id="restart" aria-label="Restart level" title="Restart level">${ICON.restart}<span class="lbl"></span></button>
     <button class="btn ghost icon" id="sound" aria-label="Sound" title="Sound">${ICON.soundAll}</button>
-    <button class="btn ghost icon" id="map" aria-label="Gardens" title="Gardens">${ICON.map}</button>
+    <button class="btn ghost icon" id="map" aria-label="Home" title="Home">${ICON.home}</button>
   </div>
 
   <div class="board" id="board">
