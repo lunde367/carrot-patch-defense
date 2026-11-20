@@ -127,7 +127,21 @@ function pencil(src, d){
   }
   return out;
 }
+// Hand-drawn pictures that replace the game's own sketch for a page (made with tools/diary-art.py).
+// Add a page's code here once its web/img/diary/<code>.webp is in place.
+const ART_FILES = new Set(['part-1','start-cabbage','after-cabbage','start-strawberry','after-strawberry','start-apple-2','after-apple','start-corn','after-corn']);
+const loaded = new Map();
+const artImage = key => { if (!loaded.has(key)){ const im = new Image(); im.decoding = 'async'; im.src = `img/diary/${key}.webp`; loaded.set(key, im); } return loaded.get(key); };
 export function drawDiaryScene(canvas, key){
+  if (ART_FILES.has(key)){
+    const im = artImage(key), paint = () => { canvas.width = im.naturalWidth; canvas.height = im.naturalHeight; canvas.getContext('2d').drawImage(im, 0, 0); };
+    if (im.complete && im.naturalWidth) paint();
+    else { canvas.width = 640; canvas.height = 572; im.addEventListener('load', paint, { once:true }); im.addEventListener('error', () => drawSketch(canvas, key), { once:true }); }
+    return true;
+  }
+  return drawSketch(canvas, key);
+}
+function drawSketch(canvas, key){
   const sc = SCENES[key]; if (!sc) return false;
   const d = 3, W = 190, H = 170;   // drawn large so the pencil strokes stay fine
   const off = document.createElement('canvas'); off.width = W*d; off.height = H*d;
