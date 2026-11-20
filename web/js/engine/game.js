@@ -73,7 +73,7 @@ export const floodAt = w => !!(G.LV.flood && path.flood && G.LV.flood.waves.incl
 export const DIFFICULTY = {
   easy:   { hp:1,  name:'Easy',   note:'Pests are softer. Great for little gardeners.' },
   normal: { hp:1.45,  name:'Normal', note:'The garden as it was meant to be played.' },
-  hard:   { hp:1.8, name:'Hard',   note:'For grown-up gardeners. You’ll need your Sprayer and Compost.' },
+  hard:   { hp:1.7, name:'Hard',   note:'For grown-up gardeners. You’ll need your Sprayer and every trick you know.' },
 };
 const hpMul = () => G.LV.hpMul*(G.diff||1);
 // In the Endless Garden pests also get a steady 9% tougher every wave, so every run ends somewhere.

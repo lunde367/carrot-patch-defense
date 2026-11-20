@@ -467,3 +467,17 @@ canvas{ display:block }
 .nudge-box.blue{ background:rgba(79,179,217,.14); border-color:rgba(79,179,217,.55) }
 .nudge-box b{ font-size:.92rem } .nudge-box .btn{ margin-top:4px; align-self:stretch }
 .chal-list.plain i{ color:#c98a12; width:1.2em; text-align:center }
+/* Small phones (iPhone SE and similar): result cards and story cards get the whole screen instead of
+   only the board, so their buttons are never cut off; the top controls get a little tighter. */
+@media (max-height: 700px), (max-width: 380px){
+  .over:has(.panel), .over.part-over{ position:fixed; inset:0; z-index:60; justify-content:safe center;
+    padding:max(16px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)) }
+}
+@media (max-width: 400px){
+  .controls{ gap:4px }
+  .controls .btn.icon, .controls #spd{ min-width:38px; padding-inline:6px }
+  .controls .btn.main{ font-size:.92rem; padding-inline:8px; white-space:nowrap }
+}
+/* a locked part's hint wraps under the title on narrow screens instead of running into it */
+.part.locked b{ flex:none }
+.part.locked .part-meta{ flex:1 1 0; min-width:0; text-align:right; white-space:normal }
