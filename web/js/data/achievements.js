@@ -66,7 +66,7 @@ export const ACHIEVEMENTS = [
   { id:'clear1',     name:'Tidy Up',          desc:'Clear something out of the way for seeds.',         check:(s,e)=>e.type==='clear' },
   { id:'clear50',    name:'Clean Sweep',      desc:'Clear 50 things out of the way.',                   stat:'clears', goal:50 },
   { id:'sprayHits',  name:'Soaked',           desc:'Hit 100 pests with the Sprayer.',                   stat:'sprayHits', goal:100 },
-  { id:'fert',       name:'Green Thumb',      desc:'Use Compost 25 times.',                          stat:'ferts', goal:25 },
+  { id:'fert',       name:'Green Thumb',      desc:'Use Fertilizer or Compost 25 times.',                          stat:'ferts', goal:25 },
   { id:'scare',      name:'Shoo!',            desc:'Scare away 50 birds with Scarecrows.',              stat:'scares', goal:50 },
   { id:'shed10',     name:'Well Stocked',     desc:'Buy 10 Garden Shed upgrades.',                      check:s=>shedTiers(s)>=10 },
   // hard difficulty

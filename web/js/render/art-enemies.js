@@ -7,7 +7,15 @@ function mound(c,r,e){
   for (let k=0;k<4;k++) ell(c,Math.sin(e.ph+k*1.7)*r*.7,r*.25-Math.abs(Math.cos(e.ph*1.3+k))*r*.3,r*.13,r*.11,'#8f6643');
 }
 
-export function drawEnemy(c,e,s){
+// Glowing pests (Part 3 and leftovers in Part 4) are malformed too: lumps, an extra staring eye, glowing drips.
+export function drawEnemy(c,e,s){ c.save(); drawBase(c,e,s); const D=ENEMY[e.type];
+  if (D.glow && !e.under && !(e.cocoon>0)) mutate(c,e,e.size*s,D); c.restore(); }
+function mutate(c,e,r,D){
+  ell(c,-r*.32,-r*.15,r*.2,r*.17,'rgba(78,96,40,.6)',D.dk||'#2a3a12',1); ell(c,r*.2,r*.18,r*.14,r*.12,'rgba(78,96,40,.55)',D.dk||'#2a3a12',1);
+  const look=Math.sin(e.ph*.9)*r*.04; ell(c,r*.06,-r*.5,r*.17,r*.16,'#f2f5d8','#2a3a12',1.2); ell(c,r*.06+look,-r*.48,r*.075,r*.085,'#1e2a0a'); ell(c,r*.04+look,-r*.51,r*.025,r*.025,'#ffffff');
+  for (let k=0;k<2;k++){ const f=(e.ph*.35+k*.5)%1; c.globalAlpha=(1-f)*.8; ell(c,(k?-r*.25:r*.3),r*(.45+f*.7),r*.07,r*.09,D.glow); } c.globalAlpha=1;
+}
+function drawBase(c,e,s){
   const D=ENEMY[e.type], r=e.size*s, w=Math.sin(e.ph)*.5;
   if (e.cocoon>0){ const sh=Math.sin(e.ph*5)*r*.08, R=Math.max(r,s*.2);
     ell(c,0,R*.8,R*.9,R*.25,'rgba(40,40,20,.22)');

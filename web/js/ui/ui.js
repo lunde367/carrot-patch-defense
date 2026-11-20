@@ -1,5 +1,5 @@
 // Everything the player sees and taps outside the board: HUD, tray, panels and overlays.
-import { G, forecast, skipToWin, DIFFICULTY, BOONS, takeBoon, undoPlant, bossWave, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, canClear, sceneryPiece, clearScenery } from '../engine/game.js';
+import { G, isCompost, fertName, fertTimeNow, forecast, skipToWin, DIFFICULTY, BOONS, takeBoon, undoPlant, bossWave, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, canClear, sceneryPiece, clearScenery } from '../engine/game.js';
 import { SCENERY_NAMES } from '../data/scenery.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
 import { path } from '../engine/path.js';
@@ -83,7 +83,7 @@ const onLevelStart = (LV => {
   {   // (test mode shows these too, so the whole game can be reviewed)
     for (const k of TRAY) if (TYPES[k].unlock<=LV.gi && TYPES[k].unlock>0 && !Save.data.seen[k]) intro.push(['defender', k]);
     if (G.S.sprayOn && !Save.data.seen.spray) intro.push(['spray']);
-    if (G.S.fertOn && !Save.data.seen.fert) intro.push(['fert']);
+    if (G.S.fertOn && !(isCompost() ? Save.data.seen.compost : Save.data.seen.fert)) intro.push(['fert']);
     if (path.bonus.size && !Save.data.seen.tiles) intro.push(['tiles']);   // the first level with hills and sunny patches
   }
   nextIntro();
@@ -230,13 +230,20 @@ function offerCard(title, text, yes, onYes, onNo){
 let offerYes = null, offerNo = null;
 
 function showFertIntro(){
-  G.S.paused=true;
-  overlay(`<div class="panel newdef"><span class="tag">New tool</span><div class="spray-art fert-art">${$('fert').querySelector('svg').outerHTML}</div>
-    <h3>Compost</h3><p>Garden food made from kitchen scraps. Tap it during a wave and every defender works faster for a few seconds.</p>
-    <p>It recharges slowly, so save it for a big crowd or a boss.</p></div>
+  G.S.paused=true; setFertIcon();
+  overlay(isCompost() ? `<div class="panel newdef"><span class="tag">Better tool</span><div class="spray-art fert-art">${$('fert').querySelector('svg').outerHTML}</div>
+    <h3>Compost</h3><p>No more store-bought Fertilizer. Compost is made from kitchen scraps and old leaves: it gives a gentler boost, lasts longer, and never burns your plants.</p></div>
+    <div class="row"><button class="btn main" data-go="fert-ok">Got it</button></div>`
+  : `<div class="panel newdef"><span class="tag">New tool</span><div class="spray-art fert-art">${$('fert').querySelector('svg').outerHTML}</div>
+    <h3>Fertilizer</h3><p>“Double the harvest!” says the bag. Tap it during a wave and every defender works much faster for a few seconds.</p>
+    <p>When it wears off it burns the roots: your Roses, Sunflowers and Pine Trees wilt for a moment. Save it for a big crowd or a boss.</p></div>
     <div class="row"><button class="btn main" data-go="fert-ok">Got it</button></div>`);
   Audio.play('sparkle');
 }
+// The button shows a chemical sack in Parts 1-3 and a wooden compost bin in Part 4.
+const FERT_SVG = { sack:null, bin:`<path d="M5 12h22l-2 15a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z" fill="#9a6b3c" stroke="#5e3d20" stroke-width="1.6" stroke-linejoin="round"/><path d="M6 17h20M6.8 22h18.4" stroke="#5e3d20" stroke-width="1.3"/><path d="M11 12v17M16 12v17M21 12v17" stroke="#7a5230" stroke-width="1"/><path d="M8 12c1-4 4-6 8-6s7 2 8 6" fill="#6b4a2a" stroke="#3e2a16" stroke-width="1.4"/><path d="M11 8c-1-3 1-5 3-5 0 2-1 4-3 5zM17 7c1-3 4-4 6-3-1 2-3 3-6 3z" fill="#7fc05a" stroke="#3f7a2a" stroke-width="1"/><circle cx="14" cy="9" r="1.2" fill="#e2483a"/>` };
+function setFertIcon(){ const svg=$('fert').querySelector('svg'); if (FERT_SVG.sack==null) FERT_SVG.sack=svg.innerHTML;
+  const want=isCompost()?'bin':'sack'; if (svg.dataset.k!==want){ svg.innerHTML=FERT_SVG[want]; svg.dataset.k=want; } $('fert').querySelector('.ab-lbl').textContent=fertName(); }
 // Helpful spots: hills and sunny patches, drawn the way they look on the board.
 function showTilesIntro(){
   G.S.paused=true;
@@ -459,10 +466,27 @@ function showDiary(at){
     el.addEventListener('pointerdown', e => { x0=e.clientX; });
     el.addEventListener('pointerup', e => { if (x0!=null && Math.abs(e.clientX-x0)>40) turnPage(e.clientX<x0 ? 1 : -1); x0=null; }); }
 }
+// Turning a page: the page lifts off at the spine, swings over with its shadow falling across the book,
+// and its back (the next page) settles on the other side. Built from copies of the old and new pages,
+// laid over the new spread and removed when the turn ends.
+let turning=false;
+const reduceMotion = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){ return false; } };
+function copyPage(src){ const c=src.cloneNode(true); const a=src.querySelectorAll('canvas'), b=c.querySelectorAll('canvas');
+  a.forEach((cv,i) => { b[i].width=cv.width; b[i].height=cv.height; try { b[i].getContext('2d').drawImage(cv,0,0); } catch(e){} }); return c; }
 function turnPage(dir){
-  const n=DIARY.filter(pageWritten).length, to=jPage+dir; if (to<0 || to>=n) return;
+  const pages=DIARY.filter(pageWritten), to=jPage+dir; if (turning || to<0 || to>=pages.length) return;
+  const old=$('jPage'), L0=old && copyPage(old.querySelector('.sp-left')), R0=old && copyPage(old.querySelector('.sp-right'));
   Audio.play('page'); showDiary(to);
-  const el=$('jPage'); if (el) el.classList.add(dir>0 ? 'turn-next' : 'turn-prev');
+  const book=$('jPage'); if (!book || !L0 || reduceMotion()) return;
+  const tmp=document.createElement('div'); tmp.innerHTML=spread(pages[to], to+1); paintScenes(tmp);
+  const L1=tmp.querySelector('.sp-left'), R1=tmp.querySelector('.sp-right'), next=dir>0;
+  const still = next ? L0 : R0, front = next ? R0 : L0, back = next ? L1 : R1;
+  still.classList.add('pt-still', next?'pt-l':'pt-r'); front.classList.add('pt-face','pt-front'); back.classList.add('pt-face','pt-back');
+  const leaf=document.createElement('div'); leaf.className='pt-leaf '+(next?'pt-next':'pt-prev'); leaf.append(front, back);
+  const cast=document.createElement('i'); cast.className='pt-cast '+(next?'pt-r':'pt-l');
+  book.classList.add('turning'); book.append(still, cast, leaf); turning=true;
+  const done=()=>{ if (!turning) return; turning=false; still.remove(); cast.remove(); leaf.remove(); book.classList.remove('turning'); };
+  leaf.addEventListener('animationend', e => { if (e.target===leaf) done(); }); setTimeout(done, 1400);
 }
 
 // ---------- Defender skills: two branches per defender, bought with challenge stars ----------
@@ -518,7 +542,7 @@ function showStats(){
     ['Three-star levels', `${LEVELS.filter(l=>Save.data.stars[l.gi]===3).length} of ${LEVELS.length}`],
     ['Games won', n(s.wins)], ['Games lost', n(s.losses)], ['Win rate', games ? Math.round(s.wins/games*100)+'%' : '—'],
     ['Pests squashed', n(s.kills)], ['Bosses beaten', n(s.bossKills)], ['Seeds from Sunflowers', n(s.flowerSeeds)],
-    ['Pests hit by the Sprayer', n(s.sprayHits)], ['Times Compost was used', n(s.ferts)], ['Birds scared off', n(s.scares)],
+    ['Pests hit by the Sprayer', n(s.sprayHits)], ['Times Fertilizer or Compost was used', n(s.ferts)], ['Birds scared off', n(s.scares)],
     ['Things cleared out of the way', n(s.clears)], ['Wins on Hard', n(s.toughWins)],
     ['Diary pages written', `${DIARY.filter(pageWritten).length} of ${DIARY.length}`],
     ['Endless Garden best wave', n(Save.data.endless.best)], ['Endless Garden runs', n(Save.data.endless.runs)],
@@ -643,7 +667,7 @@ function lossTip(){
   const S=G.S, top=Object.entries(S.leaks).sort((a,b)=>b[1]-a[1])[0];
   if (!top) return 'Plant defenders near the bends, where pests pass more than once.';
   const D=ENEMY[top[0]], name=D.name, ground=Object.values(TYPES).filter(T=>T.ground).map(T=>T.name+'s').join(' and ');
-  if (D.boss) return `The ${name} got through. Upgrade your strongest defenders to level 3 before the last wave${S.fertOn?', and save your Compost for it':''}.`;
+  if (D.boss) return `The ${name} got through. Upgrade your strongest defenders to level 3 before the last wave${S.fertOn?`, and save your ${fertName()} for it`:''}.`;
   if (D.fly) return `Most of what got through was flying (${name}s). ${ground} can’t reach fliers, so add Carrot Bunnies${towerOpen('rose')?' or Thorny Roses':''} near the end of the path.`;
   if (D.armor) return `${name}s wear armor, so small hits barely dent them. Big hitters like ${towerOpen('owl')?'Night Owls and ':''}Pine Trees get through it.`;
   if (D.burrow) return `${name}s tunnel under part of the path. Spread defenders along the whole path so something is waiting where they come up.`;
@@ -654,8 +678,8 @@ function lossTip(){
 function showEnding(){
   const first=!Save.data.ended; Save.data.ended=true; Save.commit(); emit('ending');
   const todo=ACHIEVEMENTS.length-achievementCount();
-  overlay(`<div class="part-card ending" style="--part:#f6c344"><span>The End</span><h2>The garden is yours for good.</h2></div>
-    <p class="ending-text">Twelve gardens, thirty-six harvests, and one sprayer left to rust in the shed. Thank you for playing.</p>
+  overlay(`<div class="part-card ending" style="--part:#f6c344"><span>The End</span><h2>Not the world it was. Still a garden.</h2></div>
+    <p class="ending-text">Twelve gardens, thirty-six harvests, one sprayer left to rust in the shed, and a world given room to heal. Thank you for playing.</p>
     <p class="ending-text small">${first?'The <b>Endless Garden</b> is now open. ':''}${todo?`${todo} achievement${todo>1?'s are':' is'} still waiting.`:''}</p>
     <div class="row"><button class="btn main" data-go="endless">Endless Garden</button><button class="btn ghost" data-go="menu">All gardens</button></div>`);
   $('over').classList.add('part-over');
@@ -729,8 +753,8 @@ async function onOverlayClick(ev){
     case 'diff-pick': { const s=Save.data.settings; s.diff=b.dataset.diff; s.diffAsked=true; delete s.tough; Save.commit();
       G.diffId=s.diff; G.diff=DIFFICULTY[s.diff].hp; paintDiff(); return nextIntro(); }
     case 'tiles-ok': { Save.data.seen.tiles=true; Save.commit(); G.S.paused=false; hideOverlay(); dirty(); return nextIntro(); }
-    case 'fert-ok': { Save.data.seen.fert=true; Save.commit(); G.S.paused=false; hideOverlay(); dirty();
-      msg('Compost can be used once a wave has started.'); return nextIntro(); }
+    case 'fert-ok': { Save.data.seen.fert=true; if (isCompost()) Save.data.seen.compost=true; Save.commit(); G.S.paused=false; hideOverlay(); dirty();
+      msg(`${fertName()} can be used once a wave has started.`); return nextIntro(); }
     case 'offer-yes': return offerYes && offerYes();
     case 'offer-no': return offerNo && offerNo();
     case 'revive': { b.disabled=true; if (await earn('second_chance', 'keep going with half your crops') && revive()){ hideOverlay(); msg(`Back in! Wave ${G.S.wave+1} again, with ${G.S.lives} crops.`); Audio.play('chime'); } else b.disabled=false; return; }
@@ -890,12 +914,13 @@ function paintDev(){
 function paintFert(){
   const S=G.S, b=$('fert'); b.hidden = !S || !S.fertOn || S.mode!=='play';
   if (b.hidden) return;
+  setFertIcon();
   b.classList.toggle('solo', $('spray').hidden);
   const on=S.fertT>0, ready=fertReady(), full=FERT.recharge*S.perks.fertRecharge;
   b.classList.toggle('nudge', ready && !((Save.data.stats||{}).ferts>0));   // never used it yet: point at it during a wave
-  b.style.setProperty('--p', on ? S.fertT/S.perks.fertTime : ready ? 1 : 1 - S.fertCd/full);
+  b.style.setProperty('--p', on ? S.fertT/fertTimeNow() : ready ? 1 : 1 - S.fertCd/full);
   b.classList.toggle('on', on); b.classList.toggle('ready', ready);
-  b.setAttribute('aria-label', on ? 'Compost: working' : ready ? 'Compost: ready' : `Compost: ready in ${Math.ceil(S.fertCd)} seconds`);
+  b.setAttribute('aria-label', on ? `${fertName()}: working` : ready ? `${fertName()}: ready` : `${fertName()}: ready in ${Math.ceil(S.fertCd)} seconds`);
   const cd=b.querySelector('.ab-cd'); cd.hidden = on || ready || !S.active; cd.textContent = Math.ceil(S.fertCd);
 }
 function paintOffers(){
@@ -995,10 +1020,10 @@ export function initUI(){
     }
     setSpeed(next); Audio.play('tap'); };
   $('fert').onclick=()=>{ const S=G.S; if (!S || S.paused || S.mode!=='play') return;
-    if (!S.active){ Audio.play('denied'); msg('Save the Compost for a wave. Start a wave first.'); return; }
+    if (!S.active){ Audio.play('denied'); msg(`Save the ${fertName()} for a wave. Start a wave first.`); return; }
     if (S.fertT>0){ msg('Your defenders are already fed!'); return; }
-    if (!fertilize()){ Audio.play('denied'); msg(`The Compost is getting ready. ${Math.ceil(S.fertCd)} seconds to go.`); return; }
-    msg('Compost spread! Every defender works faster for a few seconds.'); dirty(); };
+    if (!fertilize()){ Audio.play('denied'); msg(`The ${fertName()} is getting ready. ${Math.ceil(S.fertCd)} seconds to go.`); return; }
+    msg(isCompost() ? 'Compost spread! Every defender works faster for a while.' : 'Fertilizer spread! Every defender works much faster, until it burns the roots.'); dirty(); };
   $('adSeeds').onclick=async()=>{ const S=G.S; if (!S || S.adSeeds || S.wave>0) return;
     if (await earn('bonus_seeds', `+${EXTRAS.bonusSeeds} seeds`)){ S.adSeeds=true; addSeeds(EXTRAS.bonusSeeds); msg(`+${EXTRAS.bonusSeeds} seeds!`); Audio.play('sparkle'); } dirty(); };
   $('adRefill').onclick=async()=>{ const S=G.S; if (!S || S.adRefill || sprayReady()) return;
@@ -1028,6 +1053,7 @@ export function initUI(){
 
   on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat && !G.S.rain && !G.S.dustT && !G.S.dewT && !G.S.soft && !G.S.flood && !swarmAt(wave) && !pestQueue.length) msg(boss ? `${G.LV.endless?'Boss wave':'Final wave'}! The ${ENEMY[(G.S.spawnQ.find(q=>ENEMY[q.t].boss)||{t:G.LV.boss}).t].name} is coming!` : wave===G.LV.waves-1 ? 'One more wave before the boss.' : 'Here they come…'); });
   on('rain', () => msg('Rain! Pests slow down in the wet, and every plant gets a drink.'));
+  on('fertBurn', n => msg(`The Fertilizer wore off and burned the roots: ${n} plant${n>1?'s':''} wilted.`));
   on('dew', () => msg('Morning dew! More slugs and snails, and they glide faster all wave.'));
   on('soft', () => msg('Soft ground! Diggers stay under longer this wave.'));
   on('flood', () => msg('Flash flood! Half the pests are riding the creek straight through.'));

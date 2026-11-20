@@ -22,7 +22,7 @@ export function challengeText(id, L){
     case 'few': return `Win with ${v} defenders or fewer in the garden at once.`;
     case 'ban': return `Win without planting a ${TYPES[v].name}.`;
     case 'perfect': return 'Win without losing a single crop.';
-    case 'noskills': return `Win without using ${spray&&fert?'the Sprayer or Compost':spray?'the Sprayer':'Compost'}.`;
+    case 'noskills': { const f=L.ch.act===4||L.endless?'Compost':'Fertilizer'; return `Win without using ${spray&&fert?`the Sprayer or ${f}`:spray?'the Sprayer':f}.`; }
     case 'cap2': return 'Win without upgrading any defender to level 3.';
     case 'thrifty': return `Win with ${v} seeds or more left over.`;
   }

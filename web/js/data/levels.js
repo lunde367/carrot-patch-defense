@@ -11,7 +11,7 @@ export const WAVES = 8;   // the standard level length; a level can set its own 
 export const PARTS = [
   { n:1, name:'The Backyard',         tint:'#5f9a45' },
   { n:2, name:'The Long Hot Summer',  tint:'#c29a3a' },
-  { n:3, name:'The Dry Years',        tint:'#9a7a5a' },
+  { n:3, name:'The Ruined Years',        tint:'#9a7a5a' },
   { n:4, name:'The First Rain',       tint:'#4f9a8a', before:'Three years later…' },
 ];
 
@@ -89,14 +89,14 @@ export const CHAPTERS = [
     { name:'Small Harvest', waves:10, swarm:[4,7,9], season:'late summer', boss:'theswarm',
       pts:[[4.5,-0.6],[4.5,1.5],[7.5,1.5],[7.5,4.5],[1.5,4.5],[1.5,7.5],[7.5,7.5],[7.5,10.5],[2.5,10.5],[2.5,13.2]],
       pool:[['aphid',1,3,.4],['wingaphid',2,2],['longhorn',2,1.5],['jbeetle',1,1.5]],
-      intro:'Something huge is buzzing over the hill: The Swarm. Save your Compost for it.' },
+      intro:'Something huge is buzzing over the hill: The Swarm. Save your Fertilizer for it.' },
   ]},
   { id:'corn', name:'Corn Field', crop:'corn', cropPlural:'corn', pests:'Locusts & rootworms', grass:['#c9c486','#bfba7c'],
     act:2, mood:'off', drought:true, road:[.5,1], levels:[
     { name:'Knee High', waves:6, season:'spring', boss:'grandhopper',
       cols:7, rows:11, pts:[[5.5,-0.6],[5.5,2.5],[1.5,2.5],[1.5,6.5],[5.5,6.5],[5.5,8.5],[3.5,8.5],[3.5,10.2]],   // a small corner of the field
       pool:[['hopperling',1,3,.55],['rootworm',2,2]],
-      intro:'Drought: plant defenders (Roses, Sunflowers, Pine Trees) wilt unless a Sprinkler is nearby.' },
+      intro:'Drought: the big farms pumped the river dry. Plant defenders (Roses, Sunflowers, Pine Trees) wilt unless a Sprinkler is nearby.' },
     { name:'Dry Spell', waves:9, season:'summer', boss:'rootking',
       lanes:[[[-0.6,1.5],[2.5,1.5],[2.5,6.5],[4.5,6.5],[4.5,9.5],[1.5,9.5],[1.5,11.5],[7.5,11.5],[7.5,13.2]],
              [[9.6,3.5],[6.5,3.5],[6.5,6.5],[4.5,6.5],[4.5,9.5],[1.5,9.5],[1.5,11.5],[7.5,11.5],[7.5,13.2]]],
@@ -117,7 +117,7 @@ export const CHAPTERS = [
       lanes:[[[-0.6,2.5],[3.5,2.5],[3.5,6.5],[5.5,6.5],[5.5,10.5],[4.5,10.5],[4.5,13.2]],
              [[9.6,4.5],[6.5,4.5],[6.5,6.5],[5.5,6.5],[5.5,10.5],[4.5,10.5],[4.5,13.2]]],   // blown in from both sides; short and fierce
       pool:[['sandflea',1,2.5],['dustgrub',1,2,.5],['dustbeetle',3,2]],
-      intro:'Sand fleas hop in clouds, and dust beetles wear thick shells.' },
+      intro:'Sand fleas hop in clouds off the dead fields, and dust beetles wear thick shells.' },
     { name:'Dust Storm', season:'late summer', boss:'dustdevil', waves:11, dust:[2,4,6,8,10],
       cols:11, rows:17, pts:[[1.5,-0.6],[1.5,13.5],[4.5,13.5],[4.5,2.5],[7.5,2.5],[7.5,13.5],[9.5,13.5],[9.5,16.2]],   // long straight furrows
       pool:[['sandflea',1,2],['dustbeetle',1,2.5],['dustgrub',2,2,.45]],
@@ -129,7 +129,7 @@ export const CHAPTERS = [
       cols:11, rows:17, lanes:[[[1.5,-0.6],[1.5,4.5],[5.5,4.5],[5.5,8.5],[2.5,8.5],[2.5,16.2]],
              [[9.5,-0.6],[9.5,6.5],[7.5,6.5],[7.5,12.5],[9.5,12.5],[9.5,16.2]]],
       pool:[['rat',1,3],['pigeon',3,1.5]],
-      intro:'The smog hides fliers: defenders only spot them up close.' },
+      intro:'Nothing lives up here but the pests. The smog hides fliers: defenders only spot them up close.' },
     { name:'Heavy Air', season:'summer', boss:'bigpidge',
       pts:[[7.5,-0.6],[7.5,1.5],[1.5,1.5],[1.5,11.5],[7.5,11.5],[7.5,13.2]],   // around the edge of the roof, with a wide open middle
       pool:[['rat',1,2.5],['pigeon',1,2],['smogworm',2,2,.5]],
@@ -144,15 +144,15 @@ export const CHAPTERS = [
     { name:'Ashes', waves:6, season:'spring', boss:'mutantmole',
       cols:7, rows:11, pts:[[1.5,-0.6],[1.5,2.5],[5.5,2.5],[5.5,5.5],[1.5,5.5],[1.5,8.5],[3.5,8.5],[3.5,10.2]],   // a small, cramped bunker yard
       pool:[['glowslug',1,3],['glowmole',3,1.5]],
-      intro:'The pests that are left glow in the dark. Keep them off the seeds.' },
+      intro:'The pests that crawled out of the poisoned ground glow in the dark, and some have extra eyes. Keep them off the seeds.' },
     { name:'Last Light', waves:9, season:'summer', boss:'palequeen',
       pts:[[0.5,-0.6],[0.5,1.5],[2.5,1.5],[2.5,3.5],[4.5,3.5],[4.5,5.5],[6.5,5.5],[6.5,7.5],[8.5,7.5],[8.5,9.5],[5.5,9.5],[5.5,11.5],[2.5,11.5],[2.5,13.2]],   // a staircase down and back
       pool:[['glowslug',1,2],['glowworm',1,2,.5],['glowsnail',3,1.5]],
-      intro:'Glowing caterpillars turn into pale moths. Even the snails shine.' },
+      intro:'Glowing caterpillars turn into pale, lopsided moths. Even the snails shine.' },
     { name:'The Blight', season:'late summer', boss:'blight', waves:14,
       cols:11, rows:17, pts:[[5.5,-0.6],[5.5,9.5],[2.5,9.5],[2.5,4.5],[8.5,4.5],[8.5,13.5],[2.5,13.5],[2.5,16.2]],
       pool:[['glowslug',1,2],['glowworm',1,2,.45],['glowsnail',2,1.5],['glowmole',3,1.5]],
-      intro:'The Blight is everything the spray left behind. Protect the last seeds. If they make it, the garden can come back.' },
+      intro:'The Blight is everything the spray and the poison left behind. Protect the last seeds. If they make it, the garden can come back.' },
   ]},
   { id:'rain', name:'Rain Garden', crop:'radish', cropPlural:'radishes', pests:'Froghoppers & mud snails', grass:['#9fcc86','#95c27c'],
     act:4, mood:'regrow', rain:[2,4,6], levels:[
@@ -195,12 +195,12 @@ export const CHAPTERS = [
     { name:'Wild and Green', waves:10, season:'summer', boss:'giantsnail',
       pts:[[-0.6,2.5],[7.5,2.5],[7.5,6.5],[2.5,6.5],[2.5,10.5],[6.5,10.5],[6.5,13.2]],   // in through the side gate
       pool:[['caterpillar',1,2,.5],['jbeetle',1,1.5],['glowworm',2,1.5,.5],['frog',1,1.5]],
-      intro:'Everything is green again, and more pests than ever want in.' },
+      intro:'It’s greener than it’s been in years, and more pests than ever want in.' },
     { name:'The New Garden', season:'late summer', boss:'blightweak', waves:12,
       cols:11, rows:17, lanes:[[[1.5,-0.6],[1.5,5.5],[5.5,5.5],[5.5,10.5],[2.5,10.5],[2.5,7.5],[8.5,7.5],[8.5,13.5],[3.5,13.5],[3.5,16.2]],
              [[9.5,-0.6],[9.5,3.5],[5.5,3.5],[5.5,10.5],[2.5,10.5],[2.5,7.5],[8.5,7.5],[8.5,13.5],[3.5,13.5],[3.5,16.2]]],
       pool:[['glowslug',1,2],['glowsnail',2,1.5],['mudsnail',1,1.5],['wingaphid',2,1.5],['frog',1,1.5]],
-      intro:'The Blight is weak, but it’s coming one last time. Hold on, and the garden is yours for good.' },
+      intro:'The Blight is weak, but it’s coming one last time. Hold on, and the garden gets its second chance.' },
   ]},
 ];
 
@@ -210,7 +210,7 @@ export const CHAPTERS = [
 // never sprays. The Pesticide Sprayer then makes levels easier, a shortcut, never a requirement.
 // Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
 const TOUGHNESS = [1.15, 1.39, 0.97, 2.44, 2.88, 1.16, 2.94, 1.43, 1.63,
-                   4.75, 2.17, 2.29, 2.35, 2.4, 2.83, 5.15, 2.88, 2.68,
+                   4.75, 2.17, 2.29, 2.05, 2.4, 2.83, 5.15, 2.88, 2.68,
                    14.53, 2.1, 6.6, 0.91, 1.5, 1.2, 4.66, 3.21, 3.73,
                    7.91, 11.26, 7.14, 6.81, 6.45, 7.79, 10.55, 6.28, 11.5];
 

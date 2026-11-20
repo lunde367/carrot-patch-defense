@@ -191,10 +191,15 @@ export function skipToWin(){
   S.enemies=[]; S.spawnQ=[]; S.shots=[]; S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.dewT=0; S.soft=false; S.flood=false; S.wave=G.LV.waves; S.lives=S.maxLives;
   S.mode='won'; emit('win', { stars:3, lives:S.lives, maxLives:S.maxLives, lost:0, gi:G.LV.gi }); return true;
 }
+// Part 4 (and the Endless Garden) uses Compost; before that the button is chemical Fertilizer.
+export const isCompost = () => !!(G.LV && (G.LV.endless || G.CH.act===4));
+export const fertName = () => isCompost() ? 'Compost' : 'Fertilizer';
+export const fertBoostNow = () => isCompost() ? G.S.perks.fertBoost : 1+(G.S.perks.fertBoost-1)*FERT.chemBoost;
+export const fertTimeNow = () => G.S.perks.fertTime*(isCompost() ? FERT.compostTime : 1);
 export const fertReady = () => G.S.fertOn && G.S.fertCd<=0 && G.S.fertT<=0 && G.S.mode==='play' && G.S.active;
 export function fertilize(){
   const S=G.S; if (!fertReady()) return false;
-  S.fertT=S.perks.fertTime; S.fertCd=FERT.recharge*S.perks.fertRecharge; S.track.fert++;
+  S.fertT=fertTimeNow(); S.fertCd=FERT.recharge*S.perks.fertRecharge; S.track.fert++;
   for (const t of S.towers) puffs(t.x, t.y-.2, 3, .6);
   emit('fert'); return true;
 }
@@ -339,11 +344,13 @@ export function update(dt){
   }
 
   if (S.sprayCd>0 && S.active) S.sprayCd=Math.max(0, S.sprayCd-dt);   // recharges during waves
-  if (S.active){ if (S.fertT>0) S.fertT=Math.max(0, S.fertT-dt); else if (S.fertCd>0) S.fertCd=Math.max(0, S.fertCd-dt); }
+  if (S.active){ if (S.fertT>0){ S.fertT=Math.max(0, S.fertT-dt);
+      if (S.fertT===0 && !isCompost()){ let n=0; for (const t of S.towers) if (PLANTS.includes(t.type)){ t.wilt=Math.max(t.wilt||0, FERT.burn); n++; } if (n) emit('fertBurn', n); } }   // Fertilizer burn
+    else if (S.fertCd>0) S.fertCd=Math.max(0, S.fertCd-dt); }
   for (const t of S.towers){
     const T=TYPES[t.type];
     t.dry = !!(G.CH.drought && !S.rain && PLANTS.includes(t.type) && !watered(t));
-    t.cd-=dt*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1)*hiveBoost(t)*coolBoost(t)*(S.fertT>0 ? S.perks.fertBoost : 1)*(S.perks.rateMul||1)*(1+(sk(t.type).rate||0)); t.hop=Math.max(0,t.hop-dt*4);
+    t.cd-=dt*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1)*hiveBoost(t)*coolBoost(t)*(S.fertT>0 ? fertBoostNow() : 1)*(S.perks.rateMul||1)*(1+(sk(t.type).rate||0)); t.hop=Math.max(0,t.hop-dt*4);
     if (t.wilt>0){ t.wilt=Math.max(0, t.wilt-dt); continue; }          // wilted by the spray
     if (t.type==='sunflower' || T.support) continue;
     const K=sk(t.type), DM=T.dmg ? T.dmg[t.lv]*(1+(K.dmg||0)) : 0;

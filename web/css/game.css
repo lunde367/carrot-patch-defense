@@ -431,3 +431,33 @@ canvas{ display:block }
 
 .tile-pics{ display:flex; gap:14px; justify-content:center; margin:4px 0 8px }
 .tile-pics canvas{ width:64px; height:64px; border-radius:12px; background:#a6cf8a }
+
+/* ---------- journal page turn ---------- */
+.spread{ perspective:1700px }
+.spread.turning{ pointer-events:none }
+.pt-still, .pt-leaf, .pt-cast{ position:absolute; top:0; bottom:0; width:50% }
+.pt-l{ left:0 } .pt-r{ left:50% }
+.pt-still{ z-index:2; min-height:0; background-color:#fbf6e6 }
+.pt-still.pt-l{ border-radius:7px 0 0 7px } .pt-still.pt-r{ border-radius:0 7px 7px 0 }
+.pt-cast{ z-index:2; pointer-events:none; opacity:0; animation:pt-cast .9s ease-in-out forwards }
+.pt-cast.pt-r{ background:linear-gradient(90deg, rgba(50,35,15,.45), rgba(50,35,15,.12) 45%, transparent) }
+.pt-cast.pt-l{ background:linear-gradient(270deg, rgba(50,35,15,.45), rgba(50,35,15,.12) 45%, transparent) }
+.pt-leaf{ z-index:3; transform-style:preserve-3d; animation:.9s cubic-bezier(.45,.05,.3,1) forwards }
+.pt-leaf.pt-next{ left:50%; transform-origin:0 50%; animation-name:pt-next }
+.pt-leaf.pt-prev{ left:0; transform-origin:100% 50%; animation-name:pt-prev }
+.pt-face{ position:absolute; inset:0; min-height:0; margin:0; background-color:#fbf6e6; overflow:hidden;
+  backface-visibility:hidden; -webkit-backface-visibility:hidden; box-shadow:0 0 14px rgba(40,25,10,.18) }
+.pt-back{ transform:rotateY(180deg) }
+.pt-face::after{ content:''; position:absolute; inset:0; pointer-events:none; animation:.9s cubic-bezier(.45,.05,.3,1) forwards }
+.pt-next .pt-front::after{ background:linear-gradient(90deg, rgba(50,35,15,.55), rgba(50,35,15,.05) 70%); animation-name:pt-dim-in }
+.pt-next .pt-back::after { background:linear-gradient(270deg, rgba(50,35,15,.55), rgba(50,35,15,.05) 70%); animation-name:pt-dim-out }
+.pt-prev .pt-front::after{ background:linear-gradient(270deg, rgba(50,35,15,.55), rgba(50,35,15,.05) 70%); animation-name:pt-dim-in }
+.pt-prev .pt-back::after { background:linear-gradient(90deg, rgba(50,35,15,.55), rgba(50,35,15,.05) 70%); animation-name:pt-dim-out }
+.pt-next .pt-front{ border-radius:0 7px 7px 0 } .pt-next .pt-back{ border-radius:7px 0 0 7px }
+.pt-prev .pt-front{ border-radius:7px 0 0 7px } .pt-prev .pt-back{ border-radius:0 7px 7px 0 }
+/* the page lifts a little as it rises, then settles flat */
+@keyframes pt-next{ 0%{ transform:rotateY(0) } 45%{ transform:rotateY(-80deg) translateZ(6px) scaleY(1.02) } 100%{ transform:rotateY(-180deg) } }
+@keyframes pt-prev{ 0%{ transform:rotateY(0) } 45%{ transform:rotateY(80deg) translateZ(6px) scaleY(1.02) } 100%{ transform:rotateY(180deg) } }
+@keyframes pt-dim-in{ 0%{ opacity:0 } 50%{ opacity:1 } 100%{ opacity:1 } }
+@keyframes pt-dim-out{ 0%{ opacity:1 } 50%{ opacity:1 } 100%{ opacity:0 } }
+@keyframes pt-cast{ 0%{ opacity:0 } 40%{ opacity:1 } 100%{ opacity:0 } }

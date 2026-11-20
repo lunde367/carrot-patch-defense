@@ -21,10 +21,10 @@ export const PERKS = [
   { id:'nozzle',  name:'Wider Nozzle',     spray:true, costs:[1,2,3],   desc:t=>`The spray circle is ${V.nozzle[t]}% wider.` },
   { id:'refill',  name:'Quick Refill',     spray:true, costs:[1,2,3],   desc:t=>`The Sprayer refills ${V.refill[t]}% faster.` },
   { id:'gentle',  name:'Gentle Formula',   spray:true, costs:[1,1],     desc:t=>`Your plants wilt ${V.gentle[t]}% shorter in the spray.` },
-  // Compost upgrades (shown once the Compost has been introduced)
-  { id:'fmix',    name:'Rich Mix',       fert:true, costs:[1,2,3], desc:t=>`Compost makes defenders work ${V.fmix[t]}% faster (from 35%).` },
-  { id:'flong',   name:'Deep Mulch',   fert:true, costs:[1,2,3], desc:t=>`Compost lasts ${V.flong[t]} seconds (from 10).` },
-  { id:'fbin',    name:'Second Bin',    fert:true, costs:[2,3],   desc:t=>`Compost is ready again ${V.fbin[t]}% sooner.` },
+  // Fertilizer / Compost upgrades (shown once it has been introduced)
+  { id:'fmix',    name:'Rich Mix',       fert:true, costs:[1,2,3], desc:t=>`Fertilizer and Compost work ${Math.round((V.fmix[t]/35-1)*100)}% harder.` },
+  { id:'flong',   name:'Deep Mulch',   fert:true, costs:[1,2,3], desc:t=>`Fertilizer and Compost last ${Math.round((V.flong[t]/10-1)*100)}% longer.` },
+  { id:'fbin',    name:'Second Bin',    fert:true, costs:[2,3],   desc:t=>`Fertilizer and Compost are ready again ${V.fbin[t]}% sooner.` },
   // After the story: bought with stars from the Endless Garden (shown once the story is finished)
   { id:'heirloom', name:'Heirloom Seeds', post:true, costs:[2,3,4], desc:t=>`Start every level with another +${V.heirloom[t]} seeds.` },
   { id:'roots',    name:'Deep Roots',     post:true, costs:[3,4],   desc:t=>`Every garden has ${V.roots[t]} more crops to lose.` },
