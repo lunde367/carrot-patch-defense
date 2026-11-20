@@ -11,7 +11,7 @@ export const TOWER_FACTS = {
   scarecrow:'Farmers have used scarecrows for more than 3,000 years. Birds get used to them unless they move.',
   barrel:'One rainy day on a small roof can fill a rain barrel to the top.',
   hive:'About a third of the food we eat depends on bees and other pollinators.',
-  ladybug:'A single ladybug can eat thousands of aphids in its lifetime.',
+  cow:'Composted manure feeds the soil without the chemicals, and the worms love it.',
 };
 const FAMILY = [
   [/slug/, 'Slugs are snails without a shell. They come out at night and after rain, and leave a silvery trail.'],

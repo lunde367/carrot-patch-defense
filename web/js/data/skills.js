@@ -26,10 +26,10 @@ export const SKILLS = {
                branch('b','Quick Turn','rate',[.06,.12,.18], ()=>'Ready to scare again sooner.') ],
   barrel:    [ branch('a','Long Hose','range',[.05,.1,.15], ()=>'Waters farther.'),
                branch('b','Cool Water','cool',[.02,.04,.06], ()=>'Plants it waters work faster.') ],
-  hive:      [ branch('a','Busy Bees','boost',[.02,.04,.06], ()=>'Defenders near the hive work even faster.'),
-               branch('b','Wide Meadow','range',[.05,.1,.15], ()=>'The bees reach farther.') ],
-  ladybug:   [ branch('a','More Ladybugs','rate',[.03,.06,.09], ()=>'Sends ladybugs faster.'),
-               branch('b','Big Appetite','dmg',[.04,.08,.12], ()=>'Each nip is stronger.') ],
+  hive:      [ branch('a','Busy Bees','boost',[.03,.06,.09], ()=>'Defenders near the hive work even faster.'),
+               branch('b','Wide Meadow','range',[.05,.1,.15], ()=>'The bees reach farther.', { fx:{ honey:.5 }, text:'And they make half again as much honey.' }) ],
+  cow:       [ branch('a','Strong Kick','dmg',[.04,.08,.12], ()=>'Each pat splats harder.'),
+               branch('b','Extra Stinky','pile',[.1,.2,.3], ()=>'The piles hurt more.', { fx:{ splash:.1 }, text:'And each pat lands wider.' }) ],
 };
 // Owned steps, e.g. { bunny:{ a:2, b:1 } } → the numbers the game uses, e.g. { bunny:{ rate:.12, dmg:.08 } }.
 export function skillValues(owned = {}){

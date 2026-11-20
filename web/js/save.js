@@ -33,7 +33,7 @@ function migrate(d, base){
     stars: Array.isArray(d.stars) ? d.stars : [],
     perks: { ...(d.perks||{}) }, seen: { ...(d.seen||{}) },
     settings: { ...base.settings, ...(d.settings||{}) },
-    owned: { ...(d.owned||{}) }, stats: { ...base.stats, ...(d.stats||{}) }, ach: { ...(d.ach||{}) }, diary: { ...(d.diary||{}) }, parts: { ...(d.parts||{}) }, intros: { ...(d.intros||{}) }, chal: { ...(d.chal||{}) }, rating: { ...(d.rating||{}) }, skills: JSON.parse(JSON.stringify(d.skills||{})), endless: { ...base.endless, ...(d.endless||{}) }, fold: { ...(d.fold||{}) }, pests: d.pests ? { ...d.pests } : null, adStars: { ...base.adStars, ...(d.adStars||{}) } };
+    owned: { ...(d.owned||{}) }, stats: { ...base.stats, ...(d.stats||{}) }, ach: { ...(d.ach||{}) }, diary: { ...(d.diary||{}) }, parts: { ...(d.parts||{}) }, intros: { ...(d.intros||{}) }, chal: { ...(d.chal||{}) }, rating: { ...(d.rating||{}) }, skills: (o => { delete o.ladybug; return o; })(JSON.parse(JSON.stringify(d.skills||{}))),   /* the Ladybug Nest is gone: its skill stars come back */ endless: { ...base.endless, ...(d.endless||{}) }, fold: { ...(d.fold||{}) }, pests: d.pests ? { ...d.pests } : null, adStars: { ...base.adStars, ...(d.adStars||{}) } };
   if (!d.v || d.v < 2){
     // v1 players already know the basics; introduce only defenders they haven't reached.
     out.tutorialDone = out.stars.some(Boolean);

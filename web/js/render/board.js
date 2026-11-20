@@ -176,6 +176,8 @@ export function draw(clock){
   for (const f of S.fx){ const p=1-f.life/f.max;
     if (f.k==='ring'){ g.beginPath(); g.arc(f.x*s,f.y*s,f.r*s*p,0,6.28); g.strokeStyle=`rgba(150,210,240,${1-p})`; g.lineWidth=3; g.stroke(); }
     if (f.k==='scare'){ g.beginPath(); g.arc(f.x*s,f.y*s,f.r*s*(.3+.7*p),0,6.28); g.strokeStyle=`rgba(194,69,107,${.7*(1-p)})`; g.lineWidth=2.5; g.setLineDash([4,5]); g.stroke(); g.setLineDash([]); }
+    if (f.k==='splat'){ ell(g,f.x*s,f.y*s,f.r*s*(.3+.7*p),f.r*s*(.2+.4*p),`rgba(110,80,40,${.45*(1-p)})`,`rgba(70,48,22,${1-p})`,2);
+      for (let k=0;k<6;k++){ const a=k*1.05; ell(g,(f.x+Math.cos(a)*f.r*p)*s,(f.y+Math.sin(a)*f.r*.6*p)*s,s*.03,s*.025,`rgba(92,62,30,${1-p})`); } }
     if (f.k==='thud') ell(g,f.x*s,f.y*s,f.r*s*(.4+.6*p),f.r*s*(.25+.4*p),`rgba(120,80,40,${.35*(1-p)})`,`rgba(94,61,32,${1-p})`,2); }
   // spray mist: a yellow-green cloud that billows out and fades
   for (const f of S.fx) if (f.k==='spray'){ const p=1-f.life/f.max, R=f.r*s*(.55+.45*Math.min(1,p*2.2)), a=.42*(1-p);
@@ -227,6 +229,25 @@ export function draw(clock){
       ell(g,x*s,y*s+e.size*s*.2,e.size*s*(.7+.3*f),e.size*s*(.28+.1*f),`rgba(96,128,140,${.42*f})`);
       ell(g,x*s,y*s+e.size*s*.15,e.size*s*(.45+.2*f),e.size*s*(.12+.05*f),`rgba(205,238,255,${.7*f})`);
       if (k%2) ell(g,x*s-e.size*s*.15,y*s+e.size*s*.2,e.size*s*.12,e.size*s*.05,`rgba(255,255,255,${.8*f})`); } }
+  // Sludge trail: black oily smears with a rainbow sheen that shrink as they dry
+  if (S.slime && S.slime.length){ const tt=clockReal();
+    for (const p of S.slime){ const f=Math.min(1,p.life/3), w=s*(.22+.08*Math.sin(p.seed));
+      ell(g,p.x*s,p.y*s+s*.08,w*f+s*.06,w*.5*f+s*.03,`rgba(28,28,18,${.55*f+.1})`);
+      g.beginPath(); g.ellipse(p.x*s,p.y*s+s*.06,w*.6*f+s*.03,w*.22*f+s*.01,p.seed,3.4,5.8); g.strokeStyle=`hsla(${(tt*40+p.seed*60)%360},70%,62%,${.45*f})`; g.lineWidth=1.5; g.stroke(); } }
+  // Cow pats: brown splats with green stink curling up
+  if (S.piles && S.piles.length){ const tt=clockReal();
+    for (const p of S.piles){ const f=Math.min(1,p.life/.8), R=p.r*s;
+      ell(g,p.x*s,p.y*s+s*.06,R*.7,R*.35,`rgba(92,62,30,${.75*f})`,`rgba(60,40,18,${.8*f})`,1.2);
+      ell(g,p.x*s-R*.15,p.y*s+s*.03,R*.35,R*.16,`rgba(120,86,46,${.8*f})`);
+      g.strokeStyle=`rgba(150,190,70,${.6*f})`; g.lineWidth=1.6; g.lineCap='round';
+      for (let k=0;k<3;k++){ const d=((tt*.7+k*.33+p.seed)%1), x=p.x*s+(k-1)*R*.35, y=p.y*s-d*s*.45;
+        g.globalAlpha=1-d; g.beginPath(); g.moveTo(x,y); g.quadraticCurveTo(x+s*.06,y-s*.06,x,y-s*.12); g.quadraticCurveTo(x-s*.06,y-s*.18,x,y-s*.24); g.stroke(); }
+      g.globalAlpha=1; } }
+  // Bee Hive: bees fly back and forth to every defender they help, so you can see who's boosted
+  for (const h of S.towers){ if (h.type!=='hive') continue; const R=rangeOf(h), tt=clockReal();
+    for (const t of S.towers){ if (t===h || t.type==='sunflower' || TYPES[t.type].support || Math.hypot(t.x-h.x,t.y-h.y)>R) continue;
+      for (let k=0;k<2;k++){ const f=(tt*.45+k*.5+t.x*.13+t.y*.07)%1, q=f<.5?f*2:2-f*2, bx=h.x+(t.x-h.x)*q, by=h.y-.15+(t.y-h.y)*q-Math.sin(q*Math.PI)*.35+Math.sin(tt*9+k)*.04;
+        ell(g,bx*s,by*s,s*.035,s*.026,'#f2c94a','#3a2614',1); ell(g,bx*s,by*s-s*.025,s*.024,s*.013,'rgba(255,255,255,.85)'); } } }
   // towers and pests sorted by depth so nearer things overlap farther ones
   const items=[];
   for (const t of S.towers) items.push({y:t.y,t});
@@ -240,6 +261,9 @@ export function draw(clock){
         ell(g,s*.22,-s*.3,s*.07,s*.07,'#c4d65c','#7d8f2a',1); g.fillStyle='#4a5a14'; g.font=`800 ${Math.round(s*.13)}px Nunito, sans-serif`; g.textAlign='center'; g.fillText('!',s*.22,-s*.255); }
       else { g.save(); DRAW[t.type](g,s,t.hop,t.lv,clock+t.x,t.look||1); g.restore(); }
       if (t.dry){ const d=(clockReal()*.8+t.x)%1; g.save(); g.translate(s*.24,-s*.24); g.rotate(.6+d*.4); ell(g,0,0,s*.06,s*.03,`rgba(190,140,60,${1-d*.5})`,'#8a6a2a',1); g.restore(); }
+      if (t.gunk){ const d=(clockReal()*.9+t.x)%1;   // gummed up by sludge: oily drips and a dark puddle at its feet
+        ell(g,0,s*.28,s*.36,s*.11,'rgba(24,24,14,.7)'); g.beginPath(); g.ellipse(0,s*.27,s*.24,s*.06,0,3.4,5.9); g.strokeStyle=`hsla(${(clockReal()*40+t.x*50)%360},70%,62%,.6)`; g.lineWidth=1.5; g.stroke();
+        ell(g,s*.24,-s*.28,s*.07,s*.06,'#2a2a1c','#0e0e08',1); ell(g,s*.22,-s*.3,s*.02,s*.015,'rgba(255,255,255,.6)'); ell(g,-s*.18,-s*.1+d*s*.3,s*.03,s*.045,`rgba(40,40,26,${1-d})`); ell(g,s*.14,-s*.18+((d+.5)%1)*s*.3,s*.025,s*.04,`rgba(40,40,26,${1-(d+.5)%1})`); }
       if (S.heat && !t.cool){ const d=(clockReal()*1.4+t.x)%1; ell(g,s*.24,-s*.28+d*s*.18,s*.035,s*.05,`rgba(120,190,240,${1-d})`); }
       drawPips(g,s,t.lv); }
     else { const e=it.e; g.translate(e.x*s,e.y*s); g.save(); if (e.face<0) g.scale(-1,1); if (G.CH.smog && e.fly) g.globalAlpha=.55; drawEnemy(g,e,s); g.restore();

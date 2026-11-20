@@ -32,7 +32,7 @@ export function startLevel(gi, speed=1, bonusSeeds=0, perks=NO_PERKS){
     fertOn: gi >= FERT.unlock, fertCd:0, fertT:0,                                 // Compost: cooldown, and time left while it's working
     leaks:{},                                                                     // pests that reached the crops, by type (for the tip after a loss)
     revived:false, adSeeds:false, adRefill:false,                                 // one-per-try extras (ads or Remove Ads)
-    enemies:[], towers:[], shots:[], fx:[], spawnQ:[], spawnT:0, laneNext:0, active:false, speed, sel:null, build:null };
+    enemies:[], towers:[], shots:[], fx:[], slime:[], piles:[], spawnQ:[], spawnT:0, laneNext:0, active:false, speed, sel:null, build:null };
   emit('levelStart', LV);
 }
 
@@ -115,9 +115,11 @@ export function startWave(){
 }
 function spawnEnemy(type, dist, morph, lane=0){
   const S=G.S, d=ENEMY[type], sc=d.boss?hpMul()*(G.LV.endless?(.6+S.wave*.12)*Math.pow(G.LV.growth, S.wave-1):1):hpScale(Math.max(1,S.wave));
+  if (d.rise && dist===0){ dist=laneTotal(lane)*(SLUDGE_FROM+Math.random()*SLUDGE_SPREAD);   // Sludge bubbles up out of the creek, partway down the road
+    if (!S.sludgeSeen){ S.sludgeSeen=true; emit('sludge'); } }
   const hp=Math.round(d.hp*sc), [x,y]=pointAt(dist, lane);
   const e={ type, hp, max:hp, spd:d.spd, reward:d.reward+Math.floor(G.LV.gi/2), size:d.size, armor:d.armor||0,
-    dist, x, y, face:1, slow:0, hit:0, ph:Math.random()*6, bt:0, fly:!!d.fly, lane, morphAt:morph?laneTotal(lane)*morph:null, cocoon:0, scared:0, st:0 };
+    dist, x, y, face:1, slow:0, hit:0, ph:Math.random()*6, bt:0, fly:!!d.fly, lane, morphAt:morph?laneTotal(lane)*morph:null, cocoon:0, scared:0, st:0, rising:d.rise?SLUDGE_RISE:0, trail:dist };
   S.enemies.push(e);
   if (d.boss) emit('boss', type);
   return e;
@@ -146,6 +148,13 @@ const hiveBoost = t => { let b=1; for (const h of G.S.towers) if (h.type==='hive
 // Cool Water (a Rain Barrel skill): plants a barrel waters work a little faster.
 // Plants a Rain Barrel waters work a little faster (the best barrel in reach counts), more with the Cool Water skill.
 const coolBoost = t => { if (!PLANTS.includes(t.type)) return 1; let b=0; for (const o of G.S.towers) if (o.type==='barrel' && Math.hypot(o.x-t.x,o.y-t.y)<=rangeOf(o)) b=Math.max(b, TYPES.barrel.water[o.lv]); return b ? 1+b+(sk('barrel').cool||0) : 1; };
+// Sludge (Part 3): rises out of the polluted creek partway down the road and leaves an oily trail.
+// Defenders standing beside the trail gum up and work slower until it dries.
+export const SLUDGE_FROM=.2, SLUDGE_SPREAD=.35, SLUDGE_RISE=.9, SLUDGE_DRY=9, SLUDGE_REACH=1.15, SLUDGE_SLOW=.7;
+const gummed = t => { for (const p of G.S.slime) if (Math.hypot(p.x-t.x,p.y-t.y)<=SLUDGE_REACH) return true; return false; };
+// Dairy Cow (Part 4): its pats leave a stinky pile that hurts and slows crawling pests walking through.
+export const PILE_TIME=4, PILE_TICK=.5, PILE_SLOW=.7;
+// Bee Hive honey: seeds after each wave cleared.
 export const SMOG = .6;   // in smog, defenders only spot fliers within 60% of their reach
 export const RAIN_SLOW = .8;
 export const towerAt = (c,r) => G.S.towers.find(t=>t.c===c&&t.r===r);
@@ -188,7 +197,7 @@ export const sprayStats = () => { const p=G.S.perks;
 // Test mode: finish the level right now as a perfect win, so the rest of the game can be looked at quickly.
 export function skipToWin(){
   const S=G.S; if (!S || S.mode!=='play' || G.LV.endless) return false;
-  S.enemies=[]; S.spawnQ=[]; S.shots=[]; S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.dewT=0; S.soft=false; S.flood=false; S.wave=G.LV.waves; S.lives=S.maxLives;
+  S.enemies=[]; S.spawnQ=[]; S.shots=[]; S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.dewT=0; S.soft=false; S.flood=false; S.slime=[]; S.piles=[]; S.wave=G.LV.waves; S.lives=S.maxLives;
   S.mode='won'; emit('win', { stars:3, lives:S.lives, maxLives:S.maxLives, lost:0, gi:G.LV.gi }); return true;
 }
 // Part 4 (and the Endless Garden) uses Compost; before that the button is chemical Fertilizer.
@@ -208,7 +217,7 @@ export function fertilize(){
 export function revive(){
   const S=G.S; if (S.mode!=='lost' || S.revived) return false;
   S.revived=true; S.mode='play'; S.lives=Math.ceil(S.maxLives/2);
-  S.enemies=[]; S.shots=[]; S.spawnQ=[]; S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.dewT=0; S.soft=false; S.flood=false; S.fertT=0;
+  S.enemies=[]; S.shots=[]; S.spawnQ=[]; S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.dewT=0; S.soft=false; S.flood=false; S.slime=[]; S.piles=[]; S.fertT=0;
   S.wave=Math.max(0, S.wave-1); emit('revive'); return true;
 }
 // ---------- Endless Garden gifts ----------
@@ -294,11 +303,14 @@ function damage(e,d){
     emit('kill', { boss:!!ENEMY[e.type].boss });
   }
 }
-const targetable = e => !e.dead && !e.under && e.dist>0.3;
+const targetable = e => !e.dead && !e.under && !(e.rising>0) && e.dist>0.3;
 function hitShot(s){
   const S=G.S;
-  if (s.k==='cone'){
+  if (s.k==='cone' || s.k==='pat'){
     for (const e of S.enemies) if (targetable(e)&&!e.fly&&Math.hypot(e.x-s.tx,e.y-s.ty)<=s.splash) damage(e,s.dmg);
+    if (s.k==='pat'){ if (S.piles.length>=24) S.piles.shift();
+      S.piles.push({ x:s.tx, y:s.ty, r:s.pile.r, dmg:s.pile.dmg, life:PILE_TIME, tk:0, seed:Math.random()*6 });
+      S.fx.push({k:'splat',x:s.tx,y:s.ty,r:s.splash,life:.45,max:.45}); emit('splat'); return; }
     S.fx.push({k:'thud',x:s.tx,y:s.ty,r:s.splash,life:.4,max:.4}); emit('thud'); return;
   }
   if (!targetable(s.tgt)) return;
@@ -324,16 +336,18 @@ export function update(dt){
   for (const e of S.enemies){
     if (e.dead) continue;
     const D=ENEMY[e.type];
-    e.slow=Math.max(0,e.slow-dt); e.hit=Math.max(0,e.hit-dt); e.ph+=dt*6; e.scared=Math.max(0,e.scared-dt);
+    e.slow=Math.max(0,e.slow-dt); e.stink=Math.max(0,(e.stink||0)-dt); e.hit=Math.max(0,e.hit-dt); e.ph+=dt*6; e.scared=Math.max(0,e.scared-dt);
     if (D.spawns && !e.under && e.dist>0.5){ e.st+=dt;                     // mothers hatch babies as they go
       if (e.st>=D.spawns.every){ e.st=0; spawnEnemy(D.spawns.type, Math.max(0.3, e.dist-0.25), null, e.lane); puffs(e.x,e.y,4,.8); } }
+    if (e.rising>0){ e.rising=Math.max(0, e.rising-dt); continue; }   // still bubbling up out of the creek
     if (e.cocoon>0){ e.cocoon-=dt; if (e.cocoon<=0) grow(e); continue; }
     if (e.morphAt!=null && e.dist>=e.morphAt){ e.morphAt=null; e.cocoon=1.3; floatText(e.x,e.y-.35,'growing!','#8a5fb0',1); emit('cocoon'); continue; }
     if (D.burrow){ e.bt+=dt; e.under = e.bt>1 && (e.bt%4.5)>(S.soft ? 2.3 : 3); } else e.under = false;
-    let mul=(e.slow>0?.5:1)*(e.under?1.3:1)*(S.rain?RAIN_SLOW:1)*(S.dewT && (D.shape==='slug'||D.shape==='snail') ? DEW_SPEED : 1);
+    let mul=(e.stink>0?PILE_SLOW:1)*(e.slow>0?.5:1)*(e.under?1.3:1)*(S.rain?RAIN_SLOW:1)*(S.dewT && (D.shape==='slug'||D.shape==='snail') ? DEW_SPEED : 1);
     if (D.hopper){ e.jump=Math.sin(e.ph*.9)>.2; mul*=e.jump?2.2:.25; }
     e.dist+=e.spd*mul*dt;
     const [x,y,f]=pointAt(e.dist, e.lane); e.x=x; e.y=y; if (f) e.face=f;
+    if (D.rise && !e.under && e.dist-e.trail>=.3){ e.trail=e.dist; if (S.slime.length>=90) S.slime.shift(); S.slime.push({ x, y, life:SLUDGE_DRY, seed:Math.random()*6 }); }
     if (e.dist>=laneTotal(e.lane)){
       e.dead=true;
       if (S.fence>0){ S.fence--; floatText(e.x,ROWS-1.3,'Fence!','#8a6a48',1); emit('fence', S.fence); continue; }   // Sturdy Fence
@@ -347,10 +361,15 @@ export function update(dt){
   if (S.active){ if (S.fertT>0){ S.fertT=Math.max(0, S.fertT-dt);
       if (S.fertT===0 && !isCompost()){ let n=0; for (const t of S.towers) if (PLANTS.includes(t.type)){ t.wilt=Math.max(t.wilt||0, FERT.burn); n++; } if (n) emit('fertBurn', n); } }   // Fertilizer burn
     else if (S.fertCd>0) S.fertCd=Math.max(0, S.fertCd-dt); }
+  for (const p of S.slime) p.life-=dt; if (S.slime.length && S.slime[0].life<=0) S.slime=S.slime.filter(p=>p.life>0);
+  for (const p of S.piles){ p.life-=dt; p.tk-=dt; const tick=p.tk<=0; if (tick) p.tk=PILE_TICK;
+    for (const e of S.enemies) if (targetable(e) && !e.fly && Math.hypot(e.x-p.x,e.y-p.y)<=p.r){ e.stink=.25; if (tick) damage(e, p.dmg*PILE_TICK); } }
+  if (S.piles.length) S.piles=S.piles.filter(p=>p.life>0);
   for (const t of S.towers){
     const T=TYPES[t.type];
+    t.gunk = S.slime.length>0 && gummed(t);
     t.dry = !!(G.CH.drought && !S.rain && PLANTS.includes(t.type) && !watered(t));
-    t.cd-=dt*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1)*hiveBoost(t)*coolBoost(t)*(S.fertT>0 ? fertBoostNow() : 1)*(S.perks.rateMul||1)*(1+(sk(t.type).rate||0)); t.hop=Math.max(0,t.hop-dt*4);
+    t.cd-=dt*(t.gunk ? SLUDGE_SLOW : 1)*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1)*hiveBoost(t)*coolBoost(t)*(S.fertT>0 ? fertBoostNow() : 1)*(S.perks.rateMul||1)*(1+(sk(t.type).rate||0)); t.hop=Math.max(0,t.hop-dt*4);
     if (t.wilt>0){ t.wilt=Math.max(0, t.wilt-dt); continue; }          // wilted by the spray
     if (t.type==='sunflower' || T.support) continue;
     const K=sk(t.type), DM=T.dmg ? T.dmg[t.lv]*(1+(K.dmg||0)) : 0;
@@ -383,9 +402,10 @@ export function update(dt){
     } else if (t.type==='squirrel'){
       t.look=Math.sign(lead.x-t.x)||t.look;
       S.shots.push({k:'acorn',x:t.x,y:t.y-.1,tgt:lead,tx:lead.x,ty:lead.y,spd:9,dmg:DM,bounce:T.bounce[t.lv]+(K.bounce||0),hits:[],a:0,spin:0});
-    } else if (t.type==='ladybug'){
-      const tgt=lead; t.look=Math.sign(tgt.x-t.x)||t.look;
-      S.shots.push({k:'lady',x:t.x,y:t.y-.15,tgt,tx:tgt.x,ty:tgt.y,spd:6,dmg:DM*(ENEMY[tgt.type].hp<=16?2:1),a:0,spin:0});
+    } else if (t.type==='cow'){
+      const d0=Math.hypot(lead.x-t.x,lead.y-t.y)||1; t.look=Math.sign(lead.x-t.x)||t.look;
+      S.shots.push({k:'pat',x:t.x,y:t.y-.25,tgt:lead,tx:lead.x,ty:lead.y,spd:5.5,dmg:DM,splash:T.splash[t.lv]*(1+(K.splash||0)),
+        pile:{ r:T.splash[t.lv]*.75, dmg:T.pile[t.lv]*(1+(K.pile||0)) },a:0,spin:0,d0,gone:0});
     } else {
       const tgt = t.type==='owl' ? inR.reduce((a,b)=>b.hp>a.hp?b:a) : lead;
       t.look=Math.sign(tgt.x-t.x)||t.look;
@@ -399,7 +419,7 @@ export function update(dt){
     const dx=s.tx-s.x, dy=s.ty-s.y, d=Math.hypot(dx,dy); s.a=Math.atan2(dy,dx); s.spin+=dt*14;
     const step=s.spd*dt;
     if (d<=step+.05){ hitShot(s); s.done=true; }
-    else { s.x+=dx/d*step; s.y+=dy/d*step; if (s.k==='cone') s.gone+=step; }
+    else { s.x+=dx/d*step; s.y+=dy/d*step; if (s.k==='cone'||s.k==='pat') s.gone+=step; }
   }
   S.shots=S.shots.filter(s=>!s.done).concat(newShots); newShots=[];
   S.enemies=S.enemies.filter(e=>!e.dead);
@@ -407,13 +427,14 @@ export function update(dt){
   S.fx=S.fx.filter(f=>f.life>0);
 
   if (S.active && !S.spawnQ.length && !S.enemies.length && S.mode==='play'){
-    S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.dewT=0; S.soft=false; S.flood=false;
+    S.active=false; S.heat=false; S.rain=false; S.dustT=0; S.dewT=0; S.soft=false; S.flood=false; S.slime=[]; S.piles=[];
     if (S.wave>=G.LV.waves){
       const lost=S.maxLives-S.lives, stars=starsFor(lost, S.maxLives);
       S.mode='won'; emit('win', { stars, lives:S.lives, maxLives:S.maxLives, lost, gi:G.LV.gi }); return;
     }
     const bonus=8+S.wave*2; let inc=0;
     for (const t of S.towers) if (t.type==='sunflower'){ const v=Math.round(TYPES.sunflower.income[t.lv]*(1+(sk('sunflower').income||0))*(t.tile==='sunny'?SUNNY_SEEDS:1)*(t.dry?.7:1)); inc+=v; floatText(t.x,t.y-.5,'+'+v,'#c98a12',1.3); t.hop=1; }
+    for (const t of S.towers) if (t.type==='hive'){ const v=Math.round(TYPES.hive.honey[t.lv]*(1+(sk('hive').honey||0))); inc+=v; floatText(t.x,t.y-.5,'+'+v+' honey','#c98a12',1.3); t.hop=1; }
     S.seeds+=bonus+inc;
     emit('waveClear', { wave:S.wave, seeds:bonus+inc, fromFlowers:inc });
     if (G.LV.endless && S.wave%5===0){ S.boonOffer=boonChoices(); emit('boons', S.boonOffer); }   // a gift after every boss

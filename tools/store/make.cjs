@@ -16,7 +16,7 @@ const SAVE = () => {
   const all = n => Object.fromEntries(n.map(k => [k, true]));
   return { v:2, stars, tutorialDone:true, shedTour:true, ended:true, bonusStars:0,
     settings:{ sfx:false, music:false, speed:1, diff:'normal', diffAsked:true },
-    seen:all(['bunny','rose','squirrel','sprinkler','pine','owl','sunflower','scarecrow','barrel','hive','ladybug','spray','fert']),
+    seen:all(['bunny','rose','squirrel','sprinkler','pine','owl','sunflower','scarecrow','barrel','hive','cow','spray','fert']),
     intros:all([...Array(37).keys()]), parts:all([1,2,3,4]), fold:{ open:1, cur:4 },
     perks:{ pouch:3, fence:2, thumb:2, reach:2, harvest:2 }, endless:{ best:17, runs:4 },
     stats:{ wins:52, losses:9, kills:8421, bossKills:41, flowerSeeds:2210, clears:23, sprayHits:312, ferts:44, scares:67 } };

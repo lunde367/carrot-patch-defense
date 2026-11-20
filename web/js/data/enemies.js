@@ -68,6 +68,8 @@ export const ENEMY = {
   ratking:{voice:'squeak',name:'Rat King',boss:true,hp:340,spd:.8,reward:55,size:.46,shape:'mouse',fur:'#5e5852'},
   bigpidge:{voice:'coo',name:'Big Pidge',boss:true,hp:380,armor:2,spd:.6,reward:60,size:.5,fly:true,shape:'bird',col:'#7a7f8a',dk:'#3a3f4a',neck:'#7a5a9a'},
   smogqueen:{voice:'buzz',name:'The Smog Moth',boss:true,hp:500,armor:2,spd:.55,reward:70,size:.56,fly:true,shape:'moth',wing:'#9a8f6a',body:'#4a4230',dk:'#2a2418'},
+  // Sludge: oozes up out of the polluted creek partway down the road (every Part 3 garden) and leaves an oily trail
+  sludge:{voice:'slurp',name:'Creek Sludge',hp:30,armor:1,spd:.5,reward:6,size:.29,gap:1,rise:true,shape:'sludge',col:'#35352a',dk:'#14140c',glow:'#b8f04a'},
   // ---- The Last Seed Vault (Part 3): glowing mutants ----
   glowslug:{name:'Glowing Slug',hp:26,spd:.6,reward:5,size:.27,gap:.7,shape:'slug',col:'#6a8a4a',dk:'#34481f',spots:true,glow:'#c6ff5a'},
   glowworm:{name:'Glowing Caterpillar',hp:22,spd:.8,reward:5,size:.26,gap:.6,shape:'cat',a:'#7aa04a',b:'#6a903a',dk:'#3a5a1a',glow:'#c6ff5a',adult:'glowmoth'},

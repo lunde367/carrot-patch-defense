@@ -36,7 +36,7 @@ export const describe = owned => PERKS.filter(p=>owned[p.id]).map(p=>`${p.name} 
 // (0 = never replays for challenges, 1 = picks up the easy ones, 3 = gets nearly all of them).
 // They buy the cheapest next step, fighters first, so skills spread across the defenders they use.
 export const chalBefore = (gi, perLevel) => Math.floor(Math.min(gi, 36) * perLevel);
-const ORDER = ['bunny','pine','rose','sprinkler','squirrel','owl','ladybug','sunflower','hive','barrel','scarecrow'];
+const ORDER = ['bunny','pine','rose','sprinkler','squirrel','owl','cow','sunflower','hive','barrel','scarecrow'];
 export function skillShop(stars, gi = 99){
   const owned = {};
   for (;;){

@@ -2,6 +2,22 @@
 import { ENEMY } from '../data/enemies.js';
 import { ell, crown } from './art-common.js';
 
+// Creek Sludge: a wobbling heap of black oil with a rainbow sheen, bubbles popping on top, and two sick eyes
+function sludge(c,e,r,D){
+  const wb=Math.sin(e.ph*.8)*.08;
+  ell(c,0,r*.8,r*1.15,r*.3,'rgba(20,20,10,.3)');
+  c.beginPath(); c.moveTo(-r*1.1,r*.55);
+  c.bezierCurveTo(-r*1.25,-r*.2,-r*.6,-r*(1+wb),0,-r*(.95-wb)); c.bezierCurveTo(r*.7,-r*(1-wb),r*1.25,-r*.15,r*1.1,r*.55);
+  c.quadraticCurveTo(r*.55,r*.78,0,r*.6); c.quadraticCurveTo(-r*.55,r*.8,-r*1.1,r*.55); c.closePath();
+  c.fillStyle=D.col; c.fill(); c.strokeStyle=D.dk; c.lineWidth=Math.max(1.2,r*.08); c.stroke();
+  const hue=(e.ph*25)%360; c.strokeStyle=`hsla(${hue},70%,62%,.55)`; c.lineWidth=Math.max(1.5,r*.12);   // oil-slick sheen
+  c.beginPath(); c.ellipse(-r*.2,-r*.3,r*.55,r*.25,-.3,3.3,5.6); c.stroke();
+  c.strokeStyle=`hsla(${(hue+120)%360},70%,62%,.4)`; c.beginPath(); c.ellipse(r*.25,r*.05,r*.5,r*.2,.2,3.4,5.4); c.stroke();
+  for (let k=0;k<3;k++){ const f=(e.ph*.3+k*.37)%1, bx=[-.45,.15,.55][k]*r, by=-r*(.55+[0,.25,.05][k]);
+    if (f<.8){ ell(c,bx,by,r*.13*(.4+f),r*.12*(.4+f),'#2c2c22','#14140c',1); ell(c,bx-r*.04,by-r*.04,r*.04,r*.03,'rgba(255,255,255,.45)'); } }
+  for (const x of [.3,.62]){ ell(c,x*r,-r*.28,r*.15,r*.13,'#e8f0b0',D.dk,1); ell(c,x*r+r*.04,-r*.26,r*.07,r*.07,'#1a1a0c'); }
+  for (let k=0;k<2;k++){ const f=(e.ph*.3+k*.5)%1; c.globalAlpha=1-f; ell(c,(k?-r*.7:r*.8),r*(.5+f*.25),r*.08,r*.06,D.col); } c.globalAlpha=1;
+}
 function mound(c,r,e){
   ell(c,0,r*.4,r*1.1,r*.45,'#7a5234','#5a3a20',1.5);
   for (let k=0;k<4;k++) ell(c,Math.sin(e.ph+k*1.7)*r*.7,r*.25-Math.abs(Math.cos(e.ph*1.3+k))*r*.3,r*.13,r*.11,'#8f6643');
@@ -9,7 +25,7 @@ function mound(c,r,e){
 
 // Glowing pests (Part 3 and leftovers in Part 4) are malformed too: lumps, an extra staring eye, glowing drips.
 export function drawEnemy(c,e,s){ c.save(); drawBase(c,e,s); const D=ENEMY[e.type];
-  if (D.glow && !e.under && !(e.cocoon>0)) mutate(c,e,e.size*s,D); c.restore(); }
+  if (D.glow && D.shape!=='sludge' && !(e.rising>0) && !e.under && !(e.cocoon>0)) mutate(c,e,e.size*s,D); c.restore(); }
 function mutate(c,e,r,D){
   ell(c,-r*.32,-r*.15,r*.2,r*.17,'rgba(78,96,40,.6)',D.dk||'#2a3a12',1); ell(c,r*.2,r*.18,r*.14,r*.12,'rgba(78,96,40,.55)',D.dk||'#2a3a12',1);
   const look=Math.sin(e.ph*.9)*r*.04; ell(c,r*.06,-r*.5,r*.17,r*.16,'#f2f5d8','#2a3a12',1.2); ell(c,r*.06+look,-r*.48,r*.075,r*.085,'#1e2a0a'); ell(c,r*.04+look,-r*.51,r*.025,r*.025,'#ffffff');
@@ -17,12 +33,17 @@ function mutate(c,e,r,D){
 }
 function drawBase(c,e,s){
   const D=ENEMY[e.type], r=e.size*s, w=Math.sin(e.ph)*.5;
+  if (e.rising>0){ const p=1-e.rising/.9;   // bubbling up out of the ground: a spreading oily puddle, then the blob rises
+    ell(c,0,r*.5,r*(.5+.9*p),r*(.2+.35*p),'#24241a','#0e0e08',1);
+    for (let k=0;k<3;k++){ const f=(e.ph*.6+k*.33)%1; ell(c,(k-1)*r*.5,r*.4-f*r*.5,r*.12*(1-f),r*.12*(1-f),'rgba(184,240,74,.7)'); }
+    c.save(); c.beginPath(); c.rect(-r*2,-r*2,r*4,r*2.3); c.clip(); c.translate(0,r*1.6*(1-p)); }
   if (e.cocoon>0){ const sh=Math.sin(e.ph*5)*r*.08, R=Math.max(r,s*.2);
     ell(c,0,R*.8,R*.9,R*.25,'rgba(40,40,20,.22)');
     ell(c,sh,0,R*.75,R*.95,'#f6f1e3','#c9bea4',1.5);
     c.strokeStyle='#d8cfb8'; c.lineWidth=1; for (const y of [-.45,-.1,.25,.55]){ c.beginPath(); c.moveTo(sh-R*.6,y*R); c.quadraticCurveTo(sh,y*R+R*.18,sh+R*.6,y*R); c.stroke(); }
     return; }
   if (e.under){ mound(c,r,e); return; }
+  if (D.shape==='sludge'){ sludge(c,e,r,D); if (e.rising>0) c.restore(); return; }
   if (e.fly){ ell(c,0,r*.9,r*.8,r*.22,'rgba(40,40,20,.18)'); c.translate(0,-s*.28+Math.sin(e.ph*.8)*s*.05); }
   else { ell(c,0,r*.85,r*1.1,r*.3,'rgba(40,40,20,.22)'); if (D.hopper&&e.jump) c.translate(0,-Math.abs(Math.sin(e.ph*1.8))*r*1.2); }
   if (D.glow){ const pulse=.55+.25*Math.sin(e.ph*.7); c.save(); c.globalAlpha=pulse*.45; ell(c,0,0,r*1.7,r*1.25,D.glow); c.globalAlpha=pulse*.6; ell(c,0,0,r*1.25,r*.95,D.glow); c.restore(); }

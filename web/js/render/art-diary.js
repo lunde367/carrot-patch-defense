@@ -42,7 +42,7 @@ const SCENES = {
   'start-rain':       ['rain',   [['land'],['cloud',.3,.14,1.2],['cloud',.72,.2,1],['rain'],['scen','sapling',.2,1.3,.82],['tower','barrel',.86,.85,.8],['scen','sapling',.44,1.8,.95],['crop','radish',.68,.95,.94]]],
   'after-rain':       ['rain',   [['land'],['cloud',.28,.16,1.1],['creek'],['crop','radish',.38,.85,.78],['scen','clover',.86,1,.8],['crop','radish',.2,1,.88],['scen','sapling',.66,1.8,.9]]],
   'start-meadow':     ['regrow', [['land'],['sun'],['cloud',.26,.16,1],['crop','bloom',.52,.8,.8],['scen','clover',.16,1.2,.95],['crop','bloom',.36,1,.93],['tower','hive',.8,1.25,.95]]],
-  'after-meadow':     ['regrow', [['land'],['sun'],['crop','bloom',.32,.8,.8],['tower','ladybug',.9,.8,.78],['crop','bloom',.16,1,.93],['crop','bloom',.48,1,.95],['tower','hive',.72,1.15,.93]]],
+  'after-meadow':     ['regrow', [['land'],['sun'],['crop','bloom',.32,.8,.8],['tower','cow',.9,.8,.78],['crop','bloom',.16,1,.93],['crop','bloom',.48,1,.95],['tower','hive',.72,1.15,.93]]],
   'start-newgarden':  ['regrow', [['land'],['sun'],['fence',.6],['crop','pumpkin',.4,.85,.82],['crop','pumpkin',.2,1.1,.94],['scen','sapling',.64,1.7,.94],['tower','bunny',.86,1,.95]]],
   'after-newgarden':  ['regrow', [['land'],['sun'],['cloud',.26,.16,1],['creek'],['tower','hive',.4,.85,.76],['crop','pumpkin',.16,1.1,.88],['scen','sapling',.62,1.8,.9],['tower','bunny',.84,1,.9]]],
 };

@@ -101,7 +101,7 @@ const chalShown = new Set();          // levels whose challenge card was shown t
 function showChalCard(){
   const LV=G.LV; chalShown.add(LV.gi); G.S.paused=true;
   overlay(`<div class="panel newdef levelcard"><span class="tag">Challenge stars · ${Object.keys(chalGot(LV.gi)).length} of ${challengesFor(LV).length}</span>
-    <h3>${LV.name}</h3><p>You’ve beaten this level, so extra goals are open. Win while meeting any of them to earn its star, then spend stars on defender skills.</p>${chalList(LV)}</div>
+    <h3>${LV.name}</h3><p>You’ve beaten this level, so extra goals are open. Win while meeting any of them to earn its star, then spend ✦ in Upgrades → Skills to make a defender stronger for good.</p>${chalList(LV)}</div>
     <div class="row"><button class="btn main" data-go="level-ok">Let’s go</button></div>`);
 }
 // Endless Garden: after every boss, pick one of three gifts.
@@ -291,6 +291,7 @@ function pestTraits(type){
   if (D.armor) out.push(`Armor ${D.armor}: every hit does ${D.armor} less damage, so small hits barely dent it.`);
   if (D.burrow) out.push('Tunnels underground for part of the way, where nothing can hit it.');
   if (D.hopper) out.push('Hops along in quick jumps.');
+  if (D.rise) out.push('Oozes up out of the polluted ground partway down the road, not at the start.', 'Leaves an oily trail. Defenders standing next to it gum up and work 30% slower until it dries.');
   if (D.spawns) out.push(`Hatches ${ENEMY[D.spawns.type].name.toLowerCase()}s as it walks.`);
   if (D.adult) out.push(`Grows into a ${ENEMY[D.adult].name} partway down the path.`);
   if (D.spd>=1.4) out.push('Very fast.'); else if (D.spd<=.5 && !D.boss) out.push('Slow, but takes a lot of hits.');
@@ -608,7 +609,7 @@ function recordWin({ stars, gi }){
     for (const id of challengesFor(LEVELS[gi])) if (!got[id] && challengeMet(id, G.S)){ got[id]=true; recordWin.fresh.push(id); }
     if (recordWin.fresh.length) emit('challenge', recordWin.fresh.length);
   }
-  Save.data.stars[gi]=Math.max(before, stars); Save.data.stats.wins++; Save.commit();
+  Save.data.stars[gi]=Math.max(before, stars); Save.data.stats.wins++; Save.data.stats.lossRun=0; Save.commit();
 }
 on('levelStart', () => { recordWin.done=null; });
 // Icons for the result screens and the bottom tabs.
@@ -620,6 +621,14 @@ const resultIcons = (replay=true) => `<div class="res-icons">
   <button class="btn ghost round" data-go="menu" aria-label="All gardens" title="All gardens">${IC_HOME}</button>
   <button class="btn ghost round" data-go="shed" aria-label="Upgrades" title="Upgrades">${IC_SHOP}${starsLeft()>0?`<i>★ ${starsLeft()}</i>`:''}</button>
   ${replay?`<button class="btn ghost round" data-go="retry" aria-label="Play again" title="Play again">${ICON.restart}</button>`:''}</div>`;
+// Under a first win: the first time, what challenge stars are; later, a nudge if none have been earned yet.
+function chalNote(){
+  if (!Save.data.seen.chalIntro){ Save.data.seen.chalIntro=true; Save.commit();
+    return `<div class="nudge-box blue"><b>New: challenge stars ${CH_ICON}</b><span>Every level you beat now has extra goals (the little ${CH_ICON} marks under it on the map). Replay the level and meet them to earn ${CH_ICON}. Spend ${CH_ICON} in <b>Upgrades → Skills</b> to make a defender stronger for good.</span></div>`; }
+  const beaten=LEVELS.filter(l => (Save.data.stars[l.gi]||0)>0).length;
+  if (!chalCount() && beaten>=4 && beaten%3===1) return `<div class="nudge-box blue"><b>Don’t forget your ${CH_ICON} challenges</b><span>Replay a beaten level and meet its goals (the grey ${CH_ICON} marks under it on the map) to earn skill stars.</span></div>`;
+  return `<p class="res-note">${CH_ICON} Challenges are now open on this level.</p>`;
+}
 function showWin(w, recorded=false){
   const { stars, lives, maxLives, gi } = w;
   if (!recorded) recordWin(w);
@@ -633,7 +642,7 @@ function showWin(w, recorded=false){
   overlay(`<div class="panel result"><h3>${LV.name} saved!</h3><div class="stars">${starStr(stars)}</div>
       <p>${lives} of ${maxLives} ${LV.ch.cropPlural} left${stars<3?`. Lose ${starLimits(maxLives)[0]} or fewer for three stars`:''}.</p>
       ${fresh||(unlocks.length&&before===0) ? `<div class="res-chips">${fresh?`<span class="blue">+${fresh} ${CH_ICON}</span>`:''}${unlocks.length&&before===0?`<span class="plain">Next: ${unlocks.map(k=>TYPES[k].name).join(' and ')}</span>`:''}</div>` : ''}
-      ${before>0 ? chalList(LV, recordWin.fresh) : `<p class="res-note">${CH_ICON} Challenges are now open on this level.</p>`}
+      ${before>0 ? chalList(LV, recordWin.fresh) : chalNote()}
       ${rate ? `<div class="rate-box" id="rateBox"><b>Enjoying the garden?</b><span>A rating helps other families find it.</span><div class="row"><button class="btn main small" data-go="rate" data-a="ok">OK</button>
         <button class="btn ghost small" data-go="rate" data-a="later">Not now</button><button class="btn ghost small" data-go="rate" data-a="never">Never ask me again</button></div></div>` : ''}</div>
     <div class="res-actions">${last ? `<button class="btn main" data-go="ending">${Save.data.ended?'See the ending again':'Finish the story'}</button>`
@@ -642,7 +651,7 @@ function showWin(w, recorded=false){
 }
 on('lose', ({ wave }) => {
   stopTutorial();
-  Save.data.stats.losses++; Save.commit(); Audio.play('lose');
+  Save.data.stats.losses++; if (!G.LV.endless) Save.data.stats.lossRun=(Save.data.stats.lossRun||0)+1; Save.commit(); Audio.play('lose');
   G.S.sel=null; G.S.selScen=null; G.S.build=null; renderInfo(); renderBar();
   const LV=G.LV, left=starsLeft(), second = extrasHere() && !G.S.revived && !LV.endless;
   if (LV.endless){
@@ -656,12 +665,26 @@ on('lose', ({ wave }) => {
   }
   overlay(`<div class="panel result"><h3>The pests got the ${LV.ch.cropPlural}</h3>
       <p>You reached wave ${wave} of ${LV.waves}.</p>
-      <p class="res-note"><b>Tip:</b> ${lossTip()}</p></div>
+      ${helpNudge() || `<p class="res-note"><b>Tip:</b> ${lossTip()}</p>`}</div>
     <div class="res-actions"><button class="btn main" data-go="retry">Try again</button>
       ${second?`<button class="btn ghost offer" data-go="revive">${tv()}Keep going from wave ${wave} with ${Math.ceil(G.S.maxLives/2)} crops</button>`:''}${resultIcons(false)}</div>`);
   dirty();
 });
 
+// Stuck on a level? After a couple of losses in a row, point at help the player hasn't used yet:
+// unspent Garden Shed stars first, then challenge stars for skills, then replaying beaten levels to earn them.
+const unclaimed = () => LEVELS.filter(l => (Save.data.stars[l.gi]||0)>0 && Object.keys(chalGot(l.gi)).length<challengesFor(l).length).length;
+function helpNudge(){
+  const run=Save.data.stats.lossRun||0, shed=starsLeft(), ch=chalLeft();
+  if (shed>0 && (run>=2 || shed>=4)) return `<div class="nudge-box"><b>You have ★ ${shed} to spend</b><span>Garden Shed upgrades help on every level: more seeds, more crops, longer reach.</span>
+      <button class="btn main small" data-go="shed">Open the Garden Shed</button></div>`;
+  if (run<2) return '';
+  if (ch>0) return `<div class="nudge-box blue"><b>You have ${CH_ICON} ${ch} to spend</b><span>Skills make one kind of defender stronger for good.</span>
+      <button class="btn main small" data-go="skills">Pick a skill</button></div>`;
+  if (unclaimed()) return `<div class="nudge-box blue"><b>Need a boost? Earn ${CH_ICON} challenge stars</b><span>Replay a level you’ve beaten and meet its challenges. Each ${CH_ICON} buys a skill that makes a defender stronger for good.</span>
+      <button class="btn main small" data-go="menu">Pick a level to replay</button></div>`;
+  return '';
+}
 // One tip after a loss, based on the kind of pest that ate the most crops.
 function lossTip(){
   const S=G.S, top=Object.entries(S.leaks).sort((a,b)=>b[1]-a[1])[0];
@@ -674,6 +697,17 @@ function lossTip(){
   if (D.spd>=1.4 || D.hopper) return `${name}s are quick. A Sprinkler slows everything near it, which gives your other defenders time.`;
   return `${name}s came in crowds. Pine Trees and Sprinklers hit many pests at once, and upgrades beat extra defenders.`;
 }
+// After the first ending: the Endless Garden opens.
+function showEndlessCard(){
+  overlay(`<div class="panel newdef levelcard"><span class="tag">Unlocked</span><h3>Congratulations! The Endless Garden is open</h3>
+    <p>You finished the story. Now the garden is yours, and the pests never stop coming.</p>
+    <ul class="chal-list plain"><li><i>∞</i><span>Waves go on forever and get tougher each time.</span></li>
+      <li><i>👑</i><span>A boss arrives every 5th wave. Beat it and pick a gift for the rest of the run.</span></li>
+      <li><i>★</i><span>Earn a Garden Shed star for every 3 waves you clear, on your best run.</span></li>
+      <li><i>☁</i><span>Heat waves, rain and aphid booms can roll in at any time.</span></li></ul>
+    <p>Every defender and every skill you’ve earned comes with you.</p></div>
+    <div class="row"><button class="btn main" data-go="endless">Play the Endless Garden</button><button class="btn ghost" data-go="menu">Later</button></div>`);
+}
 // The ending: shown after the last level, and again any time from its win screen.
 function showEnding(){
   const first=!Save.data.ended; Save.data.ended=true; Save.commit(); emit('ending');
@@ -681,7 +715,7 @@ function showEnding(){
   overlay(`<div class="part-card ending" style="--part:#f6c344"><span>The End</span><h2>Not the world it was. Still a garden.</h2></div>
     <p class="ending-text">Twelve gardens, thirty-six harvests, one sprayer left to rust in the shed, and a world given room to heal. Thank you for playing.</p>
     <p class="ending-text small">${first?'The <b>Endless Garden</b> is now open. ':''}${todo?`${todo} achievement${todo>1?'s are':' is'} still waiting.`:''}</p>
-    <div class="row"><button class="btn main" data-go="endless">Endless Garden</button><button class="btn ghost" data-go="menu">All gardens</button></div>`);
+    <div class="row"><button class="btn main" data-go="${first?'endless-card':'endless'}">${first?'Keep going':'Endless Garden'}</button><button class="btn ghost" data-go="menu">All gardens</button></div>`);
   $('over').classList.add('part-over');
   Audio.play('win');
 }
@@ -747,6 +781,7 @@ async function onOverlayClick(ev){
     case 'boon-pick': { const id=b.dataset.boon; if (takeBoon(id)){ G.S.paused=false; hideOverlay(); Audio.play('sparkle'); msg(`${BOONS[id].name}: ${BOONS[id].desc}`); dirty(); } return; }
     case 'ending': return showEnding();
     case 'endless': return play(ENDLESS.gi);
+    case 'endless-card': $('over').classList.remove('part-over'); return showEndlessCard();
     case 'guide': return showGuide(b.dataset.tab||'defenders');
     case 'stats': return showStats();
     case 'j-prev': case 'j-next': return turnPage(b.dataset.go==='j-next' ? 1 : -1);
@@ -1054,6 +1089,7 @@ export function initUI(){
   on('waveStart', ({ wave, boss }) => { if (!tutorialActive() && !G.S.heat && !G.S.rain && !G.S.dustT && !G.S.dewT && !G.S.soft && !G.S.flood && !swarmAt(wave) && !pestQueue.length) msg(boss ? `${G.LV.endless?'Boss wave':'Final wave'}! The ${ENEMY[(G.S.spawnQ.find(q=>ENEMY[q.t].boss)||{t:G.LV.boss}).t].name} is coming!` : wave===G.LV.waves-1 ? 'One more wave before the boss.' : 'Here they come…'); });
   on('rain', () => msg('Rain! Pests slow down in the wet, and every plant gets a drink.'));
   on('fertBurn', n => msg(`The Fertilizer wore off and burned the roots: ${n} plant${n>1?'s':''} wilted.`));
+  on('sludge', () => msg('Sludge is bubbling up out of the poisoned ground! Keep defenders clear of its oily trail.'));
   on('dew', () => msg('Morning dew! More slugs and snails, and they glide faster all wave.'));
   on('soft', () => msg('Soft ground! Diggers stay under longer this wave.'));
   on('flood', () => msg('Flash flood! Half the pests are riding the creek straight through.'));

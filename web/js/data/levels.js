@@ -111,16 +111,16 @@ export const CHAPTERS = [
     act:3, mood:'withered', drought:true, road:[.35,1], crowd:1.25, dust:[4,7], levels:[
     { name:'Topsoil', waves:9, season:'spring', boss:'dustdevil',
       pts:[[0.5,-0.6],[0.5,1.5],[8.5,1.5],[8.5,3.5],[0.5,3.5],[0.5,5.5],[8.5,5.5],[8.5,7.5],[0.5,7.5],[0.5,9.5],[8.5,9.5],[8.5,11.5],[4.5,11.5],[4.5,13.2]],   // one very long road, back and forth across the whole farm
-      pool:[['sandflea',1,3],['dustgrub',2,2,.5]],
+      pool:[['sandflea',1,3],['dustgrub',2,2,.5], ['sludge',3,.8]],
       intro:'A Rain Barrel keeps every plant near it watered. Dust storms blow through on some waves: your defenders can’t see far until they pass.' },
     { name:'Dry Wind', waves:7, dust:[3,5], season:'summer', boss:'dustdevil',
       lanes:[[[-0.6,2.5],[3.5,2.5],[3.5,6.5],[5.5,6.5],[5.5,10.5],[4.5,10.5],[4.5,13.2]],
              [[9.6,4.5],[6.5,4.5],[6.5,6.5],[5.5,6.5],[5.5,10.5],[4.5,10.5],[4.5,13.2]]],   // blown in from both sides; short and fierce
-      pool:[['sandflea',1,2.5],['dustgrub',1,2,.5],['dustbeetle',3,2]],
+      pool:[['sandflea',1,2.5],['dustgrub',1,2,.5],['dustbeetle',3,2], ['sludge',3,.8]],
       intro:'Sand fleas hop in clouds off the dead fields, and dust beetles wear thick shells.' },
     { name:'Dust Storm', season:'late summer', boss:'dustdevil', waves:11, dust:[2,4,6,8,10],
       cols:11, rows:17, pts:[[1.5,-0.6],[1.5,13.5],[4.5,13.5],[4.5,2.5],[7.5,2.5],[7.5,13.5],[9.5,13.5],[9.5,16.2]],   // long straight furrows
-      pool:[['sandflea',1,2],['dustbeetle',1,2.5],['dustgrub',2,2,.45]],
+      pool:[['sandflea',1,2],['dustbeetle',1,2.5],['dustgrub',2,2,.45], ['sludge',3,.8]],
       intro:'Storm after storm hides the pests, and something is spinning in behind them: the Dust Devil.' },
   ]},
   { id:'rooftop', name:'Rooftop Garden', crop:'pepper', cropPlural:'peppers', pests:'Rats, pigeons & smog moths', grass:['#aeb29c','#a4a892'],
@@ -128,30 +128,30 @@ export const CHAPTERS = [
     { name:'Gray Morning', waves:10, crowd:1.5, season:'spring', boss:'ratking',
       cols:11, rows:17, lanes:[[[1.5,-0.6],[1.5,4.5],[5.5,4.5],[5.5,8.5],[2.5,8.5],[2.5,16.2]],
              [[9.5,-0.6],[9.5,6.5],[7.5,6.5],[7.5,12.5],[9.5,12.5],[9.5,16.2]]],
-      pool:[['rat',1,3],['pigeon',3,1.5]],
+      pool:[['rat',1,3],['pigeon',3,1.5], ['sludge',2,.8]],
       intro:'Nothing lives up here but the pests. The smog hides fliers: defenders only spot them up close.' },
     { name:'Heavy Air', season:'summer', boss:'bigpidge',
       pts:[[7.5,-0.6],[7.5,1.5],[1.5,1.5],[1.5,11.5],[7.5,11.5],[7.5,13.2]],   // around the edge of the roof, with a wide open middle
-      pool:[['rat',1,2.5],['pigeon',1,2],['smogworm',2,2,.5]],
+      pool:[['rat',1,2.5],['pigeon',1,2],['smogworm',2,2,.5], ['sludge',2,.8]],
       intro:'Pigeons with dull, dusty feathers circle the chimneys. Smog worms grow into smog moths.' },
     { name:'The Smog Moth', season:'late summer', boss:'smogqueen', waves:11,
       lanes:[[[1.5,-0.6],[1.5,6.5],[4.5,6.5],[4.5,13.2]], [[4.5,-0.6],[4.5,13.2]], [[7.5,-0.6],[7.5,6.5],[4.5,6.5],[4.5,13.2]]],   // three ways in, one way out
-      pool:[['smogworm',1,2.5,.45],['pigeon',1,2],['rat',2,2],['smogmoth',3,1.5]],
+      pool:[['smogworm',1,2.5,.45],['pigeon',1,2],['rat',2,2],['smogmoth',3,1.5], ['sludge',2,.8]],
       intro:'The air is thick and yellow. Out of it comes the biggest moth anyone has ever seen.' },
   ]},
   { id:'vault', name:'The Last Seed Vault', crop:'seed', cropPlural:'seed packets', pests:'Glowing mutants', grass:['#9c958a','#928b80'],
     act:3, mood:'withered', dark:true, road:[0,1], cracked:true, crowd:1.25, levels:[
     { name:'Ashes', waves:6, season:'spring', boss:'mutantmole',
       cols:7, rows:11, pts:[[1.5,-0.6],[1.5,2.5],[5.5,2.5],[5.5,5.5],[1.5,5.5],[1.5,8.5],[3.5,8.5],[3.5,10.2]],   // a small, cramped bunker yard
-      pool:[['glowslug',1,3],['glowmole',3,1.5]],
+      pool:[['glowslug',1,3],['glowmole',3,1.5], ['sludge',2,.8]],
       intro:'The pests that crawled out of the poisoned ground glow in the dark, and some have extra eyes. Keep them off the seeds.' },
     { name:'Last Light', waves:9, season:'summer', boss:'palequeen',
       pts:[[0.5,-0.6],[0.5,1.5],[2.5,1.5],[2.5,3.5],[4.5,3.5],[4.5,5.5],[6.5,5.5],[6.5,7.5],[8.5,7.5],[8.5,9.5],[5.5,9.5],[5.5,11.5],[2.5,11.5],[2.5,13.2]],   // a staircase down and back
-      pool:[['glowslug',1,2],['glowworm',1,2,.5],['glowsnail',3,1.5]],
+      pool:[['glowslug',1,2],['glowworm',1,2,.5],['glowsnail',3,1.5], ['sludge',2,.8]],
       intro:'Glowing caterpillars turn into pale, lopsided moths. Even the snails shine.' },
     { name:'The Blight', season:'late summer', boss:'blight', waves:14,
       cols:11, rows:17, pts:[[5.5,-0.6],[5.5,9.5],[2.5,9.5],[2.5,4.5],[8.5,4.5],[8.5,13.5],[2.5,13.5],[2.5,16.2]],
-      pool:[['glowslug',1,2],['glowworm',1,2,.45],['glowsnail',2,1.5],['glowmole',3,1.5]],
+      pool:[['glowslug',1,2],['glowworm',1,2,.45],['glowsnail',2,1.5],['glowmole',3,1.5], ['sludge',2,.8]],
       intro:'The Blight is everything the spray and the poison left behind. Protect the last seeds. If they make it, the garden can come back.' },
   ]},
   { id:'rain', name:'Rain Garden', crop:'radish', cropPlural:'radishes', pests:'Froghoppers & mud snails', grass:['#9fcc86','#95c27c'],
@@ -176,7 +176,7 @@ export const CHAPTERS = [
     { name:'Clover', waves:9, season:'spring', boss:'chunkycat',
       cols:11, rows:17, pts:[[5.5,-0.6],[5.5,2.5],[9.5,2.5],[9.5,6.5],[1.5,6.5],[1.5,10.5],[9.5,10.5],[9.5,14.5],[5.5,14.5],[5.5,16.2]],   // a long wander through a big meadow
       pool:[['slug',1,2.5],['caterpillar',1,2,.5],['aphid',2,2]],
-      intro:'The old pests are back, just ordinary ones now. Ladybugs love aphids.' },
+      intro:'The old pests are back, just ordinary ones now. A Dairy Cow joins the garden: what she leaves behind feeds the soil, and the pests hate the smell.' },
     { name:'Bees Again', waves:7, season:'summer', boss:'mothqueen',
       pts:[[1.5,-0.6],[1.5,5.5],[3.5,5.5],[3.5,1.5],[5.5,1.5],[5.5,5.5],[7.5,5.5],[7.5,10.5],[2.5,10.5],[2.5,13.2]],   // up and down like a comb
       pool:[['caterpillar',1,2,.5],['mouse',1,2],['snail',3,1.5]],
@@ -209,10 +209,7 @@ export const CHAPTERS = [
 // three-star rate slopes down from about 90% early to about 25% on Big Dig even for a player who
 // never sprays. The Pesticide Sprayer then makes levels easier, a shortcut, never a requirement.
 // Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
-const TOUGHNESS = [1.15, 1.39, 0.97, 2.44, 2.88, 1.16, 2.94, 1.43, 1.63,
-                   4.75, 2.17, 2.29, 2.05, 2.4, 2.83, 5.15, 2.88, 2.68,
-                   14.53, 2.1, 6.6, 0.91, 1.5, 1.2, 4.66, 3.21, 3.73,
-                   7.91, 11.26, 7.14, 6.81, 6.45, 7.79, 10.55, 6.28, 11.5];
+const TOUGHNESS = [1.15, 1.39, 0.97, 2.44, 2.88, 1.16, 2.94, 1.43, 1.63, 4.75, 2.17, 2.29, 2.05, 2.4, 2.83, 5.15, 2.88, 2.68, 13.08, 1.89, 6.27, 0.91, 1.5, 1.2, 4.66, 3.05, 3.54, 7.91, 11.26, 7.14, 6.81, 6.45, 7.79, 10.55, 6.28, 11.5];
 
 // Flat list of every level in play order, each linked back to its chapter.
 export const LEVELS = [];

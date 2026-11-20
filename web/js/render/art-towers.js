@@ -102,25 +102,48 @@ function barrel(c,s,t,lv){
   if (lv>=1){ c.strokeStyle='#6f7a82'; c.lineWidth=s*.03; c.beginPath(); c.moveTo(s*.2,0); c.lineTo(s*.3,0); c.lineTo(s*.3,s*.08); c.stroke(); }
   if (lv>=2) ell(c,s*.3,s*.12,s*.03,s*.04,'#5aa0c8');
 }
+// Bee Hive: a painted wooden box hive on legs (not the old straw skeps), with bees busy around it
 function hive(c,s,t,lv,anim){
-  ell(c,0,s*.3,s*.24,s*.07,'rgba(40,60,20,.25)');
-  c.strokeStyle='#6b4423'; c.lineWidth=s*.04; c.beginPath(); c.moveTo(0,s*.3); c.lineTo(0,s*.1); c.stroke();
-  for (let k=0;k<4;k++){ const w=s*(.24-k*.04), y=s*(.06-k*.1); ell(c,0,y,w,s*.07,'#e8b84a','#a8782a',s*.015); }
-  ell(c,0,s*.02,s*.04,s*.03,'#3a2614');
-  for (let k=0;k<2+lv;k++){ const a=anim*3+k*2.1; const bx=Math.cos(a)*s*.32, by=Math.sin(a*1.3)*s*.2-s*.1;
-    ell(c,bx,by,s*.035,s*.025,'#f2c94a','#3a2614',1); c.fillStyle='rgba(255,255,255,.8)'; ell(c,bx,by-s*.025,s*.025,s*.015,'rgba(255,255,255,.85)'); }
+  ell(c,0,s*.3,s*.28,s*.07,'rgba(40,60,20,.25)');
+  c.save(); c.translate(0,s*.3); c.scale(1.25,1.25); c.translate(0,-s*.3);
+  c.fillStyle='#6b4423'; c.fillRect(-s*.17,s*.17,s*.04,s*.13); c.fillRect(s*.13,s*.17,s*.04,s*.13);           // stand
+  const boxes=lv>=2?3:2, cols=['#f2d16b','#8fc7d9','#f2a0b8'], h=s*.15;
+  for (let k=0;k<boxes;k++){ const y=s*.18-(k+1)*h;
+    c.beginPath(); c.roundRect(-s*.2,y,s*.4,h-s*.01,s*.015); c.fillStyle=cols[k]; c.fill(); c.strokeStyle='#6b4a2b'; c.lineWidth=s*.016; c.stroke();
+    c.fillStyle='rgba(107,74,43,.35)'; c.fillRect(-s*.06,y+h*.35,s*.12,s*.025); }                             // hand grips
+  const top=s*.18-boxes*h;
+  c.beginPath(); c.moveTo(-s*.24,top); c.lineTo(-s*.2,top-s*.07); c.lineTo(s*.2,top-s*.07); c.lineTo(s*.24,top); c.closePath();   // roof
+  c.fillStyle='#b5824e'; c.fill(); c.strokeStyle='#6b4a2b'; c.lineWidth=s*.016; c.stroke();
+  c.fillStyle='#3a2614'; c.fillRect(-s*.08,s*.15,s*.16,s*.025);                                                  // entrance slot
+  if (lv>=1){ ell(c,s*.12,top-s*.1,s*.04,s*.04,'#f2a0b8','#b0607a',1); ell(c,s*.12,top-s*.1,s*.015,s*.015,'#f2d16b'); }   // a flower on the roof
+  ell(c,-s*.02,s*.13,s*.035,s*.012,'#e8b84a');                                                                  // a drip of honey
+  for (let k=0;k<3+lv;k++){ const a=anim*3+k*2.1, bx=Math.cos(a)*s*.32, by=Math.sin(a*1.3)*s*.18-s*.12;
+    ell(c,bx,by,s*.035,s*.025,'#f2c94a','#3a2614',1); ell(c,bx,by-s*.025,s*.025,s*.015,'rgba(255,255,255,.85)'); }
+  c.restore();
 }
-function ladybug(c,s,t,lv,anim){
-  ell(c,0,s*.3,s*.24,s*.07,'rgba(40,60,20,.25)');
-  // a little wooden nest box with ladybugs on it
-  c.beginPath(); c.roundRect(-s*.18,-s*.12,s*.36,s*.4,s*.04); c.fillStyle='#b5824e'; c.fill(); c.strokeStyle='#6b4a2b'; c.lineWidth=s*.02; c.stroke();
-  c.beginPath(); c.moveTo(-s*.24,-s*.1); c.lineTo(0,-s*.3); c.lineTo(s*.24,-s*.1); c.closePath(); c.fillStyle='#c2456b'; c.fill(); c.stroke();
-  for (const [x,y] of [[-.07,0],[.07,.06],[0,.15]]) ell(c,x*s,y*s,s*.025,s*.018,'#3a2614');
-  const n=1+lv; for (let k=0;k<n;k++){ const a=anim*2+k*2.4; const bx=Math.cos(a)*s*.28, by=-s*.1+Math.sin(a)*s*.14;
-    ell(c,bx,by,s*.05,s*.045,'#e23a3a','#3a1a1a',1); c.fillStyle='#222'; ell(c,bx+s*.03,by,s*.02,s*.025,'#222'); ell(c,bx-s*.01,by-s*.015,s*.012,s*.012,'#222'); }
+// Dairy Cow: a round black-and-white cow seen from the front-ish, tail flicking; she rears back to fling a pat
+function cow(c,s,t,lv,anim,look=1){
+  ell(c,0,s*.3,s*.3,s*.08,'rgba(40,60,20,.25)');
+  c.save(); c.scale(look<0?-1:1,1); c.translate(0,-t*s*.05);
+  c.fillStyle='#4a3a2a'; for (const x of [-.17,-.06,.08,.18]) c.fillRect(x*s-s*.025,s*.12,s*.05,s*.17);   // legs
+  c.fillStyle='#2b2018'; for (const x of [-.17,-.06,.08,.18]) c.fillRect(x*s-s*.027,s*.26,s*.054,s*.04);  // hooves
+  ell(c,0,s*.05,s*.27,s*.17,'#fbf8f0','#5a4a3a',s*.018);                                                  // body
+  ell(c,-s*.1,0,s*.08,s*.07,'#2b2622'); ell(c,s*.09,s*.1,s*.07,s*.05,'#2b2622'); ell(c,-s*.17,s*.12,s*.04,s*.035,'#2b2622');
+  ell(c,s*.02,s*.2,s*.06,s*.03,'#f2b8c0','#c78a92',1);                                                     // udder
+  const sw=Math.sin(anim*2.2)*.25+t*.6; c.strokeStyle='#5a4a3a'; c.lineWidth=s*.018;                        // tail
+  c.beginPath(); c.moveTo(-s*.26,0); c.quadraticCurveTo(-s*.36,-s*.05+sw*s*.1,-s*.34,s*.1+sw*s*.05); c.stroke(); ell(c,-s*.34,s*.11+sw*s*.05,s*.025,s*.035,'#2b2622');
+  c.save(); c.translate(s*.24,-s*.08); c.rotate(-.15-t*.4);                                                // head
+  c.fillStyle='#e8dcc0'; for (const sx of [-1,1]){ c.beginPath(); c.moveTo(sx*s*.05,-s*.08); c.quadraticCurveTo(sx*s*.1,-s*.16,sx*s*.07,-s*.19); c.lineTo(sx*s*.04,-s*.09); c.fill(); }
+  ell(c,-s*.09,-s*.06,s*.05,s*.025,'#2b2622'); ell(c,s*.09,-s*.06,s*.05,s*.025,'#fbf8f0','#5a4a3a',1);   // ears
+  ell(c,0,0,s*.1,s*.11,'#fbf8f0','#5a4a3a',s*.016); ell(c,-s*.03,-s*.04,s*.04,s*.045,'#2b2622');
+  ell(c,0,s*.07,s*.075,s*.05,'#f2b8c0','#c78a92',1); ell(c,-s*.025,s*.07,s*.012,s*.01,'#7a4a52'); ell(c,s*.025,s*.07,s*.012,s*.01,'#7a4a52');
+  ell(c,-s*.04,-s*.01,s*.015,s*.018,'#1a1410'); ell(c,s*.04,-s*.01,s*.015,s*.018,'#1a1410');
+  c.restore();
+  if (lv>=1){ ell(c,s*.2,s*.06,s*.035,s*.04,'#e8b84a','#9a6a1a',1); }                                   // a bell
+  if (lv>=2){ for (let k=0;k<3;k++) ell(c,s*(.16+k*.05),-s*.2-Math.abs(k-1)*s*.01,s*.025,s*.025,['#f2a0b8','#fff3a0','#a0c8f2'][k]); }   // a daisy crown
+  c.restore();
 }
-
-export const DRAW = { bunny, rose, squirrel, sprinkler, pine, owl, sunflower, scarecrow, barrel, hive, ladybug };
+export const DRAW = { bunny, rose, squirrel, sprinkler, pine, owl, sunflower, scarecrow, barrel, hive, cow };
 export function drawPips(c,s,lv){ for (let i=0;i<=lv;i++) ell(c,(i-lv/2)*s*.12,s*.4,s*.04,s*.04,'#f7b267','#9c5a1a',s*.015); }
 
 export function drawShot(g,sh,s){
@@ -132,6 +155,8 @@ export function drawShot(g,sh,s){
     ell(g,0,s*.3,s*.07,s*.025,'rgba(30,30,10,.25)'); g.translate(0,-h); g.rotate(sh.spin*.5);
     ell(g,0,0,s*.07,s*.1,'#9a6b3c','#5e3d20',1.2); g.strokeStyle='#5e3d20'; g.lineWidth=1;
     for (const y of [-.04,0,.04]){ g.beginPath(); g.moveTo(-s*.06,y*s); g.lineTo(s*.06,y*s); g.stroke(); } }
-  else if (sh.k==='lady'){ ell(g,0,0,s*.05,s*.045,'#e23a3a','#3a1a1a',1); ell(g,s*.03,0,s*.02,s*.025,'#222'); }
+  else if (sh.k==='pat'){ const p=Math.min(1,sh.gone/sh.d0), h=Math.sin(p*Math.PI)*s*1.1;   // a cow pat, lobbed high
+    ell(g,0,s*.3,s*.07,s*.025,'rgba(30,30,10,.25)'); g.translate(0,-h); g.rotate(sh.spin*.3);
+    ell(g,0,0,s*.09,s*.055,'#6b4a26','#3e2a12',1.2); ell(g,-s*.015,-s*.02,s*.05,s*.03,'#7d5a30'); ell(g,s*.01,-s*.035,s*.025,s*.015,'#8a6638'); }
   else { g.rotate(sh.a); ell(g,0,0,s*.14,s*.045,'#efe4d0','#8a6a48',1.2); g.beginPath(); g.moveTo(-s*.14,0); g.lineTo(s*.12,0); g.strokeStyle='#8a6a48'; g.stroke(); }
 }

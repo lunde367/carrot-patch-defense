@@ -8,7 +8,7 @@ import { TYPES } from '../../web/js/data/towers.js';
 import { ENEMY } from '../../web/js/data/enemies.js';
 import { COLS, ROWS } from '../../web/js/data/levels.js';
 
-const ATTACKERS = ['bunny','rose','squirrel','sprinkler','pine','owl','ladybug'];
+const ATTACKERS = ['bunny','rose','squirrel','sprinkler','pine','owl','cow'];
 
 // Points along the path, used to judge how much of it a spot can reach.
 let samples = [];
@@ -203,7 +203,7 @@ function power(type, lv, F){
   else if (type==='squirrel') n = 1+Math.min(T.bounce[lv], F.crowd-1)*.75;
   else if (type==='sprinkler') n = .5+F.crowd*.5;                     // hits everything in its (small) reach; the slow is valued separately
   else if (type==='pine') n = Math.min(2.2, .6+F.crowd*.3);
-  else if (type==='ladybug') n = 1+F.small;
+  else if (type==='cow') n = Math.min(2.2, .6+F.crowd*.3) + T.pile[lv]/Math.max(1,T.dmg[lv])*1.5;   // splash plus the stinky pile
   else if (type==='owl') n = 1.15;                                    // picks the toughest pest: great against bosses
   return T.rate[lv]*hit*n*ground;
 }

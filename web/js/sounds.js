@@ -61,4 +61,4 @@ export const MUSIC = {
 };
 Audio.setMusic(MUSIC.cozy);
 
-export const SHOT_SOUND = { bunny:'throw', rose:'thorn', squirrel:'acorn', sprinkler:'splash', pine:'throw', owl:'hoot', ladybug:'buzzlet' };
+export const SHOT_SOUND = { bunny:'throw', rose:'thorn', squirrel:'acorn', sprinkler:'splash', pine:'throw', owl:'hoot', cow:'throw' };

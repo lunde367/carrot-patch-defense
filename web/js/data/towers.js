@@ -17,10 +17,10 @@ export const TYPES = {
     desc:'Scares flying pests back up the path. Doesn’t hurt anything, so pair it with defenders that do.'},
   barrel:{name:'Rain Barrel',unlock:18,cost:45,up:[45,70],range:[2.2,2.6,3],water:[.06,.09,.12],support:true,
     desc:'Waters every plant defender in reach. Well-watered plants work a little faster, and drought and heat can’t slow them. Doesn’t fight.'},
-  hive:{name:'Bee Hive',unlock:31,cost:80,up:[80,120],range:[1.8,2.1,2.4],boost:[1.2,1.3,1.4],support:true,
-    desc:'The bees are back! Defenders near the hive work faster. The hive itself doesn’t fight.'},
-  ladybug:{name:'Ladybug Nest',unlock:30,cost:60,up:[60,95],range:[2.4,2.6,2.8],rate:[2.2,2.6,3],dmg:[3,5,8],
-    desc:'Sends out ladybugs that nip pests fast, twice as hard on small ones like aphids. Hits fliers too.'},
+  hive:{name:'Bee Hive',unlock:31,cost:80,up:[80,120],range:[1.9,2.2,2.5],boost:[1.3,1.45,1.6],honey:[6,10,15],support:true,
+    desc:'The bees are back! Every defender the bees reach works a lot faster, and the hive makes honey seeds after each wave. The hive itself doesn’t fight.'},
+  cow:{name:'Dairy Cow',unlock:30,cost:85,up:[80,125],range:[2.6,2.9,3.2],rate:[.45,.52,.6],dmg:[10,16,26],splash:[.75,.85,.95],pile:[6,10,16],ground:true,
+    desc:'Flings cow pats! Each one splats every crawling pest in an area and leaves a stinky pile that hurts and slows pests walking through it. Can’t hit fliers.'},
   sunflower:{name:'Sunflower',unlock:2,cost:60,up:[70,110],income:[10,18,28],
     desc:'Drops extra seeds after every wave you clear.'}
 };
@@ -33,8 +33,8 @@ export function statsText(t, perks){
   switch (t.type){
     case 'sunflower': return `+${T.income[l]} seeds after each wave`;
     case 'barrel': return `Plants in reach work ${Math.round(T.water[l]*100)}% faster · Range ${R(T.range[l])}`;
-    case 'hive': return `Defenders in reach work ${Math.round((T.boost[l]-1)*100)}% faster · Range ${R(T.range[l])}`;
-    case 'ladybug': return `Damage ${T.dmg[l]} (×2 on small pests) · ${T.rate[l]}/s · Range ${R(T.range[l])}`;
+    case 'hive': return `Defenders in reach work ${Math.round((T.boost[l]-1)*100)}% faster · +${T.honey[l]} honey seeds a wave · Range ${R(T.range[l])}`;
+    case 'cow': return `Splat ${T.dmg[l]} · Stinky pile ${T.pile[l]}/s · Range ${R(T.range[l])}`;
     case 'scarecrow': return `Scares fliers back ${T.push[l]} tiles · Range ${R(T.range[l])} · every ${+(1/T.rate[l]).toFixed(1)}s`;
     case 'rose': return `Damage ${T.dmg[l]} · Hits ${T.multi[l]} pests · Range ${R(T.range[l])}`;
     case 'pine': return `Area damage ${T.dmg[l]} · Range ${R(T.range[l])} · ${T.rate[l]} per sec`;
