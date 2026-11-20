@@ -3,6 +3,7 @@ import { G, forecast, skipToWin, DIFFICULTY, BOONS, takeBoon, undoPlant, bossWav
 import { SCENERY_NAMES } from '../data/scenery.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
 import { path } from '../engine/path.js';
+import { drawBonus } from '../render/art-scenery.js';
 import { TYPES, TRAY, statsText } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
 import { PARTS, CHAPTERS, LEVELS, ENDLESS, WAVES, ROWS, COLS } from '../data/levels.js';
@@ -83,6 +84,7 @@ const onLevelStart = (LV => {
     for (const k of TRAY) if (TYPES[k].unlock<=LV.gi && TYPES[k].unlock>0 && !Save.data.seen[k]) intro.push(['defender', k]);
     if (G.S.sprayOn && !Save.data.seen.spray) intro.push(['spray']);
     if (G.S.fertOn && !Save.data.seen.fert) intro.push(['fert']);
+    if (path.bonus.size && !Save.data.seen.tiles) intro.push(['tiles']);   // the first level with hills and sunny patches
   }
   nextIntro();
 });
@@ -116,6 +118,7 @@ function nextIntro(){
   else if (card[0]==='diary') showDiaryPage(card[1]);
   else if (card[0]==='defender') showNewDefender(card[1]);
   else if (card[0]==='fert') showFertIntro();
+  else if (card[0]==='tiles') showTilesIntro();
   else if (card[0]==='level') showLevelCard();
   else if (card[0]==='chal') showChalCard();
   else if (card[0]==='diff') showDiffChoice();
@@ -232,6 +235,16 @@ function showFertIntro(){
     <h3>Compost</h3><p>Garden food made from kitchen scraps. Tap it during a wave and every defender works faster for a few seconds.</p>
     <p>It recharges slowly, so save it for a big crowd or a boss.</p></div>
     <div class="row"><button class="btn main" data-go="fert-ok">Got it</button></div>`);
+  Audio.play('sparkle');
+}
+// Helpful spots: hills and sunny patches, drawn the way they look on the board.
+function showTilesIntro(){
+  G.S.paused=true;
+  overlay(`<div class="panel newdef"><span class="tag">Good spots</span><div class="tile-pics"><canvas data-tile="hill" width="96" height="96"></canvas><canvas data-tile="sunny" width="96" height="96"></canvas></div>
+    <h3>Hills and sunny patches</h3><p>Some grass is better than the rest. A defender on a <b>hill</b> reaches 20% farther. One in a <b>sunny patch</b> works 15% faster, and a Sunflower there grows half again as many seeds.</p>
+    <p>Look for them before you plant.</p></div>
+    <div class="row"><button class="btn main" data-go="tiles-ok">Got it</button></div>`);
+  for (const cv of document.querySelectorAll('canvas[data-tile]')) drawBonus(cv.getContext('2d'), { c:0, r:0, kind:cv.dataset.tile }, 96);
   Audio.play('sparkle');
 }
 const fertUnlocked = () => devMode || !!Save.data.seen.fert;
@@ -715,6 +728,7 @@ async function onOverlayClick(ev){
     case 'j-prev': case 'j-next': return turnPage(b.dataset.go==='j-next' ? 1 : -1);
     case 'diff-pick': { const s=Save.data.settings; s.diff=b.dataset.diff; s.diffAsked=true; delete s.tough; Save.commit();
       G.diffId=s.diff; G.diff=DIFFICULTY[s.diff].hp; paintDiff(); return nextIntro(); }
+    case 'tiles-ok': { Save.data.seen.tiles=true; Save.commit(); G.S.paused=false; hideOverlay(); dirty(); return nextIntro(); }
     case 'fert-ok': { Save.data.seen.fert=true; Save.commit(); G.S.paused=false; hideOverlay(); dirty();
       msg('Compost can be used once a wave has started.'); return nextIntro(); }
     case 'offer-yes': return offerYes && offerYes();
@@ -927,7 +941,7 @@ function onBoardUp(ev){
 }
 // For a few seconds after planting, an Undo button gives every seed back.
 let undoT=null, lastPlanted=null;
-function offerUndo(t){ if (tutorialActive()) return; lastPlanted=t; $('undo').hidden=false; clearTimeout(undoT); undoT=setTimeout(endUndo, 5000); }
+function offerUndo(t){ lastPlanted=t; $('undo').hidden=false; clearTimeout(undoT); undoT=setTimeout(endUndo, 5000); }
 function endUndo(){ clearTimeout(undoT); lastPlanted=null; $('undo').hidden=true; }
 function tryPlant(c,r){
   const S=G.S, res=plantAt(c,r);

@@ -1,6 +1,6 @@
 // Draws the garden board. Sizes itself to fit any phone, tablet or desktop window.
 import { G, towerAt, rangeOf, HILL, DUST_TIME, dewy } from '../engine/game.js';
-import { path, buildable, pointAt } from '../engine/path.js';
+import { path, buildable, pointAt, laneTotal } from '../engine/path.js';
 import { drawScenery, drawBonus } from './art-scenery.js';
 import { COLS, ROWS, CHAPTERS } from '../data/levels.js';
 import { TYPES } from '../data/towers.js';
@@ -209,6 +209,15 @@ export function draw(clock){
     g.fillStyle='rgba(196,214,92,.18)'; g.fill(); g.setLineDash([6,5]); g.strokeStyle='rgba(120,140,30,.9)'; g.lineWidth=2; g.stroke(); g.setLineDash([]); }
 
   if (G.hint){ const p=.5+.5*Math.sin(clockReal()*6), x=(G.hint.c+.5)*s, y=(G.hint.r+.5)*s;
+    if (G.hint.reach){   // tutorial: what a defender planted here would reach, with the stretches of path it covers lit up
+      const R=G.hint.reach*s; g.beginPath(); g.arc(x,y,R,0,6.28); g.fillStyle='rgba(255,236,150,.16)'; g.fill();
+      g.setLineDash([7,6]); g.lineWidth=2; g.strokeStyle='rgba(214,120,40,.85)'; g.stroke(); g.setLineDash([]);
+      g.lineCap='round'; g.strokeStyle=`rgba(240,145,63,${.45+.2*p})`; g.lineWidth=s*.26;
+      for (let li=0; li<path.all.length; li++){ const T=laneTotal(li); let on=false; g.beginPath();
+        for (let d=0; d<=T; d+=.1){ const [px,py]=pointAt(d,li), inR=Math.hypot(px+0-G.hint.c-.5, py-G.hint.r-.5)<=G.hint.reach;
+          if (inR){ if (!on){ g.moveTo(px*s,py*s); on=true; } else g.lineTo(px*s,py*s); } else on=false; }
+        g.stroke(); }
+    }
     g.beginPath(); g.arc(x,y,s*(.36+.08*p),0,6.28); g.fillStyle=`rgba(255,240,170,${.35+.25*p})`; g.fill();
     g.lineWidth=3; g.strokeStyle='#f0913f'; g.stroke(); }
 
