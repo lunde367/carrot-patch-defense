@@ -129,7 +129,7 @@ function pencil(src, d){
 }
 // Hand-drawn pictures that replace the game's own sketch for a page (made with tools/diary-art.py).
 // Add a page's code here once its web/img/diary/<code>.webp is in place.
-const ART_FILES = new Set(['part-1','start-cabbage','after-cabbage','start-strawberry','after-strawberry','start-apple-2','after-apple','start-corn','after-corn']);
+const ART_FILES = new Set(['after-apple','after-cabbage','after-carrot','after-corn','after-dust','after-rooftop','after-strawberry','after-tomato','after-vault','part-1','part-2','part-3','start-apple','start-apple-2','start-cabbage','start-corn','start-dust','start-dust-2','start-rooftop','start-strawberry','start-tomato','start-vault']);
 const loaded = new Map();
 const artImage = key => { if (!loaded.has(key)){ const im = new Image(); im.decoding = 'async'; im.src = `img/diary/${key}.webp`; loaded.set(key, im); } return loaded.get(key); };
 export function drawDiaryScene(canvas, key){
