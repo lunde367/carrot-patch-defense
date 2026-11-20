@@ -155,6 +155,7 @@ const gummed = t => { for (const p of G.S.slime) if (Math.hypot(p.x-t.x,p.y-t.y)
 // Dairy Cow (Part 4): its pats leave a stinky pile that hurts and slows crawling pests walking through.
 export const PILE_TIME=4, PILE_TICK=.5, PILE_SLOW=.7;
 // Bee Hive honey: seeds after each wave cleared.
+export const ROSE_AIR = 2;   // Thorny Rose: double damage to fliers
 export const SMOG = .6;   // in smog, defenders only spot fliers within 60% of their reach
 export const RAIN_SLOW = .8;
 export const towerAt = (c,r) => G.S.towers.find(t=>t.c===c&&t.r===r);
@@ -394,8 +395,9 @@ export function update(dt){
       for (const e of inR){ damage(e,DM); e.slow=T.slow[t.lv]*(1+(K.slow||0)); }
       S.fx.push({k:'ring',x:t.x,y:t.y,r:R,life:.5,max:.5});
     } else if (t.type==='rose'){
-      for (const e of [...inR].sort((a,b)=>b.dist-a.dist).slice(0,T.multi[t.lv]+(K.multi||0)))
-        S.shots.push({k:'thorn',x:t.x,y:t.y-.2,tgt:e,tx:e.x,ty:e.y,spd:8,dmg:DM,a:0,spin:0});
+      // Thorns go for fliers first and hit them twice as hard: the rose is the garden's anti-air
+      for (const e of [...inR].sort((a,b)=>(b.fly-a.fly)||(b.dist-a.dist)).slice(0,T.multi[t.lv]+(K.multi||0)))
+        S.shots.push({k:'thorn',x:t.x,y:t.y-.2,tgt:e,tx:e.x,ty:e.y,spd:8,dmg:DM*(e.fly?ROSE_AIR:1),a:0,spin:0});
     } else if (t.type==='pine'){
       const d0=Math.hypot(lead.x-t.x,lead.y-t.y)||1;
       S.shots.push({k:'cone',x:t.x,y:t.y-.3,tgt:lead,tx:lead.x,ty:lead.y,spd:6.5,dmg:DM,splash:T.splash[t.lv]*(1+(K.splash||0)),a:0,spin:0,d0,gone:0});

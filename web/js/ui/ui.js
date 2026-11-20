@@ -284,10 +284,10 @@ function setupPestsSeen(){
 }
 function pestTraits(type){
   const D=ENEMY[type], out=[];
-  const ground = Object.values(TYPES).filter(T => T.ground).map(T => T.name);
+  const ground = Object.keys(TYPES).filter(k => TYPES[k].ground && towerOpen(k)).map(k => TYPES[k].name);
   if (D.boss){ const bite=Math.max(3, Math.round(G.S.maxLives*.25));
     out.push(`A boss: big and tough, and it comes in the final wave. If it reaches your garden it eats ${bite} crops at once.`); }
-  if (D.fly) out.push(`Flies over the path. ${ground.join(' and ')} can’t reach it.`);
+  if (D.fly) out.push(`Flies over the path. ${ground.length ? listAnd(ground)+' can’t reach it.' : 'Every defender you have can still hit it.'}${towerOpen('rose') ? ' Thorny Roses hit fliers twice as hard.' : ''}`);
   if (D.armor) out.push(`Armor ${D.armor}: every hit does ${D.armor} less damage, so small hits barely dent it.`);
   if (D.burrow) out.push('Tunnels underground for part of the way, where nothing can hit it.');
   if (D.hopper) out.push('Hops along in quick jumps.');
@@ -685,13 +685,15 @@ function helpNudge(){
       <button class="btn main small" data-go="menu">Pick a level to replay</button></div>`;
   return '';
 }
+// 'a', 'a and b', 'a, b and c'
+const listAnd = a => a.length<2 ? a.join('') : a.slice(0,-1).join(', ')+' and '+a[a.length-1];
 // One tip after a loss, based on the kind of pest that ate the most crops.
 function lossTip(){
   const S=G.S, top=Object.entries(S.leaks).sort((a,b)=>b[1]-a[1])[0];
   if (!top) return 'Plant defenders near the bends, where pests pass more than once.';
-  const D=ENEMY[top[0]], name=D.name, ground=Object.values(TYPES).filter(T=>T.ground).map(T=>T.name+'s').join(' and ');
+  const D=ENEMY[top[0]], name=D.name, ground=listAnd(Object.keys(TYPES).filter(k=>TYPES[k].ground && towerOpen(k)).map(k=>TYPES[k].name+'s'));
   if (D.boss) return `The ${name} got through. Upgrade your strongest defenders to level 3 before the last wave${S.fertOn?`, and save your ${fertName()} for it`:''}.`;
-  if (D.fly) return `Most of what got through was flying (${name}s). ${ground} can’t reach fliers, so add Carrot Bunnies${towerOpen('rose')?' or Thorny Roses':''} near the end of the path.`;
+  if (D.fly) return `Most of what got through was flying (${name}s). ${ground} can’t reach fliers, so add ${towerOpen('rose')?'Thorny Roses (they hit fliers twice as hard)':'Carrot Bunnies'} near the end of the path.`;
   if (D.armor) return `${name}s wear armor, so small hits barely dent them. Big hitters like ${towerOpen('owl')?'Night Owls and ':''}Pine Trees get through it.`;
   if (D.burrow) return `${name}s tunnel under part of the path. Spread defenders along the whole path so something is waiting where they come up.`;
   if (D.spd>=1.4 || D.hopper) return `${name}s are quick. A Sprinkler slows everything near it, which gives your other defenders time.`;

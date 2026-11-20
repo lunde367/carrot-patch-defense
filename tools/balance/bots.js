@@ -199,7 +199,7 @@ function power(type, lv, F){
   const armor = Math.max(F.armor, F.bossArmor*.5), hit = Math.min(Math.max(1, T.dmg[lv]-armor), F.hp*1.2 + (F.bossArmor||F.bossFly ? 30 : 0)),   // damage past a pest's health is wasted
     ground = T.ground ? (1-F.fly)*(F.bossFly?.6:1) : 1;
   let n = 1;
-  if (type==='rose') n = Math.min(T.multi[lv], .6+F.crowd*.6);
+  if (type==='rose') n = Math.min(T.multi[lv], .6+F.crowd*.6)*(1+F.fly);   // double damage on fliers
   else if (type==='squirrel') n = 1+Math.min(T.bounce[lv], F.crowd-1)*.75;
   else if (type==='sprinkler') n = .5+F.crowd*.5;                     // hits everything in its (small) reach; the slow is valued separately
   else if (type==='pine') n = Math.min(2.2, .6+F.crowd*.3);
