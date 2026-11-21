@@ -24,7 +24,7 @@ const pkg = JSON.parse(await readFile(join(root,'package.json'),'utf8'));
 pkg.name = id; pkg.version = '0.1.0'; pkg.description = name; delete pkg.scripts['new-game'];
 await writeFile(join(dest,'package.json'), JSON.stringify(pkg, null, 2)+'\n');
 const cap = JSON.parse(await readFile(join(root,'capacitor.config.json'),'utf8'));
-cap.appId = 'com.example.' + id.replace(/-/g,''); cap.appName = name;
+cap.appId = 'com.kitchentablegames.' + id.replace(/-/g,''); cap.appName = name;   // every game in the family ships under Kitchen Table Games
 await writeFile(join(dest,'capacitor.config.json'), JSON.stringify(cap, null, 2)+'\n');
 
 // Fill in the name placeholders.

@@ -98,8 +98,8 @@ npm run android               # copies web/ in and opens Android Studio
 After any change in `web/`, run `npm run sync` (or `npm run ios` / `npm run android`).
 
 Before you publish:
-- Change `appId` in `capacitor.config.json` to something you own, like `com.yourname.carrotpatch`,
-  **before** running `npx cap add`. It can't be changed after the first store release.
+- The app ID is `com.kitchentablegames.carrotpatch` (studio: Kitchen Table Games). It can't be changed
+  after the first store release.
 - The version number comes from `package.json` (`npm run app:setup` copies it into both projects).
 - The rating question uses the stores' own rating sheet (`@capacitor-community/in-app-review`), and
   vibration uses `@capacitor/haptics`. Both are installed by `npm install`.
