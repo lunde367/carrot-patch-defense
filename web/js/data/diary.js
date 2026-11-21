@@ -3,7 +3,7 @@
 // Key = `${when}-${chapter id}`. Tone runs cheerful → worried → quiet → hopeful (see the story plan).
 export const DIARY = [
   { key:'start-cabbage',    title:'My garden',               text:'Grandpa gave me the back corner of the yard and a packet of cabbage seeds. The slugs have found them already. Time to call in the bunnies.' },
-  { key:'after-cabbage',    title:'After the Cabbage Patch', text:'Best cabbages on the street this year! The bunnies were heroes. Can’t wait for strawberry season.' },
+  { key:'after-cabbage',    title:'After the Cabbage Bed', text:'Best cabbages on the street this year! The bunnies were heroes. Can’t wait for strawberry season.' },
   { key:'start-strawberry', title:'Strawberry season',       text:'The garden center gave me a free sprayer. “Works like magic,” the man said. Grandpa says his garden never needed one. We’ll see!' },
   { key:'after-strawberry', title:'After the Strawberry Bed', text:'It really does work like magic. One spray and the caterpillars are gone. Hardly needed the bunnies.' },
   { key:'after-carrot',     title:'After the Carrot Rows',   text:'Best summer ever. Carrots as long as my hand, and the creek is perfect for wading. The news said it was the hottest year on record, but out here it just felt like summer.' },

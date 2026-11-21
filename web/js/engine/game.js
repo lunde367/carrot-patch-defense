@@ -58,7 +58,7 @@ export const swarmAt = w => weather('swarm', w);
 // Dust storms (Dust Bowl Farm): for the first seconds of the wave, defenders can only see pests up close.
 export const dustAt = w => !G.LV.endless && weather('dust', w);
 const DUST_SIGHT = .55; export const DUST_TIME = 10;
-// Morning dew (Cabbage Patch): all wave long, slugs and snails glide faster, and more of them come out.
+// Morning dew (Cabbage Bed): all wave long, slugs and snails glide faster, and more of them come out.
 export const dewAt = w => !G.LV.endless && weather('dew', w);
 const DEW_SPEED = 1.35; const DEW_EXTRA = .4;
 export const dewy = e => G.S.dewT && (ENEMY[e.type].shape==='slug' || ENEMY[e.type].shape==='snail');

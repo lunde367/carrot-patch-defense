@@ -1,7 +1,7 @@
 // Pests. `shape` picks the drawing; colors live here so one shape can have many variants.
 // armor: flat damage removed from every hit (minimum 1). adult: what a young pest grows into.
 export const ENEMY = {
-  // ---- Cabbage Patch: slugs, snails & beetles ----
+  // ---- Cabbage Bed: slugs, snails & beetles ----
   babyslug:{name:'Baby Slug',hp:8,spd:.7,reward:2,size:.17,gap:.5,shape:'slug',col:'#cdbb8a',dk:'#8f7f52'},
   slug:{name:'Garden Slug',hp:22,spd:.65,reward:4,size:.25,gap:.7,shape:'slug',col:'#a89a5c',dk:'#6f6232'},
   bananaslug:{name:'Banana Slug',hp:70,spd:.5,reward:9,size:.34,gap:1.1,shape:'slug',col:'#f0cf45',dk:'#9c7d16',spots:true},
@@ -11,7 +11,7 @@ export const ENEMY = {
   fleagrub:{name:'Flea Beetle Grub',hp:6,spd:.85,reward:2,size:.16,gap:.4,shape:'grub',adult:'fleabeetle'},
   fleabeetle:{name:'Flea Beetle',hp:14,spd:1.1,reward:4,size:.2,gap:.5,shape:'beetle',col:'#3f8a55',dk:'#1f4a2c',hopper:true},
   beetle:{name:'Shield Beetle',hp:30,armor:3,spd:.85,reward:6,size:.28,gap:.75,shape:'beetle',col:'#4560a3',dk:'#1f2e52'},
-  beetleking:{voice:'click',name:'Beetle King',boss:true,hp:440,armor:6,spd:.45,reward:60,size:.5,shape:'beetle',col:'#7a46b0',dk:'#3c1f5e'},
+  beetleking:{voice:'click',name:'Old Ironshell',boss:true,hp:440,armor:6,spd:.45,reward:60,size:.5,shape:'beetle',col:'#7a46b0',dk:'#3c1f5e'},
   // ---- Strawberry Bed: caterpillars & moths ----
   inchworm:{name:'Inchworm',hp:7,spd:.9,reward:2,size:.18,gap:.45,shape:'inch'},
   caterpillar:{name:'Caterpillar',hp:16,spd:.8,reward:3,size:.26,gap:.6,shape:'cat',a:'#8ccc3f',b:'#7bbf31',dk:'#4c7d1c',adult:'moth'},

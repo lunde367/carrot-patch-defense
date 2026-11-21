@@ -16,7 +16,7 @@ export const PARTS = [
 ];
 
 export const CHAPTERS = [
-  { id:'cabbage', name:'Cabbage Patch', crop:'cabbage', cropPlural:'cabbages', pests:'Slugs, snails & beetles', grass:['#a6cf8a','#9ec781'], levels:[
+  { id:'cabbage', name:'Cabbage Bed', crop:'cabbage', cropPlural:'cabbages', pests:'Slugs, snails & beetles', grass:['#a6cf8a','#9ec781'], levels:[
     { name:'Seedlings', season:'spring', boss:'fatslug',
       pts:[[1.5,-0.6],[1.5,2.5],[7.5,2.5],[7.5,5.5],[1.5,5.5],[1.5,9.5],[6.5,9.5],[6.5,13.2]],
       pool:[['babyslug',1,3],['fleagrub',2,2],['slug',4,1.5]],
@@ -28,7 +28,7 @@ export const CHAPTERS = [
     { name:'Harvest Time', waves:10, season:'late summer', boss:'beetleking', dew:[4,8],
       pts:[[4.5,-0.6],[4.5,1.5],[1.5,1.5],[1.5,4.5],[7.5,4.5],[7.5,7.5],[2.5,7.5],[2.5,10.5],[7.5,10.5],[7.5,13.2]],
       pool:[['snail',1,2],['fleabeetle',1,2],['bananaslug',2,2],['beetle',3,2]],
-      intro:'Banana slugs and shield beetles are out in force. The Beetle King is coming.' },
+      intro:'Banana slugs and shield beetles are out in force. Old Ironshell, the biggest beetle in the yard, is coming.' },
   ]},
   { id:'strawberry', name:'Strawberry Bed', crop:'strawberry', cropPlural:'strawberries', pests:'Caterpillars & moths', grass:['#9ccc8f','#93c386'], levels:[
     { name:'First Blossoms', waves:6, season:'spring', boss:'chunkycat',
