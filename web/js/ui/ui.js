@@ -471,7 +471,7 @@ function showDiary(at){
 // and its back (the next page) settles on the other side. Built from copies of the old and new pages,
 // laid over the new spread and removed when the turn ends.
 let turning=false;
-const reduceMotion = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){ return false; } };
+const reduceMotion = () => { if (document.documentElement.classList.contains('reduce-motion')) return true; try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){ return false; } };
 function copyPage(src){ const c=src.cloneNode(true); const a=src.querySelectorAll('canvas'), b=c.querySelectorAll('canvas');
   a.forEach((cv,i) => { b[i].width=cv.width; b[i].height=cv.height; try { b[i].getContext('2d').drawImage(cv,0,0); } catch(e){} }); return c; }
 function turnPage(dir){
@@ -565,6 +565,7 @@ function showSettings(){
       ${toggle('t-sfx','Sound effects',s.sfx)}
       ${toggle('t-music','Music',s.music)}
       ${toggle('t-haptics','Vibration',s.haptics!==false,'A small buzz when you plant, and when pests reach the crops.')}
+      ${toggle('t-motion','Reduce motion',!!s.calm,'No screen shake, confetti or page-turn animation.')}
     </div>
     <div class="set-group">
       <div class="set-row"><span><b>Gardener’s name</b><small>The name on the diary.</small></span>
@@ -591,7 +592,7 @@ function showSettings(){
       <div class="set-row"><span><b>Reset progress</b><small>Erase all stars, upgrades, unlocks and achievements.</small></span>
         <button class="reset-btn" data-go="reset">Reset</button></div>
     </div>`:''}
-    <p class="version">Carrot Patch Defense · version ${VERSION}</p>`);
+    <p class="version"><a href="https://lunde367.github.io/carrot-patch-defense/support.html" target="_blank" rel="noopener">Help</a> · <a href="https://lunde367.github.io/carrot-patch-defense/privacy.html" target="_blank" rel="noopener">Privacy</a><br>Carrot Patch Defense · version ${VERSION}</p>`);
   const gn=$('gName'); if (gn) gn.onchange=()=>{ Save.data.settings.name=gn.value.replace(/[<>&"']/g,'').trim().slice(0,12) || 'Robin'; Save.commit(); };
 }
 
@@ -623,6 +624,8 @@ const resultIcons = (replay=true) => `<div class="res-icons">
   ${replay?`<button class="btn ghost round" data-go="retry" aria-label="Play again" title="Play again">${ICON.restart}</button>`:''}</div>`;
 // Under a first win: the first time, what challenge stars are; later, a nudge if none have been earned yet.
 function chalNote(){
+  const beaten0=LEVELS.filter(l => (Save.data.stars[l.gi]||0)>0).length;
+  if (beaten0<3) return '';   // brand-new players get the basics first; challenges come up after the first garden
   if (!Save.data.seen.chalIntro){ Save.data.seen.chalIntro=true; Save.commit();
     return `<div class="nudge-box blue"><b>New: challenge stars ${CH_ICON}</b><span>Every level you beat now has extra goals (the little ${CH_ICON} marks under it on the map). Replay the level and meet them to earn ${CH_ICON}. Spend ${CH_ICON} in <b>Upgrades → Skills</b> to make a defender stronger for good.</span></div>`; }
   const beaten=LEVELS.filter(l => (Save.data.stars[l.gi]||0)>0).length;
@@ -778,6 +781,7 @@ async function onOverlayClick(ev){
     case 'part-ok': return nextIntro();
     case 'level-ok': return nextIntro();
     case 'rate': { const a=b.dataset.a; answerRating(Save, a); track('rating', { answer:a }); const box=$('rateBox'); if (box) box.innerHTML = a==='ok' ? '<b>Thank you!</b>' : '<span>No problem.</span>'; return; }
+    case 't-motion': { const s=Save.data.settings; s.calm=!s.calm; document.documentElement.classList.toggle('reduce-motion', s.calm); Save.commit(); showSettings(); return; }
     case 't-haptics': { const s=Save.data.settings; s.haptics=s.haptics===false; setHaptics(s.haptics); Save.commit(); haptic('medium'); showSettings(); return; }
     case 't-share': { const s=Save.data.settings; s.share=s.share===false; setTelemetry(s.share); Save.commit(); showSettings(); return; }
     case 'boon-pick': { const id=b.dataset.boon; if (takeBoon(id)){ G.S.paused=false; hideOverlay(); Audio.play('sparkle'); msg(`${BOONS[id].name}: ${BOONS[id].desc}`); dirty(); } return; }

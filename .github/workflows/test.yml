@@ -1,0 +1,20 @@
+# First-time player check: on every push, a robot plays the game from a brand-new save
+# (tutorial, first garden, journal, the next two gardens) on a small and a large phone.
+# A red X here means something a new player would hit is broken. Screenshots are attached to each run.
+name: First-time player test
+on:
+  push: { branches: [main], paths: ['web/**', 'tools/test/**', '.github/workflows/test.yml'] }
+  workflow_dispatch:
+jobs:
+  first-play:
+    runs-on: ubuntu-latest
+    strategy: { fail-fast: false, matrix: { device: ['iPhone SE', 'Pixel 7'] } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm i --no-save playwright@1.63.0 && npx playwright install --with-deps chromium
+      - run: node tools/test/first-play.mjs --device "${{ matrix.device }}" --out test-shots
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: 'first-play-${{ matrix.device }}', path: test-shots, retention-days: 14 }

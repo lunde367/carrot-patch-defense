@@ -89,6 +89,7 @@ async function boot(){
   bindSave(Save); initAds(ADS);
   Audio.init(Save.data.settings);
   setHaptics(Save.data.settings.haptics!==false);
+  document.documentElement.classList.toggle('reduce-motion', !!Save.data.settings.calm);
   initTelemetry({ ...TELEMETRY, version:VERSION, enabled:Save.data.settings.share!==false }); track('app_open');
   initBoard(document.getElementById('cv'), document.getElementById('board'));
   initUI();

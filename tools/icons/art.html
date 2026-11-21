@@ -16,7 +16,7 @@ function iconScene(){
   path(); g.strokeStyle='#b48d5a'; g.lineWidth=S*.15; g.stroke(); path(); g.strokeStyle='#dcbd8b'; g.lineWidth=S*.12; g.stroke();
   const R=rng(3); for (let i=0;i<40;i++){ ell(g,S*(.1+R()*.8),S*(.1+R()*.8),S*.006,S*.004,'rgba(160,120,70,.25)'); }
   for (const [x,y] of [[.12,.9],[.36,.92],[.86,.86]]) drawCrop(g,'cabbage',S*x,S*y,S*.3);
-  g.save(); g.translate(S*.5,S*.5); DRAW.bunny(g,S*.62,0,0,0,1); g.restore();
+  g.save(); g.translate(S*.5,S*.52); DRAW.bunny(g,S*.86,0,0,0,1); g.restore();   // big enough to read at 29 px
 }
 function splashScene(){
   g.fillStyle = dark ? '#182016' : '#edf2e3'; g.fillRect(0,0,S,S);

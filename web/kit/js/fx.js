@@ -1,6 +1,6 @@
 // Feel-good effects for the game family: toasts, confetti and screen shake.
 // All of them respect the player's "reduce motion" setting.
-const reduced = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduced = () => document.documentElement.classList.contains('reduce-motion') || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 // ---------- toast: a small message that slides in at the top and leaves on its own ----------
 let toastBox = null;

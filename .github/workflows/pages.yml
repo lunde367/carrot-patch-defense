@@ -15,6 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: node scripts/fetch-fonts.mjs
+      - run: node scripts/make-precache.mjs
       - uses: actions/configure-pages@v5
       # The game is published at the site root. A copy also goes in web/, the address
       # older home-screen installs still open, so those keep working with the same save.

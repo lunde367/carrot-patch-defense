@@ -232,7 +232,7 @@ export function draw(clock){
   // Sludge trail: black oily smears with a rainbow sheen that shrink as they dry
   if (S.slime && S.slime.length){ const tt=clockReal();
     for (const p of S.slime){ const f=Math.min(1,p.life/3), w=s*(.22+.08*Math.sin(p.seed));
-      ell(g,p.x*s,p.y*s+s*.08,w*f+s*.06,w*.5*f+s*.03,`rgba(28,28,18,${.55*f+.1})`);
+      ell(g,p.x*s,p.y*s+s*.08,w*f+s*.06,w*.5*f+s*.03,`rgba(28,28,18,${.55*f+.1})`,`rgba(205,245,120,${.45*f})`,1.5);
       g.beginPath(); g.ellipse(p.x*s,p.y*s+s*.06,w*.6*f+s*.03,w*.22*f+s*.01,p.seed,3.4,5.8); g.strokeStyle=`hsla(${(tt*40+p.seed*60)%360},70%,62%,${.45*f})`; g.lineWidth=1.5; g.stroke(); } }
   // Cow pats: brown splats with green stink curling up
   if (S.piles && S.piles.length){ const tt=clockReal();

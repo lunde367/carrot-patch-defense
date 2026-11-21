@@ -31,6 +31,22 @@ await edit('android/app/src/main/AndroidManifest.xml', s =>
   s.includes('android:screenOrientation') ? s : s.replace(/<activity\b/, '<activity\n            android:screenOrientation="portrait"'));
 await edit('android/app/build.gradle', s =>
   s.replace(/versionName "[^"]*"/, `versionName "${version}"`).replace(/versionCode \d+/, `versionCode ${build}`));
+// Android: big system text would make the game's buttons and cards overflow, so the game follows the phone's
+// text size only up to 115%. (Everything is already sized to be readable; the board itself doesn't scale.)
+{ const { readdirSync } = await import('node:fs');
+  const find = d => { if (!existsSync(at(d))) return null; for (const e of readdirSync(at(d), { withFileTypes:true })){
+    const p = d + '/' + e.name; if (e.isDirectory()){ const f = find(p); if (f) return f; } else if (e.name === 'MainActivity.java') return p; } return null; };
+  const main = find('android/app/src/main/java');
+  if (main) await edit(main, s => s.includes('setTextZoom') ? s : s
+    .replace(/import com\.getcapacitor\.BridgeActivity;/, 'import com.getcapacitor.BridgeActivity;\nimport android.webkit.WebSettings;')
+    .replace(/public class MainActivity extends BridgeActivity \{\s*\}/, `public class MainActivity extends BridgeActivity {
+    @Override
+    public void onStart() {
+        super.onStart();
+        WebSettings ws = getBridge().getWebView().getSettings();
+        ws.setTextZoom(Math.min(ws.getTextZoom(), 115));
+    }
+}`)); }
 // Android test builds: always sign with the project's own test key. Left to itself the build machine
 // uses whatever debug key it happens to have, and Android refuses to update an app whose key changed.
 await edit('android/app/build.gradle', s => s.includes('test.keystore') ? s : s + `

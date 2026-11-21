@@ -28,16 +28,17 @@ const battle = async (p, gi, waves, secs) => p.evaluate(async ({ gi, waves, secs
   ui.play(gi); const S = g.G.S; S.paused = false; document.getElementById('over').hidden = true; bots.preparePath();
   const avail = Object.keys(TYPES).filter(k => TYPES[k].unlock <= gi);
   for (let w = 0; w < waves; w++){
+    S.seeds += 260; S.lives = Math.max(S.lives, 10);   // a garden that's doing well: the screenshots show play, not a loss
     bots.STRATEGIES.balanced(avail, w+1); g.startWave();
     const until = w === waves-1 ? secs : 900; let t = 0;
     while (S.mode === 'play' && S.active && t < until){ g.update(1/30); t += 1/30; }
   }
-  S.speed = 1; S.paused = true;          // freeze the moment
+  S.seeds = Math.max(S.seeds, 180); S.speed = 1; S.paused = true;          // freeze the moment
 }, { gi, waves, secs });
 const SCENES = [
   ['1-backyard', async p => battle(p, 4, 5, 9)],
   ['2-big-garden', async p => battle(p, 35, 6, 12)],
-  ['3-dry-years', async p => battle(p, 20, 5, 10)],
+  ['3-dry-years', async p => battle(p, 23, 4, 10)],
   ['4-gardens', async p => { await p.evaluate(async () => (await import('/web/js/ui/ui.js')).showMenu()); }],
   ['5-diary', async p => { await p.evaluate(async () => (await import('/web/js/ui/ui.js')).showMenu()); await p.click('[data-go="diary"]'); }],
   ['6-field-guide', async p => { await p.evaluate(async () => (await import('/web/js/ui/ui.js')).showMenu()); await p.click('[data-go="diary"]'); await p.click('[data-go="guide"]'); await p.click('[data-tab="pests"]', { timeout:1500 }).catch(()=>{}); }],
@@ -45,7 +46,7 @@ const SCENES = [
 (async () => {
   const b = await chromium.launch();
   for (const [name, viewport, scale] of DEVICES){
-    const ctx = await b.newContext({ viewport, deviceScaleFactor:scale, isMobile:name!=='ipad', hasTouch:true });
+    const ctx = await b.newContext({ viewport, deviceScaleFactor:scale, isMobile:true, hasTouch:true });
     await ctx.addInitScript(save => { try { localStorage.setItem('carrot-patch-save', save); } catch {} }, JSON.stringify(SAVE()));
     const p = await ctx.newPage();
     for (const [scene, run] of SCENES){

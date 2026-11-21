@@ -9,7 +9,7 @@ function sludge(c,e,r,D){
   c.beginPath(); c.moveTo(-r*1.1,r*.55);
   c.bezierCurveTo(-r*1.25,-r*.2,-r*.6,-r*(1+wb),0,-r*(.95-wb)); c.bezierCurveTo(r*.7,-r*(1-wb),r*1.25,-r*.15,r*1.1,r*.55);
   c.quadraticCurveTo(r*.55,r*.78,0,r*.6); c.quadraticCurveTo(-r*.55,r*.8,-r*1.1,r*.55); c.closePath();
-  c.fillStyle=D.col; c.fill(); c.strokeStyle=D.dk; c.lineWidth=Math.max(1.2,r*.08); c.stroke();
+  c.fillStyle=D.col; c.fill(); c.strokeStyle='rgba(205,245,120,.85)'; c.lineWidth=Math.max(1.6,r*.11); c.stroke();   // a sickly bright rim, so it shows on dark roads too
   const hue=(e.ph*25)%360; c.strokeStyle=`hsla(${hue},70%,62%,.55)`; c.lineWidth=Math.max(1.5,r*.12);   // oil-slick sheen
   c.beginPath(); c.ellipse(-r*.2,-r*.3,r*.55,r*.25,-.3,3.3,5.6); c.stroke();
   c.strokeStyle=`hsla(${(hue+120)%360},70%,62%,.4)`; c.beginPath(); c.ellipse(r*.25,r*.05,r*.5,r*.2,.2,3.4,5.4); c.stroke();

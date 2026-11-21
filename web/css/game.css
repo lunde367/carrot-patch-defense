@@ -476,8 +476,14 @@ canvas{ display:block }
 @media (max-width: 400px){
   .controls{ gap:4px }
   .controls .btn.icon, .controls #spd{ min-width:38px; padding-inline:6px }
-  .controls .btn.main{ font-size:.92rem; padding-inline:8px; white-space:nowrap }
+  .controls .btn.main{ font-size:.86rem; padding-inline:6px; white-space:nowrap; letter-spacing:-.01em }
+  #seedsChip small{ display:none }   /* the seed dot already says "seeds"; frees room for larger text */
+  .stats{ gap:6px }
 }
 /* a locked part's hint wraps under the title on narrow screens instead of running into it */
 .part.locked b{ flex:none }
 .part.locked .part-meta{ flex:1 1 0; min-width:0; text-align:right; white-space:normal }
+
+/* Settings → Reduce motion: the same calm look the phone's own setting gives */
+html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after{ animation-duration:.001s !important; animation-iteration-count:1 !important; transition-duration:.001s !important }
+.version a{ color:inherit; font-weight:800 }
