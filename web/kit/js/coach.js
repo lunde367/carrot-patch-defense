@@ -10,7 +10,9 @@
 // Step fields: text, target (selector, element or function; without one the bubble sits at the
 // bottom of the screen), place ('auto' next to the target |
 // 'over' or 'over-bottom' inside its bottom edge | 'over-top' inside its top edge), until (event
-// name), when (filter for that event), button (shows a button that advances), enter()/leave() hooks.
+// name), when (filter for that event), button (shows a button that advances), enter()/leave() hooks,
+// tuck (selector: the bubble gets out of the way once that is tapped, or after tuckAfter ms, and the
+// step keeps waiting for `until` with nothing on screen).
 import { on } from './events.js';
 
 export function createCoach({ onFinish = () => {}, skipLabel = 'Skip tutorial' } = {}){
@@ -20,7 +22,9 @@ export function createCoach({ onFinish = () => {}, skipLabel = 'Skip tutorial' }
   document.body.append(el);
   const textEl = el.querySelector('.coach-text'), btn = el.querySelector('.coach-btn'), arrow = el.querySelector('.coach-arrow');
 
-  let steps = [], i = -1, target = null, off = null, ticker = null;
+  let steps = [], i = -1, target = null, off = null, ticker = null, tucked = false, tuckOff = null, tuckTimer = null;
+  // a target that's hidden or has no size (e.g. a button that disappears) is treated as no target
+  const visible = t => { if (!t || !t.isConnected) return false; const r = t.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
 
   const resolve = t => !t ? null : typeof t === 'function' ? t() : typeof t === 'string' ? document.querySelector(t) : t;
 
@@ -28,7 +32,7 @@ export function createCoach({ onFinish = () => {}, skipLabel = 'Skip tutorial' }
     if (off) { off(); off = null; }
     if (target) target.classList.remove('coach-target');
     const s = steps[i]; if (s && s.leave) s.leave();
-    target = null;
+    target = null; tucked = false; if (tuckOff){ tuckOff(); tuckOff = null; } clearTimeout(tuckTimer);
   }
   function show(){
     const s = steps[i];
@@ -40,10 +44,13 @@ export function createCoach({ onFinish = () => {}, skipLabel = 'Skip tutorial' }
     // bring a target that's off screen into view so the bubble can point at it
     if (target){ const r = target.getBoundingClientRect(); if (r.bottom > window.innerHeight - 140 || r.top < 0) target.scrollIntoView({ block:'center' }); }
     if (s.until) off = on(s.until, d => { if (!s.when || s.when(d)) next(); });
+    if (s.tuck){ const tuck = () => { tucked = true; el.hidden = true; if (target) target.classList.remove('coach-target'); };
+      const t = resolve(s.tuck); if (t){ t.addEventListener('click', tuck); tuckOff = () => t.removeEventListener('click', tuck); }
+      if (s.tuckAfter) tuckTimer = setTimeout(tuck, s.tuckAfter); }
     el.hidden = false; position();
   }
   function position(){
-    if (el.hidden) return;
+    if (el.hidden || tucked) return;
     const s = steps[i], vw = window.innerWidth, vh = window.innerHeight;
     // The game may redraw the element we point at; find it again if so.
     if (s.target && (!target || !target.isConnected)){
@@ -53,6 +60,7 @@ export function createCoach({ onFinish = () => {}, skipLabel = 'Skip tutorial' }
     const w = Math.min(300, vw - 32); el.style.width = w + 'px';
     const h = el.offsetHeight;
     let top, left, arrowSide = 'none', ax = 0;
+    if (target && !visible(target)){ target.classList.remove('coach-target'); target = resolve(s.fallback) || null; }
     if (!target){
       // Nothing to point at: sit at the bottom of the screen, clear of the play area
       // (games keep the action up top and controls at the bottom).
