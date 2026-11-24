@@ -63,7 +63,7 @@ const onLevelStart = (LV => {
   $('board').classList.toggle('spray-left', path.exitCol >= 5);   // keep the button off the path's end
   setHome(false); hideOverlay(); disarmRestart(); resize(); renderBar(); renderInfo(); dirty();
   msg(LV.endless ? `Endless Garden. Best so far: wave ${Save.data.endless.best}.` : `${LV.ch.name} ${LV.li+1}: ${LV.name}. Plant your defenders, then tap Start wave.`);
-  paintDiff();
+  paintDiff(); paintChal();
   requestAnimationFrame(() => { refresh(); resize(); });   // the skill buttons may have just appeared beside the message
   if (quietStart){ quietStart=false; return; }                         // started silently behind the menu
   if (LV.gi===0 && !Save.data.tutorialDone){                           // the tutorial comes first, after the diary's opening page
@@ -79,7 +79,7 @@ const onLevelStart = (LV => {
   if (page && !Save.data.diary[page.key]) intro.push(['diary', page.key]);
   if (!Save.data.settings.diffAsked) intro.push(['diff']);          // asked once: who's gardening?
   if (!Save.data.intros[LV.gi] && !(Save.data.stars[LV.gi]>0)) intro.push(['level']);
-  if (!LV.endless && Save.data.stars[LV.gi]>0 && !chalShown.has(LV.gi) && Object.keys(chalGot(LV.gi)).length<challengesFor(LV).length) intro.push(['chal']);   // replaying a beaten level: its challenges                           // what this level is about, the first time
+  if (!LV.endless && Save.data.stars[LV.gi]>0 && !retrying && Object.keys(chalGot(LV.gi)).length<challengesFor(LV).length) intro.push(['chal']);   // replaying a beaten level: its challenges                           // what this level is about, the first time
   {   // (test mode shows these too, so the whole game can be reviewed)
     for (const k of TRAY) if (TYPES[k].unlock<=LV.gi && TYPES[k].unlock>0 && !Save.data.seen[k]) intro.push(['defender', k]);
     if (G.S.sprayOn && !Save.data.seen.spray) intro.push(['spray']);
@@ -97,9 +97,10 @@ const chalList = (L, fresh=[]) => `<ul class="chal-list">${challengesFor(L).map(
   return `<li class="${got?'got':''}"><i>${CH_ICON}</i><span>${challengeText(id, L)}${fresh.includes(id)?' <b>New!</b>':''}</span></li>`; }).join('')}</ul>`;
 // Challenge stars are spent on defender skills.
 const chalLeft = () => chalCount() + (devMode ? 60 : 0) - skillsSpent(Save.data.skills);
-const chalShown = new Set();          // levels whose challenge card was shown this session
+// The challenge card shows each time a beaten level is opened (not on Try again); the ✦ chip on the board reopens it any time.
+let retrying = false;
 function showChalCard(){
-  const LV=G.LV; chalShown.add(LV.gi); G.S.paused=true;
+  const LV=G.LV; G.S.paused=true;
   overlay(`<div class="panel newdef levelcard"><span class="tag">Challenge stars · ${Object.keys(chalGot(LV.gi)).length} of ${challengesFor(LV).length}</span>
     <h3>${LV.name}</h3><p>You’ve beaten this level, so extra goals are open. Win while meeting any of them to earn its star, then spend ✦ in Upgrades → Skills to make a defender stronger for good.</p>${chalList(LV)}</div>
     <div class="row"><button class="btn main" data-go="level-ok">Let’s go</button></div>`);
@@ -142,6 +143,8 @@ function showDiffChoice(){
     <div class="diff-pick">${Object.entries(DIFFICULTY).map(([k,d])=>`<button class="btn ${k==='normal'?'main':'ghost'}" data-go="diff-pick" data-diff="${k}"><b>${d.name}</b><small>${d.note}</small></button>`).join('')}</div></div>`);
 }
 // A small badge on the board when the difficulty isn't Normal.
+function paintChal(){ const b=$('chalChip'), LV=G.LV; if (!b || !LV) return; const all=LV.endless?[]:challengesFor(LV), got=LV.endless?0:Object.keys(chalGot(LV.gi)).length;
+  b.hidden = LV.endless || !(Save.data.stars[LV.gi]>0) || !all.length; b.innerHTML = `${CH_ICON} ${got}/${all.length}`; b.setAttribute('aria-label', `Challenges: ${got} of ${all.length} done`); }
 function paintDiff(){ const b=$('diffBadge'); b.hidden = G.diffId==='normal' || !G.diffId; b.textContent = G.diffId ? DIFFICULTY[G.diffId].name : ''; b.dataset.diff = G.diffId||''; }
 // A diary page, shown on a sheet of lined paper. Marked as read once shown.
 // A title card when the story moves into a new part. Shown once.
@@ -745,7 +748,7 @@ async function onOverlayClick(ev){
   const gi=G.LV.gi;
   switch (b.dataset.go){
     case 'next': return play(gi+1);
-    case 'retry': return play(gi);
+    case 'retry': retrying = true; play(gi); retrying = false; return;
     case 'menu': return showMenu();
     case 'achievements': return showAchievements();
     case 'settings': return showSettings();
@@ -925,7 +928,7 @@ let armTimer=null;
 function disarmRestart(){ clearTimeout(armTimer); armTimer=null; const b=$('restart'); b.classList.remove('armed'); b.querySelector('.lbl').textContent=''; }
 function onRestart(){
   const S=G.S; if (!S||S.mode==='menu') return;
-  if ((S.wave===0&&!S.towers.length) || armTimer){ Audio.play('tap'); play(G.LV.gi); return; }
+  if ((S.wave===0&&!S.towers.length) || armTimer){ Audio.play('tap'); retrying=true; play(G.LV.gi); retrying=false; return; }
   const b=$('restart'); b.classList.add('armed'); b.querySelector('.lbl').textContent='Tap again';
   msg('Tap Restart again to start this level over.'); armTimer=setTimeout(disarmRestart,3000);
 }
@@ -1047,6 +1050,7 @@ export function initUI(){
   $('cv').addEventListener('pointercancel', () => { G.preview=null; });
   $('cv').addEventListener('pointerleave', ev => { if (ev.pointerType==='mouse') G.preview=null; });
   $('spray').onclick=onSprayBtn;
+  $('chalChip').onclick=()=>{ if (G.S && G.S.mode==='play' && !G.S.paused){ intro=[]; showChalCard(); } };
   $('over').addEventListener('click', onOverlayClick);
   $('home').addEventListener('click', onOverlayClick);
   $('go').onclick=()=>{ if (startWave()){ disarmRestart(); introducePests(); } };

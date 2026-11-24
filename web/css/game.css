@@ -487,3 +487,7 @@ canvas{ display:block }
 /* Settings → Reduce motion: the same calm look the phone's own setting gives */
 html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after{ animation-duration:.001s !important; animation-iteration-count:1 !important; transition-duration:.001s !important }
 .version a{ color:inherit; font-weight:800 }
+/* ✦ chip on a beaten level's board: challenge progress, tap to see the goals */
+.chal-chip{ position:absolute; z-index:3; top:6px; right:6px; font:800 .72rem/1 var(--font-ui, inherit); padding:5px 9px; border-radius:var(--r-pill);
+  border:1.5px solid rgba(79,179,217,.7); background:rgba(255,253,245,.92); color:#2f6f8a; box-shadow:0 1px 3px rgba(0,0,0,.15); cursor:pointer }
+.board.spray-left .chal-chip{ right:6px }
