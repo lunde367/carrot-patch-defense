@@ -492,7 +492,7 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after{
   border:1.5px solid rgba(79,179,217,.7); background:rgba(255,253,245,.92); color:#2f6f8a; box-shadow:0 1px 3px rgba(0,0,0,.15); cursor:pointer }
 .board.spray-left .chal-chip{ right:6px }
 /* "new challenge stars" flags: the Upgrades tab badge turns blue, and the Skills tab gets a NEW tag */
-.home-nav button i.has-new{ background:#4fb3d9; color:#08222c; box-shadow:0 0 0 2px var(--bg), 0 0 10px rgba(79,179,217,.7); animation:pip-pulse 1.6s ease-in-out infinite }
+.home-nav button i.has-new, .btn.round i.has-new{ background:#4fb3d9; color:#08222c; box-shadow:0 0 0 2px var(--bg), 0 0 10px rgba(79,179,217,.7); animation:pip-pulse 1.6s ease-in-out infinite }
 @keyframes pip-pulse{ 50%{ transform:scale(1.12) } }
-@media (prefers-reduced-motion: reduce){ .home-nav button i.has-new{ animation:none } }
+@media (prefers-reduced-motion: reduce){ .home-nav button i.has-new, .btn.round i.has-new{ animation:none } }
 .sub-tabs .new-tag{ margin-left:6px; font-size:.62rem; font-weight:800; letter-spacing:.04em; padding:2px 6px; border-radius:var(--r-pill); background:#4fb3d9; color:#08222c; vertical-align:2px }

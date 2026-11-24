@@ -99,6 +99,8 @@ const chalList = (L, fresh=[]) => `<ul class="chal-list">${challengesFor(L).map(
 const chalLeft = () => chalCount() + (devMode ? 60 : 0) - skillsSpent(Save.data.skills);
 // New challenge stars the player hasn't looked at yet: flagged on the Upgrades tab and the Skills tab until Skills is opened.
 const chalNew = () => chalLeft()>0 && chalCount() > (Save.data.chalSeen||0);
+// The little count on any Upgrades button: unspent ★, plus new ✦ (blue and pulsing) when fresh challenge stars are waiting.
+const shopPip = () => (starsLeft()>0 || chalNew()) ? `<i class="${chalNew()?'has-new':''}">${[starsLeft()>0?`★ ${starsLeft()}`:'', chalNew()?`${CH_ICON} ${chalLeft()}`:''].filter(Boolean).join(' ')}</i>` : '';
 // The challenge card shows each time a beaten level is opened (not on Try again); the ✦ chip on the board reopens it any time.
 let retrying = false;
 function showChalCard(){
@@ -190,7 +192,7 @@ function home(html){
   const [tab, sub] = tabAt || []; tabAt = null;
   const subs = SUBS[tab] ? SUBS[tab]() : [];
   if (subs.length>1) html = html.replace('</div>', `</div><div class="seg sub-tabs" role="tablist">${subs.map(([go,label])=>`<button role="tab" aria-checked="${go===sub}" data-go="${go}">${label}</button>`).join('')}</div>`);
-  const pip = (starsLeft()>0 || chalNew()) ? `<i class="${chalNew()?'has-new':''}">${[starsLeft()>0?`★ ${starsLeft()}`:'', chalNew()?`${CH_ICON} ${chalLeft()}`:''].filter(Boolean).join(' ')}</i>` : '';
+  const pip = shopPip();
   $('home').innerHTML = html + `<nav class="home-nav" aria-label="Main">
     <button data-go="menu" class="${tab==='gardens'?'on':''}">${IC_HOME}<span>Gardens</span></button>
     <button data-go="shed" class="nav-shed ${tab==='upgrades'?'on':''}">${IC_SHOP}<span>Upgrades</span>${pip}</button>
@@ -616,7 +618,7 @@ function recordWin({ stars, gi }){
     for (const id of challengesFor(LEVELS[gi])) if (!got[id] && challengeMet(id, G.S)){ got[id]=true; recordWin.fresh.push(id); }
     if (recordWin.fresh.length) emit('challenge', recordWin.fresh.length);
   }
-  Save.data.stars[gi]=Math.max(before, stars); Save.data.stats.wins++; Save.data.stats.lossRun=0; Save.commit();
+  Save.data.stars[gi]=Math.max(before, stars); Save.data.stats.wins++; Save.data.stats.lossRun=0; Save.commit(); paintChal();
 }
 on('levelStart', () => { recordWin.done=null; });
 // Icons for the result screens and the bottom tabs.
@@ -626,7 +628,7 @@ const IC_SHOP = svgIcon('<path d="M4 9h16l-1.3 10.200a1.500 1.500 0 0 1-1.500 1.
 // The three small round buttons under a result: gardens, upgrades, play again.
 const resultIcons = (replay=true) => `<div class="res-icons">
   <button class="btn ghost round" data-go="menu" aria-label="All gardens" title="All gardens">${IC_HOME}</button>
-  <button class="btn ghost round" data-go="shed" aria-label="Upgrades" title="Upgrades">${IC_SHOP}${starsLeft()>0?`<i>★ ${starsLeft()}</i>`:''}</button>
+  <button class="btn ghost round" data-go="shed" aria-label="Upgrades" title="Upgrades">${IC_SHOP}${shopPip()}</button>
   ${replay?`<button class="btn ghost round" data-go="retry" aria-label="Play again" title="Play again">${ICON.restart}</button>`:''}</div>`;
 // Under a first win: the first time, what challenge stars are; later, a nudge if none have been earned yet.
 function chalNote(){
