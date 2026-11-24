@@ -97,6 +97,8 @@ const chalList = (L, fresh=[]) => `<ul class="chal-list">${challengesFor(L).map(
   return `<li class="${got?'got':''}"><i>${CH_ICON}</i><span>${challengeText(id, L)}${fresh.includes(id)?' <b>New!</b>':''}</span></li>`; }).join('')}</ul>`;
 // Challenge stars are spent on defender skills.
 const chalLeft = () => chalCount() + (devMode ? 60 : 0) - skillsSpent(Save.data.skills);
+// New challenge stars the player hasn't looked at yet: flagged on the Upgrades tab and the Skills tab until Skills is opened.
+const chalNew = () => chalLeft()>0 && chalCount() > (Save.data.chalSeen||0);
 // The challenge card shows each time a beaten level is opened (not on Try again); the ✦ chip on the board reopens it any time.
 let retrying = false;
 function showChalCard(){
@@ -180,7 +182,7 @@ function setHome(on){ document.querySelector('.app').classList.toggle('home-mode
 // first: ['gardens'], ['upgrades','shed'|'skills'], ['journal','diary'|'guide'|'achievements'|'stats'], or null (Settings).
 let tabAt = null;
 const SUBS = {
-  upgrades:() => [['shed', `Garden Shed ★ ${starsLeft()}`], ...((Save.data.stars[0]||0)>0 || devMode ? [['skills', `Skills ${CH_ICON} ${chalLeft()}`]] : [])],
+  upgrades:() => [['shed', `Garden Shed ★ ${starsLeft()}`], ...((Save.data.stars[0]||0)>0 || devMode ? [['skills', `Skills ${CH_ICON} ${chalLeft()}${chalNew() ? '<b class="new-tag">NEW</b>' : ''}`]] : [])],
   journal:() => [['diary','Diary'], ['guide','Guide'], ['achievements','Awards'], ['stats','Stats']],
 };
 function home(html){
@@ -188,7 +190,7 @@ function home(html){
   const [tab, sub] = tabAt || []; tabAt = null;
   const subs = SUBS[tab] ? SUBS[tab]() : [];
   if (subs.length>1) html = html.replace('</div>', `</div><div class="seg sub-tabs" role="tablist">${subs.map(([go,label])=>`<button role="tab" aria-checked="${go===sub}" data-go="${go}">${label}</button>`).join('')}</div>`);
-  const pip = starsLeft()>0 ? `<i>★ ${starsLeft()}</i>` : '';
+  const pip = (starsLeft()>0 || chalNew()) ? `<i class="${chalNew()?'has-new':''}">${[starsLeft()>0?`★ ${starsLeft()}`:'', chalNew()?`${CH_ICON} ${chalLeft()}`:''].filter(Boolean).join(' ')}</i>` : '';
   $('home').innerHTML = html + `<nav class="home-nav" aria-label="Main">
     <button data-go="menu" class="${tab==='gardens'?'on':''}">${IC_HOME}<span>Gardens</span></button>
     <button data-go="shed" class="nav-shed ${tab==='upgrades'?'on':''}">${IC_SHOP}<span>Upgrades</span>${pip}</button>
@@ -495,6 +497,7 @@ function turnPage(dir){
 
 // ---------- Defender skills: two branches per defender, bought with challenge stars ----------
 function showSkills(){
+  if (chalCount() > (Save.data.chalSeen||0)){ Save.data.chalSeen = chalCount(); Save.commit(); }
   const left=chalLeft(), open=TRAY.filter(towerOpen);
   const cards=open.map(k => { const T=TYPES[k], own=Save.data.skills[k]||{};
     const rows=SKILLS[k].map(br => { const n=own[br.id]||0, max=n>=SKILL_COSTS.length, cost=SKILL_COSTS[n];
