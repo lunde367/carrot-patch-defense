@@ -86,21 +86,44 @@ export function rebuild(){
   const R2=rng(31);
   for (const sg of path.lanes.flatMap(L=>L.segs)){ const n=Math.floor(sg.len*3); for (let i=0;i<n;i++){ const k=R2();
     ell(b,(sg.x1+(sg.x2-sg.x1)*k+(R2()-.5)*.45)*s,(sg.y1+(sg.y2-sg.y1)*k+(R2()-.5)*.45)*s,s*.035,s*.025,'#c4a271'); } }
-  // Paved over: in later gardens part of the dirt path has become road (CH.road = [from, to] as shares of the path).
+  // Paved over: in later gardens part of the dirt path has been paved (CH.road = [from, to] as shares of the path).
+  // Part 2: pale concrete slabs, like a farm yard or greenhouse aisle. Part 3: old grey asphalt, more cracked each garden.
+  // The paving sits inside the dirt edges with square, crumbly ends, so it reads as part of the same path.
   if (CH.road){
-   for (let li=0; li<path.lanes.length; li++){
-    const L=path.lanes[li], [f0,f1]=CH.road, d0=f0*L.total, d1=f1*L.total, pts=[pointAt(d0,li)];
-    for (const sg of L.segs){ const e=sg.start+sg.len; if (e>d0 && e<d1) pts.push([sg.x2,sg.y2]); }
-    pts.push(pointAt(d1,li));
-    const road=(w,col,dash)=>{ b.beginPath(); pts.forEach(([x,y],i)=>i?b.lineTo(x*s,y*s):b.moveTo(x*s,y*s)); b.strokeStyle=col; b.lineWidth=w; b.setLineDash(dash||[]); b.stroke(); b.setLineDash([]); };
-    road(.86*s,'#4a4c4e'); road(.74*s,'#6a6c6e'); road(Math.max(1.5,s*.05),'#e8c04a',[s*.22,s*.18]);
-    const RR=rng(77+LV.gi);
-    for (let i=0;i<Math.floor((d1-d0)*(CH.cracked?2.2:.8));i++){
-      const [x,y]=pointAt(d0+RR()*(d1-d0),li), ox=(RR()-.5)*.5, oy=(RR()-.5)*.5;
-      b.strokeStyle='#3e4042'; b.lineWidth=1.1; b.beginPath(); b.moveTo((x+ox)*s,(y+oy)*s); b.lineTo((x+ox+(RR()-.5)*.3)*s,(y+oy+(RR()-.5)*.3)*s); b.lineTo((x+ox+(RR()-.5)*.4)*s,(y+oy+(RR()-.5)*.4)*s); b.stroke();
-      if (CH.cracked && RR()<.4){ b.strokeStyle='#6f9a45'; b.lineWidth=1.2; b.beginPath(); b.moveTo((x+ox)*s,(y+oy)*s); b.lineTo((x+ox-.04)*s,(y+oy-.1)*s); b.moveTo((x+ox)*s,(y+oy)*s); b.lineTo((x+ox+.05)*s,(y+oy-.09)*s); b.stroke(); }
+    const slab = CH.act===2, [f0,f1]=CH.road;
+    const P = slab ? { edge:'#9d998c', fill:'#c4c0b2', joint:'#a29e91', crack:'#8e8a7e', crumb:'#b3afa1' }
+                   : { edge:'#55575a', fill:'#6f7174', joint:'#5e6063', crack:'#46484b', crumb:'#7c7e80' };
+    const strips=[];
+    for (let li=0; li<path.lanes.length; li++){
+      const L=path.lanes[li], d0=f0*L.total, d1=f1*L.total, pts=[pointAt(d0,li)];
+      for (const sg of L.segs){ const e=sg.start+sg.len; if (e>d0 && e<d1) pts.push([sg.x2,sg.y2]); }
+      pts.push(pointAt(d1,li));
+      strips.push((w,col)=>{ b.beginPath(); pts.forEach(([x,y],i)=>i?b.lineTo(x*s,y*s):b.moveTo(x*s,y*s)); b.strokeStyle=col; b.lineWidth=w*s; b.lineCap='butt'; b.stroke(); });
     }
-  }
+    for (const f of strips) f(.66,P.edge);   // all edges first, then all tops, so lanes that meet join cleanly
+    for (const f of strips) f(.58,P.fill);
+    for (let li=0; li<path.lanes.length; li++){
+      const L=path.lanes[li], d0=f0*L.total, d1=f1*L.total;
+      // seams across the paving, on tile edges so lanes that share a stretch line up
+      b.strokeStyle=P.joint; b.lineWidth=Math.max(1,s*.025); b.lineCap='butt';
+      for (const sg of L.segs){ const a0=Math.max(sg.start,d0), a1=Math.min(sg.start+sg.len,d1); if (a1<=a0) continue;
+        const h = sg.y1===sg.y2, dir = Math.sign(h ? sg.x2-sg.x1 : sg.y2-sg.y1), base = h ? sg.x1 : sg.y1;
+        const u0=base+dir*(a0-sg.start), u1=base+dir*(a1-sg.start);
+        for (let u=Math.ceil(Math.min(u0,u1)); u<Math.max(u0,u1); u+=slab?1:2){ const c = h ? sg.y1 : sg.x1;
+          b.beginPath(); if (h){ b.moveTo(u*s,(c-.29)*s); b.lineTo(u*s,(c+.29)*s); } else { b.moveTo((c-.29)*s,u*s); b.lineTo((c+.29)*s,u*s); } b.stroke(); } }
+      // the ragged start where the paving gives way to dirt (skip it when the whole path is paved)
+      const RR=rng(77+LV.gi+li*5);
+      if (f0>0){ const [x,y]=pointAt(d0,li), [x2,y2]=pointAt(d0+.05,li), tx=x-x2, ty=y-y2, nx=-ty, ny=tx;   // back along the path, and across it
+        for (let i=0;i<5;i++){ const k=(RR()-.5)*.5, back=.04+RR()*.14; ell(b,(x+nx*k*20+tx*back*20)*s,(y+ny*k*20+ty*back*20)*s,s*(.03+RR()*.03),s*(.025+RR()*.02),P.crumb,P.edge,1); } }
+      // cracks: a few in Part 2, more in Part 3, with weeds pushing through in the last gardens
+      const n=Math.floor((d1-d0)*(CH.cracked?2:slab?.35:.8));
+      for (let i=0;i<n;i++){
+        const [x,y]=pointAt(d0+RR()*(d1-d0),li), ox=(RR()-.5)*.36, oy=(RR()-.5)*.36;
+        b.strokeStyle=P.crack; b.lineWidth=1.1; b.lineCap='round'; b.beginPath(); b.moveTo((x+ox)*s,(y+oy)*s); b.lineTo((x+ox+(RR()-.5)*.22)*s,(y+oy+(RR()-.5)*.22)*s); b.lineTo((x+ox+(RR()-.5)*.3)*s,(y+oy+(RR()-.5)*.3)*s); b.stroke();
+        if (CH.cracked && RR()<.4){ b.strokeStyle='#6f9a45'; b.lineWidth=1.2; b.beginPath(); b.moveTo((x+ox)*s,(y+oy)*s); b.lineTo((x+ox-.04)*s,(y+oy-.1)*s); b.moveTo((x+ox)*s,(y+oy)*s); b.lineTo((x+ox+.05)*s,(y+oy-.09)*s); b.stroke(); }
+      }
+    }
+    b.lineCap='round';
   }
   if (CH.drought){
     // cracked, dry ground: thin dark crack lines scattered over the grass
