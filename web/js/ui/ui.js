@@ -251,7 +251,7 @@ function setFertIcon(){ const svg=$('fert').querySelector('svg'); if (FERT_SVG.s
 function showTilesIntro(){
   G.S.paused=true;
   overlay(`<div class="panel newdef"><span class="tag">Good spots</span><div class="tile-pics"><canvas data-tile="hill" width="96" height="96"></canvas><canvas data-tile="sunny" width="96" height="96"></canvas></div>
-    <h3>Hills and sunny patches</h3><p>Some grass is better than the rest. A defender on a <b>hill</b> reaches 20% farther. One in a <b>sunny patch</b> works 15% faster, and a Sunflower there grows half again as many seeds.</p>
+    <h3>Hills and sunny patches</h3><p>Some grass is better than the rest. A defender on a <b>hill</b> reaches 20% farther. One in a <b>sunny patch</b> works 15% faster${towerOpen('sunflower') ? ', and a Sunflower there grows half again as many seeds' : ''}.</p>
     <p>Look for them before you plant.</p></div>
     <div class="row"><button class="btn main" data-go="tiles-ok">Got it</button></div>`);
   for (const cv of document.querySelectorAll('canvas[data-tile]')) drawBonus(cv.getContext('2d'), { c:0, r:0, kind:cv.dataset.tile }, 96);

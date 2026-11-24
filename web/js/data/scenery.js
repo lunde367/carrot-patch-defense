@@ -63,7 +63,7 @@ export function sceneryFor(LV, onPath, keep=[]){
 }
 
 // Helpful tiles: a hill (+range) on a good spot beside the path, and a sunny patch (Sunflowers
-// make more seeds there; other defenders work a little faster) somewhere quieter.
+// make more seeds there; other defenders work a little faster) on a plainer spot that still touches the path.
 // None in the tutorial level. The third level of a garden gets a second hill.
 export function bonusFor(LV, onPath, scenery){
   if (LV.gi===0) return [];
@@ -77,7 +77,9 @@ export function bonusFor(LV, onPath, scenery){
   const pick = (list, kind) => { const x = list.find(apart); if (x){ out.push({ c:x.c, r:x.r, kind }); blocked.add(x.c+','+x.r); } };
   const hills = cells.filter(x => x.s>=3).sort((a,b) => a.k-b.k);
   pick(hills, 'hill'); if (LV.li===2) pick(hills.filter(x => !blocked.has(x.c+','+x.r)), 'hill');
-  pick(cells.filter(x => x.s<=2 && !blocked.has(x.c+','+x.r)).sort((a,b) => a.k-b.k), 'sunny');
+  // the sunny patch sits beside the path (so any defender there is useful), just not on the very best spot
+  const sunny = s => cells.filter(x => s(x.s) && !blocked.has(x.c+','+x.r)).sort((a,b) => a.k-b.k);
+  const before = out.length; pick(sunny(n => n>=1 && n<=2), 'sunny'); if (out.length===before) pick(sunny(n => n<=2), 'sunny');
   return out;
 }
 
