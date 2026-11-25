@@ -521,7 +521,8 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after{
 .home-top{ position:sticky; top:0; z-index:20; display:flex; flex-direction:column; gap:12px; background:var(--bg);
   margin-top:-6px; padding-top:calc(6px + env(safe-area-inset-top, 0px)); padding-bottom:8px; box-shadow:0 10px 10px -10px rgba(0,0,0,.35) }
 
-/* Speed button while an ad's 3× time is running: the speed, with the time left under it */
-#spd.timed{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; line-height:1; padding-block:0 }
-#spd.timed span{ font-size:.95em }
-#spd.timed small{ font-size:.62rem; font-weight:800; color:var(--accent, #f0913a); font-variant-numeric:tabular-nums; margin-top:2px }
+/* Speed button while an ad's 3× time is running: a stopwatch sweep drains behind the speed (--left: 1 → 0) */
+#spd.timed{ background:conic-gradient(from 0deg, rgba(120,200,255,.32) calc(var(--left)*360deg), transparent 0) , var(--surface); -webkit-touch-callout:none; user-select:none }
+#spd.timed.ending{ background:conic-gradient(from 0deg, rgba(240,145,58,.55) calc(var(--left)*360deg), transparent 0), var(--surface); animation:spd-pulse 1.2s ease-in-out infinite }
+@keyframes spd-pulse{ 50%{ box-shadow:0 0 0 3px rgba(240,145,58,.45) } }
+.reduce-motion #spd.timed.ending{ animation:none; box-shadow:0 0 0 2px rgba(240,145,58,.6) }

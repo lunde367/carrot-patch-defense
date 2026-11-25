@@ -939,8 +939,10 @@ export function refresh(){
   $('season').textContent=G.LV.endless?'wave':G.LV.season==='late summer'?'harvest':G.LV.season;
   const go=$('go'); go.disabled=S.active||S.mode!=='play'||S.paused;
   go.textContent = S.mode!=='play' ? 'Pick a level' : S.active ? `Wave ${S.wave}…` : bossWave(S.wave+1) ? 'Boss wave' : `Start wave ${S.wave+1}`;
-  const spd=$('spd'); spd.classList.toggle('timed', fastLeft>0);
-  spd.innerHTML = fastLeft>0 ? `<span>${S.speed}×</span><small>${Math.floor(fastLeft/60)}:${String(fastLeft%60).padStart(2,'0')}</small>` : S.speed+'×';
+  // a stopwatch sweep behind the speed drains as the time runs out; orange and pulsing for the last 2 minutes
+  const spd=$('spd'); spd.classList.toggle('timed', fastLeft>0); spd.classList.toggle('ending', fastLeft>0 && fastLeft<=120);
+  spd.style.setProperty('--left', fastLeft>0 ? (fastLeft/(EXTRAS.fastMinutes*60)).toFixed(4) : 0);
+  spd.textContent = S.speed+'×';
   spd.setAttribute('aria-label', fastLeft>0 ? `Game speed ${S.speed}×. 3× speed: ${Math.ceil(fastLeft/60)} minutes left` : 'Game speed');
   $('restart').disabled=S.mode==='menu';
   for (const k of TRAY){ const el=$('card-'+k); if (el && towerOpen(k)) el.classList.toggle('poor', S.seeds<costOf(k)); }
@@ -1084,7 +1086,13 @@ export function initUI(){
   $('over').addEventListener('click', onOverlayClick);
   $('home').addEventListener('click', onOverlayClick);
   $('go').onclick=()=>{ if (startWave()){ disarmRestart(); introducePests(); } };
-  $('spd').onclick=()=>{ const S=G.S; if (!S) return;
+  // Tap and hold the speed button to see exactly how much 3× time is left.
+  let holdT=0, held=false;
+  $('spd').addEventListener('pointerdown', () => { held=false; clearTimeout(holdT); holdT=setTimeout(() => { const left=Math.ceil(((Save.data.fast3Until||0)-Date.now())/1000);
+    if (noAds() || left<=0) return; held=true; haptic('light'); msg(`3× speed: ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')} left.`); }, 450); });
+  for (const ev of ['pointerup','pointerleave','pointercancel']) $('spd').addEventListener(ev, () => clearTimeout(holdT));
+  $('spd').addEventListener('contextmenu', e => e.preventDefault());
+  $('spd').onclick=()=>{ const S=G.S; if (!S) return; if (held){ held=false; return; }
     let next = S.speed===1?2:S.speed===2?3:1;
     const setSpeed = v => { S.speed=v; Save.data.settings.speed=v; Save.commit(); dirty(); };
     if (next===3 && !fast3Open()){
