@@ -28,7 +28,7 @@ function freeCells(){
   return out;
 }
 // Best open spot for a defender; sunflowers go wherever no defender would want to stand.
-function bestCell(type, rnd=null){
+export function bestCell(type, rnd=null){
   const cells=freeCells(); if (!cells.length) return null;
   if (type==='sunflower'){ const sunny=cells.find(([c,r])=>bonusAt(c,r)==='sunny'); if (sunny) return sunny;
     let best=null, bs=Infinity; for (const [c,r] of cells){ const s=coverage(c,r,2.5); if (s<bs){ bs=s; best=[c,r]; } } return best; }

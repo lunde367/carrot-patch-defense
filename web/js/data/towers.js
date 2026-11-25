@@ -7,10 +7,10 @@ export const TYPES = {
   rose:{name:'Thorny Rose',unlock:3,cost:55,up:[55,90,145],range:[2.4,2.6,2.9,3.2],rate:[.9,1.05,1.2,1.4],dmg:[5,8,12,16],multi:[3,4,5,7],
     desc:'Fires thorns at several pests at once, fliers first. Thorns hit flying pests twice as hard, so roses are your best answer to moths and birds.',
     sup:{name:'Crimson Rose', short:'×3 on fliers · Spray and Fertilizer can’t wilt it', desc:'Thorns hit fliers three times as hard, and the Sprayer and Fertilizer can’t wilt it.'}},
-  squirrel:{name:'Squirrel',unlock:4,cost:70,up:[70,115,180],range:[2.4,2.6,2.9,3.2],rate:[1.8,2.3,2.8,3.2],dmg:[4,6,9,12],bounce:[1,2,2,4],
+  squirrel:{name:'Squirrel',unlock:4,cost:70,up:[70,115,180],range:[2.4,2.6,2.9,3.1],rate:[1.8,2.3,2.8,3],dmg:[4,6,9,11],bounce:[1,2,2,3],
     desc:'Rapid-fire acorns that bounce to the next pest.',
-    sup:{name:'Honey Squirrel', short:'Honey acorns bounce farther and slow pests', desc:'Dips every acorn in honey: they bounce to two more pests and leave each one sticky and slow.'}},
-  sprinkler:{name:'Sprinkler',unlock:0,cost:55,up:[60,100,160],range:[1.8,2.0,2.2,2.5],rate:[1,1.1,1.3,1.5],dmg:[3,5,8,12],slow:[1.4,1.8,2.2,2.6],ground:true,
+    sup:{name:'Honey Squirrel', short:'Honey acorns bounce farther and slow pests', desc:'Dips every acorn in honey: they bounce to one more pest and leave each one sticky and slow.'}},
+  sprinkler:{name:'Sprinkler',unlock:0,cost:55,up:[60,100,160],range:[1.8,2.0,2.2,2.4],rate:[1,1.1,1.3,1.4],dmg:[3,5,8,10],slow:[1.4,1.8,2.2,2.4],ground:true,
     desc:'Soaks and slows every crawling pest nearby. Can’t reach fliers.',
     sup:{name:'Storm Sprinkler', short:'Soaks fliers too', desc:'A little storm of its own: it soaks and slows flying pests too.'}},
   pine:{name:'Pine Tree',unlock:1,cost:75,up:[75,120,190],range:[3,3.3,3.6,4],rate:[.55,.65,.75,.85],dmg:[14,22,36,48],splash:[.9,1,1.15,1.3],ground:true,
@@ -19,9 +19,9 @@ export const TYPES = {
   owl:{name:'Night Owl',unlock:5,cost:90,up:[90,140,220],range:[3.8,4.2,4.7,5.2],rate:[.55,.65,.8,.9],dmg:[32,52,85,110],
     desc:'Long-range feather strike on the toughest pest, flying or not.',
     sup:{name:'Thunder Owl', short:'Every 5th strike hits 5× as hard', desc:'Every fifth strike is a thunder dive that hits five times as hard.'}},
-  scarecrow:{name:'Scarecrow',unlock:15,cost:65,up:[65,105,165],range:[4,4.5,5,5.5],rate:[.5,.6,.7,.85],dmg:[3,5,8,12],push:[.9,1.2,1.5,1.8],line:true,
+  scarecrow:{name:'Scarecrow',unlock:15,cost:65,up:[65,105,165],range:[4,4.5,5,5.5],rate:[.5,.6,.7,.8],dmg:[3,5,8,10],push:[.9,1.2,1.5,1.6],line:true,
     desc:'Throws crows in a straight line. Each crow pecks every pest it flies past and knocks it back up the path (fliers get knocked farther). Tap it, then Turn, to point it another way.',
-    sup:{name:'Crow King', short:'Every 4th crow carries a pest back to the start', desc:'Every fourth crow is a big one that grabs a pest and carries it all the way back to the start. Bosses are too heavy.'}},
+    sup:{name:'Crow King', short:'Every 6th crow carries a pest back to the start', desc:'Every sixth crow is a big one that grabs a pest and carries it all the way back to the start. Bosses are too heavy.'}},
   barrel:{name:'Rain Barrel',unlock:18,cost:45,up:[45,70,110],range:[2.2,2.6,3,3.4],water:[.06,.09,.12,.15],support:true,
     desc:'Waters every plant defender in reach. Well-watered plants work a little faster, and drought and heat can’t slow them. Doesn’t fight.',
     sup:{name:'Frog Barrel', short:'Frogs snap up pests in reach', desc:'Frogs move into the barrel and snap up pests in reach with their long sticky tongues, fliers too.'}},
@@ -30,7 +30,7 @@ export const TYPES = {
     sup:{name:'Queen’s Hive', short:'Bees sting pests in reach', desc:'The queen sends out guards: bees sting every pest in the hive’s reach.'}},
   cow:{name:'Dairy Cow',unlock:30,cost:85,up:[80,125,200],range:[2.6,2.9,3.2,3.5],rate:[.45,.52,.6,.68],dmg:[10,16,26,34],splash:[.75,.85,.95,1.05],pile:[6,10,16,20],ground:true,
     desc:'Flings cow pats! Each one splats every crawling pest in an area and leaves a stinky pile that hurts and slows pests walking through it. Can’t hit fliers.',
-    sup:{name:'Prize Cow', short:'Huge piles that last twice as long', desc:'Blue-ribbon pats: the stinky piles are much bigger and last twice as long.'}},
+    sup:{name:'Prize Cow', short:'Bigger piles that last longer', desc:'Blue-ribbon pats: the stinky piles are bigger and last longer.'}},
   sunflower:{name:'Sunflower',unlock:2,cost:60,up:[70,110,175],income:[10,18,28,38],
     desc:'Drops extra seeds after every wave you clear.',
     sup:{name:'Giant Sunflower', short:'Defenders next to it work 12% faster', desc:'So big and bright that defenders right next to it work faster in its light.'}}
@@ -38,8 +38,8 @@ export const TYPES = {
 // Super level (the 4th): opened per defender with challenge stars, after both of its skills are full.
 export const SUPER_LV = 3;
 // The Super numbers for the new powers.
-export const SUPER = { burst:.6, burstR:.75, roseAir:3, honeySlow:1.2, fireR:.75, fireTime:4, fireDps:12, thunderEvery:5, thunder:5, crowEvery:4,
-  pileWide:1.4, pileLong:2, sunReach:1.5, sunBoost:1.12, frogEvery:1.1, frogDmg:26, stingDps:8 };
+export const SUPER = { burst:.75, burstR:.8, roseAir:3, honeySlow:.6, fireR:.75, fireTime:4, fireDps:12, thunderEvery:5, thunder:5, crowEvery:6,
+  pileWide:1.25, pileLong:1.6, sunReach:1.5, sunBoost:1.12, frogEvery:1.1, frogDmg:32, stingDps:14 };
 
 // Tray order: the order defenders unlock in.
 export const TRAY = Object.keys(TYPES).sort((a,b)=>TYPES[a].unlock-TYPES[b].unlock);
