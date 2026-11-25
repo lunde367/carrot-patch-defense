@@ -143,9 +143,28 @@ export function rebuild(){
     for (const x0 of [W*.1, W*.55]){ b.beginPath(); b.moveTo(x0,0); b.lineTo(x0+s*1.2,0); b.lineTo(x0+s*1.2-gy*.35,gy); b.lineTo(x0-gy*.35,gy); b.closePath(); b.fill(); }
     b.fillStyle='rgba(255,236,190,.07)'; b.fillRect(0,0,W,gy);
   }
-  b.fillStyle='#f3ead8'; b.strokeStyle='#b9ab8f'; b.lineWidth=1;
-  for (let c=0;c<COLS;c++){ if (path.exitCols.has(c)) continue; for (const o of [.22,.62]){ const x=c*s+o*s;
-    b.beginPath(); b.moveTo(x,gy+s*.02); b.lineTo(x+s*.08,gy-s*.12); b.lineTo(x+s*.16,gy+s*.02); b.lineTo(x+s*.16,gy+s*.2); b.lineTo(x,gy+s*.2); b.closePath(); b.fill(); b.stroke(); } }
+  drawFence(b, s, gy);
+}
+// A white picket fence along the top of the crop row: two rails, evenly spaced pointed pickets with a little shading,
+// and sturdy square posts on both sides of every gap where a path comes through.
+function drawFence(b, s, gy){
+  const top=gy-s*.2, bot=gy+s*.22, pw=s*.11, edge='#a8997a', paint='#f7f1e3', shade='#e2d8c2';
+  const runs=[]; let start=null;                                                   // stretches of fence between the path gaps
+  for (let c=0;c<=COLS;c++){ const open = c<COLS && !path.exitCols.has(c); if (open && start===null) start=c; if (!open && start!==null){ runs.push([start,c]); start=null; } }
+  for (const [c0,c1] of runs){ const x0=c0*s, x1=c1*s;
+    b.fillStyle='rgba(60,40,20,.22)'; b.fillRect(x0, bot-s*.02, x1-x0, s*.05);                                // shadow on the soil
+    for (const y of [top+s*.1, bot-s*.11]){ b.fillStyle=shade; b.fillRect(x0, y, x1-x0, s*.055); b.strokeStyle=edge; b.lineWidth=1; b.strokeRect(x0+.5, y+.5, x1-x0-1, s*.055-1); }   // rails
+    const n=Math.round((x1-x0)/(s*.25)), gap=(x1-x0)/n;
+    for (let i=0;i<n;i++){ const x=x0+gap*(i+.5)-pw/2, post=(i===0 && c0>0) || (i===n-1 && c1<COLS);
+      if (post) continue;
+      b.beginPath(); b.moveTo(x, bot); b.lineTo(x, top+s*.05); b.lineTo(x+pw/2, top-s*.02); b.lineTo(x+pw, top+s*.05); b.lineTo(x+pw, bot); b.closePath();
+      b.fillStyle=paint; b.fill(); b.fillStyle=shade; b.fillRect(x+pw*.68, top+s*.06, pw*.32, bot-top-s*.06); b.strokeStyle=edge; b.lineWidth=1.2; b.stroke(); }
+    // gate posts beside each gap: taller, square, with a cap
+    for (const [px,on] of [[x0, c0>0],[x1-s*.15, c1<COLS]]){ if (!on) continue;
+      b.fillStyle=paint; b.strokeStyle=edge; b.lineWidth=1.2; b.beginPath(); b.rect(px+s*.01, top-s*.06, s*.13, bot-top+s*.06); b.fill(); b.stroke();
+      b.fillStyle=shade; b.fillRect(px+s*.1, top-s*.05, s*.04, bot-top+s*.04);
+      b.fillStyle='#efe6d2'; b.beginPath(); b.rect(px-s*.005, top-s*.1, s*.16, s*.05); b.fill(); b.stroke(); }
+  }
 }
 
 // How lush the ground is for this level: { tufts: how many decorations, grass: share that are plain grass
