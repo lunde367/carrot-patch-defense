@@ -506,13 +506,13 @@ function showSkills(){
       return `<div class="sk-branch"><span><b>${br.name}</b><span class="tiers">${SKILL_COSTS.map((_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>
           <small>${max ? br.desc(n-1) : `${br.desc(n)}${n===SKILL_COSTS.length-1 || !n ? '' : ' (again)'}`}</small></span>
         ${max ? '<span class="sk-max">Full</span>' : `<button class="btn ${left>=cost?'main':'ghost'} small" data-go="skill-buy" data-type="${k}" data-br="${br.id}" ${left>=cost?'':'disabled'}>${CH_ICON} ${cost}</button>`}</div>`; }).join('');
-    // The Super step: shown on every card, but it only says what it is once both skills are full.
+    // The Super step: appears only once both skills are full.
     const full=skillsFull(own), sup = own.s
       ? `<div class="sk-branch sk-super on"><span><b>${T.sup.name}</b><small>${T.sup.desc} Upgrade a ${T.name} a 4th time in the garden.</small></span><canvas data-tower="${k}" data-lv="${SUPER_LV}"></canvas></div>`
       : full
       ? `<div class="sk-branch sk-super ready"><span><b>Super: ${T.sup.name}</b><small>${T.sup.desc} Opens a 4th upgrade in the garden.</small></span>
           <button class="btn ${left>=SUPER_COST?'main':'ghost'} small" data-go="skill-buy" data-type="${k}" data-br="s" ${left>=SUPER_COST?'':'disabled'}>${CH_ICON} ${SUPER_COST}</button></div>`
-      : `<div class="sk-branch sk-super locked"><span><b>???</b><small>Fill both skills to find out.</small></span></div>`;
+      : '';
     return `<div class="sk-card${own.s?' is-super':''}"><header><canvas data-tower="${k}"></canvas><b>${T.name}</b></header>${rows}${sup}</div>`; }).join('');
   tabAt=['upgrades','skills'];
   home(`<div class="home-head"><h2>Defender skills</h2><span class="star-count">${CH_ICON} ${left}</span></div>
