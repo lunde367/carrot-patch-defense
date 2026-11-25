@@ -55,11 +55,11 @@ function sprinkler(c,s,t,lv,anim){
   for (let i=0;i<(lv>=SUP?5:3);i++){ const a=anim*(lv>=SUP?3:2)+i*(lv>=SUP?1.2566:2.094); ell(c,Math.cos(a)*s*.36,Math.sin(a)*s*.2-s*.02,s*.035,s*.045,lv>=SUP?'#9fd8ff':'#bfe3f5'); }
   if (lv>=SUP){ const ph=(anim*.45)%1, strike=ph<.07;                                // Storm Sprinkler: its own storm cloud, raining, with a lightning strike every couple of seconds
     if (strike){ c.save(); c.globalAlpha=1-ph/.07; const gr=c.createRadialGradient(0,s*.1,0,0,s*.1,s*.6); gr.addColorStop(0,'rgba(255,250,200,.7)'); gr.addColorStop(1,'rgba(255,250,200,0)'); c.fillStyle=gr; c.beginPath(); c.arc(0,s*.1,s*.6,0,6.28); c.fill(); c.restore(); }
-    cloud(c,s,-s*.48,anim,true,1.5);
+    c.save(); c.globalAlpha=.92; cloud(c,s,-s*.4,anim,true,1.3); c.restore();   // big, but kept mostly inside its own tile so it doesn't hide the defender above
     if (strike){ const side=Math.floor(anim*.45)%2 ? 1 : -1, bx=side*s*.24;
-      c.beginPath(); c.moveTo(side*s*.12,-s*.4); c.lineTo(bx+side*s*.02,-s*.2); c.lineTo(bx-side*s*.04,-s*.18); c.lineTo(bx+side*s*.03,s*.04); c.lineTo(bx-side*s*.02,s*.06); c.lineTo(bx,s*.24);
+      c.beginPath(); c.moveTo(side*s*.12,-s*.34); c.lineTo(bx+side*s*.02,-s*.2); c.lineTo(bx-side*s*.04,-s*.18); c.lineTo(bx+side*s*.03,s*.04); c.lineTo(bx-side*s*.02,s*.06); c.lineTo(bx,s*.24);
       c.strokeStyle='#fff27a'; c.lineWidth=s*.04; c.lineJoin='round'; c.stroke(); c.strokeStyle='#ffffff'; c.lineWidth=s*.015; c.stroke(); ell(c,bx,s*.24,s*.08,s*.03,'rgba(255,245,160,.8)'); }
-    else if ((anim*3.1)%1<.08){ ell(c,s*.05,-s*.5,s*.1,s*.06,'rgba(255,250,190,.6)'); } }   // a flicker inside the cloud
+    else if ((anim*3.1)%1<.08){ ell(c,s*.05,-s*.42,s*.1,s*.06,'rgba(255,250,190,.6)'); } }   // a flicker inside the cloud
 }
 function owl(c,s,t,lv,anim,look){
   ell(c,0,s*.28,s*.25,s*.07,'rgba(40,60,20,.25)'); c.translate(0,-t*s*.06);
