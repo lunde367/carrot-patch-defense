@@ -381,7 +381,6 @@ export function update(dt){
     // pests take turns at each entrance
     if (S.spawnT<=0){ const it=S.spawnQ.shift(); { const k=S.laneNext++; const e=spawnEnemy(it.t,0,it.m, S.flood && k%2===0 ? path.lanes.length : k%path.lanes.length); if (it.sw) e.reward=ENEMY[it.t].reward; } S.spawnT=(ENEMY[it.t].gap||2)/Math.pow(crowdOf(), .3); } }
 
-  const clouds=S.towers.filter(t=>t.type==='barrel' && t.lv>=SUPER_LV);   // Rain Cloud barrels: crawlers slog through the puddles
   for (const e of S.enemies){
     if (e.dead) continue;
     const D=ENEMY[e.type];
@@ -393,7 +392,6 @@ export function update(dt){
     if (e.morphAt!=null && e.dist>=e.morphAt){ e.morphAt=null; e.cocoon=1.3; floatText(e.x,e.y-.35,'growing!','#8a5fb0',1); emit('cocoon'); continue; }
     if (D.burrow){ e.bt+=dt; e.under = e.bt>1 && (e.bt%4.5)>(S.soft ? 2.3 : 3); } else e.under = false;
     let mul=(e.stink>0?PILE_SLOW:1)*(e.slow>0?.5:1)*(e.under?1.3:1)*(S.rain?RAIN_SLOW:1)*(S.dewT && (D.shape==='slug'||D.shape==='snail') ? DEW_SPEED : 1);
-    if (clouds.length && !e.fly && clouds.some(t=>Math.hypot(t.x-e.x,t.y-e.y)<=rangeOf(t))) mul*=SUPER.rainSlow;
     if (D.hopper){ e.jump=Math.sin(e.ph*.9)>.2; mul*=e.jump?2.2:.25; }
     e.dist+=e.spd*mul*dt;
     const [x,y,f]=pointAt(e.dist, e.lane); e.x=x; e.y=y; if (f) e.face=f;
@@ -423,6 +421,10 @@ export function update(dt){
     if (t.wilt>0){ t.wilt=Math.max(0, t.wilt-dt); continue; }          // wilted by the spray
     if (t.type==='hive' && t.lv>=SUPER_LV && S.active){ t.sting=(t.sting||0)-dt;        // Queen's Hive: guard bees sting pests in reach
       if (t.sting<=0){ t.sting=.5; const R=rangeOf(t); for (const e of S.enemies) if (targetable(e) && Math.hypot(e.x-t.x,e.y-t.y)<=R){ damage(e, SUPER.stingDps*.5); if (S.fx.length<MAX_FX) S.fx.push({k:'sting',x:t.x,y:t.y-.2,tx:e.x,ty:e.y,life:.35,max:.35}); } } }
+    if (t.type==='barrel' && t.lv>=SUPER_LV && S.active){ t.frog=(t.frog||0)-dt;       // Frog Barrel: a frog snaps the pest in reach closest to the crops
+      if (t.frog<=0){ const R=rangeOf(t), near=S.enemies.filter(e=>targetable(e) && Math.hypot(e.x-t.x,e.y-t.y)<=R);
+        if (near.length){ t.frog=SUPER.frogEvery; t.hop=1; const e=near.reduce((a,b)=>(laneTotal(b.lane)-b.dist)<(laneTotal(a.lane)-a.dist)?b:a);
+          damage(e, SUPER.frogDmg); S.fx.push({k:'tongue',x:t.x+.1,y:t.y-.28,tx:e.x,ty:e.y-(e.fly?.28:0),life:.3,max:.3}); emit('frog'); } else t.frog=0; } }
     if (t.type==='sunflower' || T.support) continue;
     const K=sk(t.type), DM=T.dmg ? T.dmg[t.lv]*(1+(K.dmg||0)) : 0;
     const R=rangeOf(t), seen = e => Math.hypot(e.x-t.x,e.y-t.y) <= R*(G.CH.smog && e.fly ? SMOG : 1)*(S.dustT>0 ? DUST_SIGHT : 1);

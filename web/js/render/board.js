@@ -206,8 +206,10 @@ export function draw(clock){
     if (f.k==='bolt'){ const a=1-p; g.strokeStyle=`rgba(255,245,140,${a})`; g.lineWidth=4; g.beginPath();   // thunder dive
       let x=f.x*s, y=f.y*s-s*1.6; g.moveTo(x,y); for (let k=0;k<5;k++){ x+=(k%2?1:-1)*s*.14; y+=s*.32; g.lineTo(x,y); } g.stroke();
       g.strokeStyle=`rgba(255,255,255,${a})`; g.lineWidth=1.5; g.stroke(); ell(g,f.x*s,f.y*s,s*.5*p+s*.1,s*.3*p+s*.06,`rgba(255,240,150,${.4*a})`); }
+    if (f.k==='tongue'){ const q=p<.5?p*2:2-p*2, ex=f.x+(f.tx-f.x)*q, ey=f.y+(f.ty-f.y)*q;   // a frog's tongue shooting out and back
+      g.strokeStyle='#e86a8a'; g.lineWidth=Math.max(2,s*.045); g.lineCap='round'; g.beginPath(); g.moveTo(f.x*s,f.y*s); g.lineTo(ex*s,ey*s); g.stroke(); ell(g,ex*s,ey*s,s*.05,s*.05,'#e86a8a','#b03a5a',1); }
     if (f.k==='sting'){ const q=Math.min(1,p*1.6), bx=f.x+(f.tx-f.x)*q, by=f.y+(f.ty-f.y)*q-Math.sin(q*Math.PI)*.25;   // a guard bee darting out
-      ell(g,bx*s,by*s,s*.035,s*.025,'#f2c94a','#3a2614',1); }
+      ell(g,bx*s,by*s,s*.055,s*.04,'#f2c94a','#3a2614',1.2); g.fillStyle='#3a2614'; g.fillRect(bx*s-s*.01,by*s-s*.04,s*.015,s*.08); ell(g,bx*s,by*s-s*.04,s*.04,s*.022,'rgba(255,255,255,.85)'); }
     if (f.k==='carry'){ const a=1-p; g.save(); g.translate(f.x*s,(f.y-.3-p*.8)*s); g.globalAlpha=a; crowBird(g,0,0,s*.42,Math.sin(p*20),true); g.restore(); }   // the big crow flying off with a pest
     if (f.k==='superup'){ for (let k=0;k<3;k++){ const q=Math.min(1,p*1.4+k*.15); g.beginPath(); g.arc(f.x*s,f.y*s,s*(.3+q*1.1),0,6.28); g.strokeStyle=`rgba(255,215,90,${(1-q)*.9})`; g.lineWidth=4-k; g.stroke(); }
       for (let k=0;k<10;k++){ const a=k*.628+p*2; ell(g,(f.x+Math.cos(a)*p*.9)*s,(f.y-.2+Math.sin(a)*p*.6-p*.5)*s,s*.04,s*.04,`rgba(255,240,150,${1-p})`); } }

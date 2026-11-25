@@ -33,6 +33,7 @@ on('leak', () => Audio.play('leak'));
 on('fence', () => Audio.play('fence'));
 on('scare', () => Audio.play('scare'));
 on('carry', () => Audio.play('scare'));
+on('frog', () => Audio.play('pop'));
 on('rain', () => Audio.play('rain'));
 on('fert', () => Audio.play('fert'));
 on('swarm', () => { Audio.play('swarm'); shake(document.getElementById('board'), .5); });

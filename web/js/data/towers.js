@@ -24,7 +24,7 @@ export const TYPES = {
     sup:{name:'Crow King', short:'Every 4th crow carries a pest back to the start', desc:'Every fourth crow is a big one that grabs a pest and carries it all the way back to the start. Bosses are too heavy.'}},
   barrel:{name:'Rain Barrel',unlock:18,cost:45,up:[45,70,110],range:[2.2,2.6,3,3.4],water:[.06,.09,.12,.15],support:true,
     desc:'Waters every plant defender in reach. Well-watered plants work a little faster, and drought and heat can’t slow them. Doesn’t fight.',
-    sup:{name:'Rain Cloud', short:'Pests in reach walk 25% slower', desc:'A rain cloud hangs over it. Every pest in its reach slogs through the puddles 25% slower.'}},
+    sup:{name:'Frog Barrel', short:'Frogs snap up pests in reach', desc:'Frogs move into the barrel and snap up pests in reach with their long sticky tongues, fliers too.'}},
   hive:{name:'Bee Hive',unlock:31,cost:80,up:[80,120,190],range:[1.9,2.2,2.5,2.8],boost:[1.3,1.45,1.6,1.7],honey:[6,10,15,20],support:true,
     desc:'The bees are back! Every defender the bees reach works a lot faster, and the hive makes honey seeds after each wave. The hive itself doesn’t fight.',
     sup:{name:'Queen’s Hive', short:'Bees sting pests in reach', desc:'The queen sends out guards: bees sting every pest in the hive’s reach.'}},
@@ -39,7 +39,7 @@ export const TYPES = {
 export const SUPER_LV = 3;
 // The Super numbers for the new powers.
 export const SUPER = { burst:.6, burstR:.75, roseAir:3, honeySlow:1.2, fireR:.75, fireTime:4, fireDps:12, thunderEvery:5, thunder:5, crowEvery:4,
-  pileWide:1.4, pileLong:2, sunReach:1.5, sunBoost:1.12, rainSlow:.75, stingDps:8 };
+  pileWide:1.4, pileLong:2, sunReach:1.5, sunBoost:1.12, frogEvery:1.1, frogDmg:26, stingDps:8 };
 
 // Tray order: the order defenders unlock in.
 export const TRAY = Object.keys(TYPES).sort((a,b)=>TYPES[a].unlock-TYPES[b].unlock);
