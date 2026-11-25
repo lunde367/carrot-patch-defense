@@ -1,5 +1,5 @@
 // Pure game simulation: no DOM, drawing, sound or ads. It reports what happens through events.
-import { TYPES } from '../data/towers.js';
+import { TYPES, SUPER, SUPER_LV } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
 import { LEVELS, setGrid, ROWS } from '../data/levels.js';
 import { path, setPath, setScenery, sceneryAt, bonusAt, pointAt, laneTotal, buildable } from './path.js';
@@ -91,7 +91,8 @@ function makeWave(w){
   // Aphid boom (Apple Orchard): a big extra burst of the garden's smallest pest.
   // Morning dew: extra slugs and snails, mixed in.
   if (dewAt(w)){ const slimy=pool.filter(p=>['slug','snail'].includes(ENEMY[p[0]].shape)); if (slimy.length) for (let i=0;i<Math.round(n*DEW_EXTRA);i++){ const p=slimy[i%slimy.length]; q.splice(Math.floor(Math.random()*(q.length+1)), 0, {t:p[0], m:p[3]}); } }
-  if (swarmAt(w)){ const small=pool[0]; for (let i=0;i<Math.floor(n*1.5);i++) q.splice(Math.floor(Math.random()*q.length), 0, {t:small[0], m:small[3]}); }
+  // Swarm pests are only worth a seed or so each, so a swarm is a test, not a payday.
+  if (swarmAt(w)){ const small=pool[0]; for (let i=0;i<Math.floor(n*1.5);i++) q.splice(Math.floor(Math.random()*q.length), 0, {t:small[0], m:small[3], sw:1}); }
   if (G.LV.endless){ if (w%5===0) q.push({t:G.LV.bosses[(w/5-1)%G.LV.bosses.length]}); if (q.length>60) q.splice(0, q.length-60); }
   else if (w===G.LV.waves) q.push({t:G.LV.boss});
   return q;
@@ -159,6 +160,25 @@ export const ROSE_AIR = 2;   // Thorny Rose: double damage to fliers
 export const SMOG = .6;   // in smog, defenders only spot fliers within 60% of their reach
 export const RAIN_SLOW = .8;
 export const towerAt = (c,r) => G.S.towers.find(t=>t.c===c&&t.r===r);
+// Scarecrow: throws crows in a straight line, one of four ways (0 right, 1 down, 2 left, 3 up).
+export const DIRS = [[1,0],[0,1],[-1,0],[0,-1]], CROW_W = .5;
+// How many path tiles a line from tile (c, r) crosses.
+export const lineCells = (c, r, dir, L) => { const [dx,dy]=DIRS[dir], seen=new Set(); let n=0;
+  for (let k=.5; k<=L+.01; k+=.25){ const key=Math.floor(c+.5+dx*k)+','+Math.floor(r+.5+dy*k); if (!seen.has(key)){ seen.add(key); if (path.cells.has(key)) n++; } } return n; };
+// Planted facing the way that crosses the most path (ties: the first way checked).
+export const bestDir = (c, r, L) => { let b=0, bs=-1; for (let d=0; d<4; d++){ const n=lineCells(c,r,d,L); if (n>bs){ bs=n; b=d; } } return b; };
+// Turn a scarecrow to the next way that crosses some path.
+export function turnTower(t){
+  if (!t || !TYPES[t.type].line) return false;
+  const L=rangeOf(t); let d=t.dir||0;
+  for (let i=0;i<4;i++){ d=(d+1)%4; if (lineCells(t.c,t.r,d,L)>0) break; }
+  t.dir=d; t.hop=1; emit('turn', t); return true;
+}
+export const inLine = (t, e, L) => { const [dx,dy]=DIRS[t.dir||0], ex=e.x-t.x, ey=e.y-t.y, al=ex*dx+ey*dy; return al>.15 && al<=L && Math.abs(ex*dy-ey*dx)<=CROW_W; };
+// Giant Sunflower (Super): defenders right next to it work faster.
+const sunBoost = t => { for (const o of G.S.towers) if (o!==t && o.type==='sunflower' && o.lv>=SUPER_LV && Math.hypot(o.x-t.x,o.y-t.y)<=SUPER.sunReach) return SUPER.sunBoost; return 1; };
+// Super Crimson Rose: the Sprayer and Fertilizer can't wilt it.
+const wiltProof = t => t.type==='rose' && t.lv>=SUPER_LV;
 export function plantAt(c,r){
   const S=G.S, T=TYPES[S.build], cost=costOf(S.build);
   if (!buildable(c,r)) return { ok:false, reason: sceneryAt(c,r) ? 'scenery' : 'path' };
@@ -169,15 +189,22 @@ export function plantAt(c,r){
   if (head) S.headStartUsed = true;
   const lv = head ? S.perks.headLv : 0;
   const t={ type:S.build, c, r, x:c+.5, y:r+.5, lv, cd:0, hop:1, look:1, spent:cost, tile:bonusAt(c,r) };
+  if (T.line) t.dir = bestDir(c, r, rangeOf(t));
   t.cool = !S.heat || watered(t);
   const gift = S.build==='sunflower' ? (sk('sunflower').gift||0) : 0; S.seeds+=gift;   // Early Bloom
   t.undo={ peak:S.track.peak, head, cost, gift };                                // enough to take the planting back
   S.towers.push(t); S.track.kinds[t.type]=(S.track.kinds[t.type]||0)+1; S.track.peak=Math.max(S.track.peak, S.towers.length); emit('plant', t); return { ok:true, tower:t };
 }
+// Every defender grows to level 3. A defender whose Super skill is owned can grow once more, to its Super form.
+export const maxLvOf = type => sk(type).super ? SUPER_LV : 2;
+export const canUpgrade = t => !!t && t.lv < maxLvOf(t.type);
+export const isSuper = t => t.lv >= SUPER_LV;
 export function upgrade(t){
-  const S=G.S; if (!t||t.lv>=2) return false;
+  const S=G.S; if (!canUpgrade(t)) return false;
   const cost=upCostOf(t); if (S.seeds<cost) return false;
-  S.seeds-=cost; t.spent+=cost; t.lv++; t.hop=1; S.track.maxLv=Math.max(S.track.maxLv, t.lv); emit('upgrade', t); return true;
+  S.seeds-=cost; t.spent+=cost; t.lv++; t.hop=1; S.track.maxLv=Math.max(S.track.maxLv, Math.min(2, t.lv));
+  if (t.lv>=SUPER_LV){ puffs(t.x, t.y-.2, 14, 1.6); S.fx.push({k:'superup',x:t.x,y:t.y,life:1.1,max:1.1}); }
+  emit('upgrade', t); return true;
 }
 // Take back a defender that was just planted: all its seeds return, as if it never happened.
 export function undoPlant(t){
@@ -276,7 +303,7 @@ export function spray(x, y){
     e.hp-=Math.ceil(e.max*Math.min(1, share(e))); e.hit=.2;      // soaks through armor
     if (e.hp<=0){ e.hp=1; damage(e, 999); }              // reuse the normal squash (seeds, puffs, events)
   }
-  for (const t of S.towers) if (PLANTS.includes(t.type) && Math.hypot(t.x-x, t.y-y) <= st.radius*SPRAY.drift){ t.wilt=st.wilt; plants++; }
+  for (const t of S.towers) if (PLANTS.includes(t.type) && !wiltProof(t) && Math.hypot(t.x-x, t.y-y) <= st.radius*SPRAY.drift){ t.wilt=st.wilt; plants++; }
   S.sprayCd=st.recharge; S.aiming=false; S.track.spray++;
   if (G.CH.act>=2 && S.scorch.length<40) S.scorch.push({ x, y, r:st.radius*.7, seed:S.scorch.length*7+3 });   // once the magic wears off, every spray leaves a dead patch
   S.fx.push({k:'spray',x,y,r:st.radius*SPRAY.drift,life:.9,max:.9});
@@ -310,20 +337,40 @@ function hitShot(s){
   if (s.k==='cone' || s.k==='pat'){
     for (const e of S.enemies) if (targetable(e)&&!e.fly&&Math.hypot(e.x-s.tx,e.y-s.ty)<=s.splash) damage(e,s.dmg);
     if (s.k==='pat'){ if (S.piles.length>=24) S.piles.shift();
-      S.piles.push({ x:s.tx, y:s.ty, r:s.pile.r, dmg:s.pile.dmg, life:PILE_TIME, tk:0, seed:Math.random()*6 });
+      S.piles.push({ x:s.tx, y:s.ty, r:s.pile.r, dmg:s.pile.dmg, life:s.pile.life||PILE_TIME, tk:0, seed:Math.random()*6, big:!!s.sup });
       S.fx.push({k:'splat',x:s.tx,y:s.ty,r:s.splash,life:.45,max:.45}); emit('splat'); return; }
+    if (s.fire){ if (S.piles.length>=24) S.piles.shift();                    // Firecone Pine: the ground cracks and burns
+      S.piles.push({ x:s.tx, y:s.ty, r:SUPER.fireR, dmg:SUPER.fireDps, life:SUPER.fireTime, tk:0, seed:Math.random()*6, fire:true });
+      S.fx.push({k:'blast',x:s.tx,y:s.ty,r:s.splash,life:.5,max:.5}); emit('thud'); return; }
     S.fx.push({k:'thud',x:s.tx,y:s.ty,r:s.splash,life:.4,max:.4}); emit('thud'); return;
   }
   if (!targetable(s.tgt)) return;
   damage(s.tgt,s.dmg);
+  if (s.honey && !s.tgt.dead) s.tgt.slow=Math.max(s.tgt.slow, SUPER.honeySlow);   // Honey Squirrel: sticky and slow
+  if (s.burst){ for (const e of S.enemies) if (e!==s.tgt && targetable(e) && Math.hypot(e.x-s.tgt.x,e.y-s.tgt.y)<=SUPER.burstR) damage(e, s.dmg*SUPER.burst);   // Golden Bunny
+    S.fx.push({k:'burst',x:s.tgt.x,y:s.tgt.y,r:SUPER.burstR,life:.4,max:.4}); }
+  if (s.thunder) S.fx.push({k:'bolt',x:s.tgt.x,y:s.tgt.y,life:.45,max:.45});
   if (s.pierce){ let best=null, bd=1.3;                 // Big Carrots: clip one more pest close by
     for (const e of S.enemies){ if (e===s.tgt || !targetable(e)) continue; const d=Math.hypot(e.x-s.tgt.x,e.y-s.tgt.y); if (d<bd){ bd=d; best=e; } }
     if (best) damage(best, s.dmg*s.pierce); }
   if (s.k==='acorn' && s.bounce>0){
     const hits=[...s.hits,s.tgt]; let best=null, bd=1.8;
     for (const e of S.enemies){ if (!targetable(e)||hits.includes(e)) continue; const d=Math.hypot(e.x-s.tgt.x,e.y-s.tgt.y); if (d<bd){bd=d;best=e;} }
-    if (best) newShots.push({k:'acorn',x:s.tgt.x,y:s.tgt.y,tgt:best,tx:best.x,ty:best.y,spd:9,dmg:Math.max(1,Math.round(s.dmg*.75)),bounce:s.bounce-1,hits,a:0,spin:0});
+    if (best) newShots.push({k:'acorn',x:s.tgt.x,y:s.tgt.y,tgt:best,tx:best.x,ty:best.y,spd:9,dmg:Math.max(1,Math.round(s.dmg*.75)),bounce:s.bounce-1,hits,a:0,spin:0,honey:s.honey});
   }
+}
+
+// A crow pecks a pest and knocks it back up the path: fliers the whole way, crawlers half, bosses half again.
+// A pest that was just knocked back can't be knocked again for a moment, so crows can't hold one forever.
+// The Crow King's big crow carries the first ordinary pest it meets back to the start.
+function crowHit(s, e){
+  const S=G.S, boss=!!ENEMY[e.type].boss;
+  damage(e, s.dmg); if (e.dead) return;
+  if (s.big && !s.carried && !boss){ s.carried=true; S.fx.push({k:'carry',x:e.x,y:e.y,life:.7,max:.7});
+    e.dist=.35; e.scared=2.6; const [x,y]=pointAt(e.dist, e.lane); e.x=x; e.y=y; puffs(x, y, 6, 1); floatText(e.x, e.y-.35, 'carried off!', '#6a4a8a', 1); emit('carry'); return; }
+  if (e.scared>0) return;
+  e.dist=Math.max(.35, e.dist - s.push*(e.fly?1:.5)*(boss?.5:1)); e.scared=2.6;
+  const [x,y]=pointAt(e.dist, e.lane); e.x=x; e.y=y;
 }
 
 // ---------- one simulation step ----------
@@ -332,8 +379,9 @@ export function update(dt){
   if (S.dustT>0) S.dustT=Math.max(0, S.dustT-dt);
   if (S.spawnQ.length){ S.spawnT-=dt;
     // pests take turns at each entrance
-    if (S.spawnT<=0){ const it=S.spawnQ.shift(); { const k=S.laneNext++; spawnEnemy(it.t,0,it.m, S.flood && k%2===0 ? path.lanes.length : k%path.lanes.length); } S.spawnT=(ENEMY[it.t].gap||2)/Math.pow(crowdOf(), .3); } }
+    if (S.spawnT<=0){ const it=S.spawnQ.shift(); { const k=S.laneNext++; const e=spawnEnemy(it.t,0,it.m, S.flood && k%2===0 ? path.lanes.length : k%path.lanes.length); if (it.sw) e.reward=ENEMY[it.t].reward; } S.spawnT=(ENEMY[it.t].gap||2)/Math.pow(crowdOf(), .3); } }
 
+  const clouds=S.towers.filter(t=>t.type==='barrel' && t.lv>=SUPER_LV);   // Rain Cloud barrels: crawlers slog through the puddles
   for (const e of S.enemies){
     if (e.dead) continue;
     const D=ENEMY[e.type];
@@ -345,6 +393,7 @@ export function update(dt){
     if (e.morphAt!=null && e.dist>=e.morphAt){ e.morphAt=null; e.cocoon=1.3; floatText(e.x,e.y-.35,'growing!','#8a5fb0',1); emit('cocoon'); continue; }
     if (D.burrow){ e.bt+=dt; e.under = e.bt>1 && (e.bt%4.5)>(S.soft ? 2.3 : 3); } else e.under = false;
     let mul=(e.stink>0?PILE_SLOW:1)*(e.slow>0?.5:1)*(e.under?1.3:1)*(S.rain?RAIN_SLOW:1)*(S.dewT && (D.shape==='slug'||D.shape==='snail') ? DEW_SPEED : 1);
+    if (clouds.length && !e.fly && clouds.some(t=>Math.hypot(t.x-e.x,t.y-e.y)<=rangeOf(t))) mul*=SUPER.rainSlow;
     if (D.hopper){ e.jump=Math.sin(e.ph*.9)>.2; mul*=e.jump?2.2:.25; }
     e.dist+=e.spd*mul*dt;
     const [x,y,f]=pointAt(e.dist, e.lane); e.x=x; e.y=y; if (f) e.face=f;
@@ -360,63 +409,69 @@ export function update(dt){
 
   if (S.sprayCd>0 && S.active) S.sprayCd=Math.max(0, S.sprayCd-dt);   // recharges during waves
   if (S.active){ if (S.fertT>0){ S.fertT=Math.max(0, S.fertT-dt);
-      if (S.fertT===0 && !isCompost()){ let n=0; for (const t of S.towers) if (PLANTS.includes(t.type)){ t.wilt=Math.max(t.wilt||0, FERT.burn); n++; } if (n) emit('fertBurn', n); } }   // Fertilizer burn
+      if (S.fertT===0 && !isCompost()){ let n=0; for (const t of S.towers) if (PLANTS.includes(t.type) && !wiltProof(t)){ t.wilt=Math.max(t.wilt||0, FERT.burn); n++; } if (n) emit('fertBurn', n); } }   // Fertilizer burn
     else if (S.fertCd>0) S.fertCd=Math.max(0, S.fertCd-dt); }
   for (const p of S.slime) p.life-=dt; if (S.slime.length && S.slime[0].life<=0) S.slime=S.slime.filter(p=>p.life>0);
   for (const p of S.piles){ p.life-=dt; p.tk-=dt; const tick=p.tk<=0; if (tick) p.tk=PILE_TICK;
-    for (const e of S.enemies) if (targetable(e) && !e.fly && Math.hypot(e.x-p.x,e.y-p.y)<=p.r){ e.stink=.25; if (tick) damage(e, p.dmg*PILE_TICK); } }
+    for (const e of S.enemies) if (targetable(e) && !e.fly && Math.hypot(e.x-p.x,e.y-p.y)<=p.r){ if (!p.fire) e.stink=.25; if (tick) damage(e, p.dmg*PILE_TICK); } }
   if (S.piles.length) S.piles=S.piles.filter(p=>p.life>0);
   for (const t of S.towers){
     const T=TYPES[t.type];
     t.gunk = S.slime.length>0 && gummed(t);
     t.dry = !!(G.CH.drought && !S.rain && PLANTS.includes(t.type) && !watered(t));
-    t.cd-=dt*(t.gunk ? SLUDGE_SLOW : 1)*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1)*hiveBoost(t)*coolBoost(t)*(S.fertT>0 ? fertBoostNow() : 1)*(S.perks.rateMul||1)*(1+(sk(t.type).rate||0)); t.hop=Math.max(0,t.hop-dt*4);
+    t.cd-=dt*(t.gunk ? SLUDGE_SLOW : 1)*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1)*hiveBoost(t)*coolBoost(t)*(S.fertT>0 ? fertBoostNow() : 1)*(S.perks.rateMul||1)*(1+(sk(t.type).rate||0))*sunBoost(t); t.hop=Math.max(0,t.hop-dt*4);
     if (t.wilt>0){ t.wilt=Math.max(0, t.wilt-dt); continue; }          // wilted by the spray
+    if (t.type==='hive' && t.lv>=SUPER_LV && S.active){ t.sting=(t.sting||0)-dt;        // Queen's Hive: guard bees sting pests in reach
+      if (t.sting<=0){ t.sting=.5; const R=rangeOf(t); for (const e of S.enemies) if (targetable(e) && Math.hypot(e.x-t.x,e.y-t.y)<=R){ damage(e, SUPER.stingDps*.5); if (S.fx.length<MAX_FX) S.fx.push({k:'sting',x:t.x,y:t.y-.2,tx:e.x,ty:e.y,life:.35,max:.35}); } } }
     if (t.type==='sunflower' || T.support) continue;
     const K=sk(t.type), DM=T.dmg ? T.dmg[t.lv]*(1+(K.dmg||0)) : 0;
     const R=rangeOf(t), seen = e => Math.hypot(e.x-t.x,e.y-t.y) <= R*(G.CH.smog && e.fly ? SMOG : 1)*(S.dustT>0 ? DUST_SIGHT : 1);
-    if (t.type==='scarecrow'){
-      // Scares every flier in reach back up the path. Bosses only flinch half as far. A scared pest
-      // can't be scared again for a moment, so several scarecrows can't hold one forever.
+    if (T.line){
+      // Scarecrow: a crow flies out along its line and pecks every pest it passes.
       if (t.cd>0) continue;
-      const near=S.enemies.filter(e=>targetable(e)&&e.fly&&e.scared<=0&&seen(e));
-      if (!near.length) continue;
-      t.cd=1/T.rate[t.lv]; t.hop=1;
-      for (const e of near){ e.dist=Math.max(0.35, e.dist-T.push[t.lv]*(1+(K.push||0))*(ENEMY[e.type].boss?.5:1)); e.scared=2.6;
-        const [x,y]=pointAt(e.dist, e.lane); e.x=x; e.y=y; }
-      S.fx.push({k:'scare',x:t.x,y:t.y,r:R,life:.6,max:.6}); emit('scare', near.length);
+      const L=R*(S.dustT>0 ? DUST_SIGHT : 1);
+      if (!S.enemies.some(e=>targetable(e) && inLine(t, e, L*(G.CH.smog && e.fly ? SMOG : 1)))) continue;
+      t.cd=1/T.rate[t.lv]; t.hop=1; t.throws=(t.throws||0)+1;
+      const big = t.lv>=SUPER_LV && t.throws%SUPER.crowEvery===0, [dx,dy]=DIRS[t.dir||0];
+      S.shots.push({k:'crow',x:t.x,y:t.y,dx,dy,len:L,gone:0,spd:big?6:7.5,dmg:DM,push:T.push[t.lv]*(1+(K.push||0)),hits:[],big,a:Math.atan2(dy,dx),spin:0});
+      emit('scare', 1);
       continue;
     }
-    const inR=S.enemies.filter(e=>targetable(e)&&!(T.ground&&e.fly)&&seen(e));
+    const SUP=t.lv>=SUPER_LV, inR=S.enemies.filter(e=>targetable(e)&&!(T.ground&&e.fly&&!(SUP&&t.type==='sprinkler'))&&seen(e));
     if (!inR.length||t.cd>0) continue;
     t.cd=1/T.rate[t.lv]; t.hop=1;
     const left=e=>laneTotal(e.lane)-e.dist, lead=inR.reduce((a,b)=>left(b)<left(a)?b:a);   // the pest closest to the crops
     if (t.type==='sprinkler'){
       for (const e of inR){ damage(e,DM); e.slow=T.slow[t.lv]*(1+(K.slow||0)); }
-      S.fx.push({k:'ring',x:t.x,y:t.y,r:R,life:.5,max:.5});
+      S.fx.push({k:'ring',x:t.x,y:t.y,r:R,life:.5,max:.5,sup:SUP});
     } else if (t.type==='rose'){
       // Thorns go for fliers first and hit them twice as hard: the rose is the garden's anti-air
       for (const e of [...inR].sort((a,b)=>(b.fly-a.fly)||(b.dist-a.dist)).slice(0,T.multi[t.lv]+(K.multi||0)))
-        S.shots.push({k:'thorn',x:t.x,y:t.y-.2,tgt:e,tx:e.x,ty:e.y,spd:8,dmg:DM*(e.fly?ROSE_AIR:1),a:0,spin:0});
+        S.shots.push({k:'thorn',x:t.x,y:t.y-.2,tgt:e,tx:e.x,ty:e.y,spd:SUP?10:8,dmg:DM*(e.fly?(SUP?SUPER.roseAir:ROSE_AIR):1),a:0,spin:0,sup:SUP});
     } else if (t.type==='pine'){
       const d0=Math.hypot(lead.x-t.x,lead.y-t.y)||1;
-      S.shots.push({k:'cone',x:t.x,y:t.y-.3,tgt:lead,tx:lead.x,ty:lead.y,spd:6.5,dmg:DM,splash:T.splash[t.lv]*(1+(K.splash||0)),a:0,spin:0,d0,gone:0});
+      S.shots.push({k:'cone',x:t.x,y:t.y-.3,tgt:lead,tx:lead.x,ty:lead.y,spd:6.5,dmg:DM,splash:T.splash[t.lv]*(1+(K.splash||0)),a:0,spin:0,d0,gone:0,fire:SUP});
     } else if (t.type==='squirrel'){
       t.look=Math.sign(lead.x-t.x)||t.look;
-      S.shots.push({k:'acorn',x:t.x,y:t.y-.1,tgt:lead,tx:lead.x,ty:lead.y,spd:9,dmg:DM,bounce:T.bounce[t.lv]+(K.bounce||0),hits:[],a:0,spin:0});
+      S.shots.push({k:'acorn',x:t.x,y:t.y-.1,tgt:lead,tx:lead.x,ty:lead.y,spd:9,dmg:DM,bounce:T.bounce[t.lv]+(K.bounce||0),hits:[],a:0,spin:0,honey:SUP});
     } else if (t.type==='cow'){
       const d0=Math.hypot(lead.x-t.x,lead.y-t.y)||1; t.look=Math.sign(lead.x-t.x)||t.look;
       S.shots.push({k:'pat',x:t.x,y:t.y-.25,tgt:lead,tx:lead.x,ty:lead.y,spd:5.5,dmg:DM,splash:T.splash[t.lv]*(1+(K.splash||0)),
-        pile:{ r:T.splash[t.lv]*.75, dmg:T.pile[t.lv]*(1+(K.pile||0)) },a:0,spin:0,d0,gone:0});
+        pile:{ r:T.splash[t.lv]*.75*(SUP?SUPER.pileWide:1), dmg:T.pile[t.lv]*(1+(K.pile||0)), life:PILE_TIME*(SUP?SUPER.pileLong:1) },a:0,spin:0,d0,gone:0,sup:SUP});
     } else {
       const tgt = t.type==='owl' ? inR.reduce((a,b)=>b.hp>a.hp?b:a) : lead;
-      t.look=Math.sign(tgt.x-t.x)||t.look;
-      S.shots.push({k:t.type==='owl'?'feather':'carrot',x:t.x,y:t.y-.15,tgt,tx:tgt.x,ty:tgt.y,spd:t.type==='owl'?10:7,dmg:DM,pierce:K.pierce||0,a:0,spin:0});
+      t.look=Math.sign(tgt.x-t.x)||t.look; t.n=(t.n||0)+1;
+      const thunder = SUP && t.type==='owl' && t.n%SUPER.thunderEvery===0;   // Thunder Owl: every 5th strike
+      S.shots.push({k:t.type==='owl'?'feather':'carrot',x:t.x,y:t.y-.15,tgt,tx:tgt.x,ty:tgt.y,spd:t.type==='owl'?(thunder?14:10):7,dmg:DM*(thunder?SUPER.thunder:1),pierce:K.pierce||0,a:0,spin:0,
+        sup:SUP, thunder, burst:SUP && t.type==='bunny'});
     }
     emit('shoot', t.type);
   }
 
   for (const s of S.shots){
+    if (s.k==='crow'){ const step=s.spd*dt; s.x+=s.dx*step; s.y+=s.dy*step; s.gone+=step; s.spin+=dt*14;
+      for (const e of S.enemies) if (targetable(e) && !s.hits.includes(e) && Math.hypot(e.x-s.x,e.y-s.y)<=.5){ s.hits.push(e); crowHit(s, e); }
+      if (s.gone>=s.len) s.done=true; continue; }
     if (!s.tgt.dead){ s.tx=s.tgt.x; s.ty=s.tgt.y; }
     const dx=s.tx-s.x, dy=s.ty-s.y, d=Math.hypot(dx,dy); s.a=Math.atan2(dy,dx); s.spin+=dt*14;
     const step=s.spd*dt;

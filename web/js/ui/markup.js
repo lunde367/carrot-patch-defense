@@ -45,6 +45,7 @@ export const MARKUP = `
   <div class="info" id="info" hidden>
     <h3 id="iName"></h3>
     <div class="acts">
+      <button class="btn ghost small" id="iTurn" hidden>Turn</button>
       <button class="btn ghost small" id="iUp">Upgrade</button>
       <button class="btn ghost small" id="iSell">Sell</button>
     </div>

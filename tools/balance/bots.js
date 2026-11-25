@@ -3,7 +3,7 @@
 import { G, plantAt, upgrade, costOf, upCostOf, towerAt, spray, sprayReady, sprayStats } from '../../web/js/engine/game.js';
 import { PLANTS, SPRAY } from '../../web/js/data/spray.js';
 import { path, pointAt, laneTotal, buildable, bonusAt } from '../../web/js/engine/path.js';
-import { HILL, fertReady, fertilize, clearCost, clearScenery } from '../../web/js/engine/game.js';
+import { HILL, fertReady, fertilize, clearCost, clearScenery, canUpgrade, bestDir, lineCells } from '../../web/js/engine/game.js';
 import { TYPES } from '../../web/js/data/towers.js';
 import { ENEMY } from '../../web/js/data/enemies.js';
 import { COLS, ROWS } from '../../web/js/data/levels.js';
@@ -39,6 +39,8 @@ function bestCell(type, rnd=null){
     for (const [c,r] of cells){ const n=G.S.towers.filter(t=>want(t)&&Math.hypot(t.x-(c+.5),t.y-(r+.5))<=R).length; if (n>bs){ bs=n; best=[c,r]; } }
     return best;
   }
+  if (TYPES[type].line){ const L=TYPES[type].range[0]*G.S.perks.rangeMul; let best=null, bs=-1;
+    for (const [c,r] of cells){ const n=lineCells(c,r,bestDir(c,r,L),L); if (n>bs){ bs=n; best=[c,r]; } } return best; }
   const range=TYPES[type].range[0]*G.S.perks.rangeMul;
   const scored=cells.map(([c,r])=>({c,r,s:coverage(c,r,range)})).sort((a,b)=>b.s-a.s);
   const pick = rnd ? scored[Math.floor(rnd()*Math.min(8,scored.length))] : scored[0];
@@ -55,8 +57,8 @@ function upgradeBest(filter=()=>true){
   const S=G.S;
   // only fighters get upgraded first; helpers (scarecrow, hive, barrel) only once every fighter is maxed
   const fighter = t => ATTACKERS.includes(t.type);
-  let cands=S.towers.filter(t=>t.lv<2 && fighter(t) && filter(t) && S.seeds>=upCostOf(t));
-  if (!cands.length) cands=S.towers.filter(t=>t.lv<2 && t.type!=='sunflower' && !fighter(t) && filter(t) && S.seeds>=upCostOf(t) && S.towers.filter(fighter).every(f=>f.lv>=2));
+  let cands=S.towers.filter(t=>canUpgrade(t) && fighter(t) && filter(t) && S.seeds>=upCostOf(t));
+  if (!cands.length) cands=S.towers.filter(t=>canUpgrade(t) && t.type!=='sunflower' && !fighter(t) && filter(t) && S.seeds>=upCostOf(t) && S.towers.filter(fighter).every(f=>!canUpgrade(f)));
   if (!cands.length) return false;
   cands.sort((a,b)=>coverage(b.c,b.r,TYPES[b.type].range[b.lv])-coverage(a.c,a.r,TYPES[a.type].range[a.lv]));
   return upgrade(cands[0]);
@@ -107,7 +109,7 @@ export const STRATEGIES = {
     for (let guard=0; guard<40; guard++){
       if (upgradeBest()) continue;
       if (G.S.towers.length<3 + Math.floor(G.S.wave/3) && place(atk[G.S.towers.length % atk.length])) continue;
-      if (G.S.towers.every(t=>t.lv>=2) && place(atk[G.S.towers.length % atk.length])) continue;
+      if (G.S.towers.every(t=>!canUpgrade(t)) && place(atk[G.S.towers.length % atk.length])) continue;
       break;
     }
   },
@@ -205,6 +207,7 @@ function power(type, lv, F){
   else if (type==='pine') n = Math.min(2.2, .6+F.crowd*.3);
   else if (type==='cow') n = Math.min(2.2, .6+F.crowd*.3) + T.pile[lv]/Math.max(1,T.dmg[lv])*1.5;   // splash plus the stinky pile
   else if (type==='owl') n = 1.15;                                    // picks the toughest pest: great against bosses
+  if (lv>=3) n *= 1.25;                                               // a Super defender's power is worth something on top of its numbers
   return T.rate[lv]*hit*n*ground;
 }
 const rangeAt = (type, lv) => TYPES[type].range[lv]*G.S.perks.rangeMul;
@@ -231,7 +234,7 @@ function expertSpend(avail, wave, { saving=true }={}){
       const pay=TYPES.sunflower.income[0]*(left-1); if (pay>=costOf('sunflower')*1.15 && place('sunflower')) continue; }
     // a first one of each kind is worth a little extra: a mixed garden covers more situations
     for (const k of attackers(avail)){ const b=bestSpot(k,F); if (b) opts.push({ kind:'plant', type:k, cell:b.cell, gain:b.value*(count(k)===0?1.25:1), cost:costOf(k) }); }
-    for (const t of S.towers){ if (t.lv>=2) continue;
+    for (const t of S.towers){ if (!canUpgrade(t)) continue;
       if (ATTACKERS.includes(t.type)) opts.push({ kind:'up', t, gain:(worth(t.type,t.lv+1,t.c,t.r,F)-worth(t.type,t.lv,t.c,t.r,F))*(fighters.length<4?.6:1), cost:upCostOf(t) });
       else if (t.type==='sunflower' && left>=4) opts.push({ kind:'up', t, gain:0, seeds:(TYPES.sunflower.income[t.lv+1]-TYPES.sunflower.income[t.lv])*(left-1), cost:upCostOf(t) }); }
     // Helpers, valued by what they add to the fighters around them.

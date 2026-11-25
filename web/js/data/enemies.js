@@ -40,7 +40,7 @@ export const ENEMY = {
   shieldbug:{voice:'click',name:'Shield Bug',boss:true,hp:360,armor:4,spd:.45,reward:55,size:.48,shape:'shield',col:'#6f8a3e',dk:'#33461a'},
   baron:{voice:'click',name:'Stink Bug Baron',boss:true,hp:520,armor:5,spd:.42,reward:70,size:.52,shape:'shield',col:'#6b4a2e',dk:'#33210f',spots:true},
   // ---- Apple Orchard: aphids & invasive beetles (Act 2) ----
-  aphid:{name:'Aphid',hp:5,spd:.85,reward:1,size:.13,gap:.22,shape:'aphid',col:'#9ccf5a',dk:'#5a8a2a',adult:'wingaphid'},
+  aphid:{name:'Aphid',hp:7,spd:.85,reward:1,size:.13,gap:.22,shape:'aphid',col:'#9ccf5a',dk:'#5a8a2a',adult:'wingaphid'},
   wingaphid:{name:'Winged Aphid',hp:9,spd:1.5,reward:2,size:.17,gap:.3,fly:true,shape:'moth',wing:'#eef6e0',body:'#8fc25a',dk:'#557a2c'},
   jbeetle:{name:'Japanese Beetle',hp:24,armor:2,spd:.9,reward:5,size:.25,gap:.6,shape:'beetle',col:'#3f9a6a',dk:'#1d5a3a',copper:true},
   longhorn:{name:'Longhorn Beetle',hp:55,armor:3,spd:.6,reward:9,size:.32,gap:1,shape:'beetle',col:'#2e2e36',dk:'#121216',spots:true,horns:true},

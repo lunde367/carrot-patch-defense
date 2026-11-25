@@ -1,5 +1,5 @@
 // Draws the garden board. Sizes itself to fit any phone, tablet or desktop window.
-import { G, towerAt, rangeOf, HILL, DUST_TIME, dewy } from '../engine/game.js';
+import { G, towerAt, rangeOf, HILL, DUST_TIME, dewy, DIRS, CROW_W, bestDir } from '../engine/game.js';
 import { path, buildable, pointAt, laneTotal } from '../engine/path.js';
 import { drawScenery, drawBonus } from './art-scenery.js';
 import { COLS, ROWS, CHAPTERS } from '../data/levels.js';
@@ -7,7 +7,7 @@ import { TYPES } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
 import { ell, rng } from '../../kit/js/draw.js';
 import { drawCrop } from './art-common.js';
-import { DRAW, drawPips, drawShot } from './art-towers.js';
+import { DRAW, drawPips, drawShot, crowBird } from './art-towers.js';
 import { drawEnemy } from './art-enemies.js';
 
 let cv, g, bgc, boardEl, tile=0, W=0, H=0, dpr=1;
@@ -193,11 +193,24 @@ export function draw(clock){
   if (S.build && S.mode==='play'){ g.fillStyle='rgba(255,255,255,.28)';
     for (let r=0;r<ROWS-1;r++) for (let c=0;c<COLS;c++) if (buildable(c,r)&&!towerAt(c,r)){ g.beginPath(); g.arc((c+.5)*s,(r+.5)*s,s*.1,0,6.28); g.fill(); } }
   if (S.sel && TYPES[S.sel.type].range){ const R=rangeOf(S.sel);
-    g.beginPath(); g.arc(S.sel.x*s,S.sel.y*s,R*s,0,6.28); g.fillStyle='rgba(255,255,255,.18)'; g.fill();
-    g.setLineDash([6,5]); g.strokeStyle='rgba(255,255,255,.85)'; g.lineWidth=2; g.stroke(); g.setLineDash([]); }
+    if (TYPES[S.sel.type].line) lineArea(g, S.sel.x, S.sel.y, S.sel.dir||0, R, s, .18);
+    else { g.beginPath(); g.arc(S.sel.x*s,S.sel.y*s,R*s,0,6.28); g.fillStyle='rgba(255,255,255,.18)'; g.fill();
+    g.setLineDash([6,5]); g.strokeStyle='rgba(255,255,255,.85)'; g.lineWidth=2; g.stroke(); g.setLineDash([]); } }
 
   for (const f of S.fx){ const p=1-f.life/f.max;
-    if (f.k==='ring'){ g.beginPath(); g.arc(f.x*s,f.y*s,f.r*s*p,0,6.28); g.strokeStyle=`rgba(150,210,240,${1-p})`; g.lineWidth=3; g.stroke(); }
+    if (f.k==='ring'){ g.beginPath(); g.arc(f.x*s,f.y*s,f.r*s*p,0,6.28); g.strokeStyle=f.sup?`rgba(200,235,255,${1-p})`:`rgba(150,210,240,${1-p})`; g.lineWidth=f.sup?5:3; g.stroke();
+      if (f.sup){ g.beginPath(); g.arc(f.x*s,f.y*s,f.r*s*p*.7,0,6.28); g.strokeStyle=`rgba(120,190,255,${.8*(1-p)})`; g.lineWidth=2; g.stroke(); } }
+    if (f.k==='burst'){ ell(g,f.x*s,f.y*s,f.r*s*(.3+.7*p),f.r*s*(.25+.55*p),`rgba(255,215,90,${.35*(1-p)})`,`rgba(230,170,40,${1-p})`,2);   // golden carrot burst
+      for (let k=0;k<8;k++){ const a=k*.785; ell(g,(f.x+Math.cos(a)*f.r*p)*s,(f.y+Math.sin(a)*f.r*.7*p)*s,s*.03,s*.03,`rgba(255,230,120,${1-p})`); } }
+    if (f.k==='blast'){ ell(g,f.x*s,f.y*s,f.r*s*(.4+.6*p),f.r*s*(.3+.45*p),`rgba(255,140,40,${.45*(1-p)})`,`rgba(200,70,20,${1-p})`,2.5); }   // firecone landing
+    if (f.k==='bolt'){ const a=1-p; g.strokeStyle=`rgba(255,245,140,${a})`; g.lineWidth=4; g.beginPath();   // thunder dive
+      let x=f.x*s, y=f.y*s-s*1.6; g.moveTo(x,y); for (let k=0;k<5;k++){ x+=(k%2?1:-1)*s*.14; y+=s*.32; g.lineTo(x,y); } g.stroke();
+      g.strokeStyle=`rgba(255,255,255,${a})`; g.lineWidth=1.5; g.stroke(); ell(g,f.x*s,f.y*s,s*.5*p+s*.1,s*.3*p+s*.06,`rgba(255,240,150,${.4*a})`); }
+    if (f.k==='sting'){ const q=Math.min(1,p*1.6), bx=f.x+(f.tx-f.x)*q, by=f.y+(f.ty-f.y)*q-Math.sin(q*Math.PI)*.25;   // a guard bee darting out
+      ell(g,bx*s,by*s,s*.035,s*.025,'#f2c94a','#3a2614',1); }
+    if (f.k==='carry'){ const a=1-p; g.save(); g.translate(f.x*s,(f.y-.3-p*.8)*s); g.globalAlpha=a; crowBird(g,0,0,s*.42,Math.sin(p*20),true); g.restore(); }   // the big crow flying off with a pest
+    if (f.k==='superup'){ for (let k=0;k<3;k++){ const q=Math.min(1,p*1.4+k*.15); g.beginPath(); g.arc(f.x*s,f.y*s,s*(.3+q*1.1),0,6.28); g.strokeStyle=`rgba(255,215,90,${(1-q)*.9})`; g.lineWidth=4-k; g.stroke(); }
+      for (let k=0;k<10;k++){ const a=k*.628+p*2; ell(g,(f.x+Math.cos(a)*p*.9)*s,(f.y-.2+Math.sin(a)*p*.6-p*.5)*s,s*.04,s*.04,`rgba(255,240,150,${1-p})`); } }
     if (f.k==='scare'){ g.beginPath(); g.arc(f.x*s,f.y*s,f.r*s*(.3+.7*p),0,6.28); g.strokeStyle=`rgba(194,69,107,${.7*(1-p)})`; g.lineWidth=2.5; g.setLineDash([4,5]); g.stroke(); g.setLineDash([]); }
     if (f.k==='splat'){ ell(g,f.x*s,f.y*s,f.r*s*(.3+.7*p),f.r*s*(.2+.4*p),`rgba(110,80,40,${.45*(1-p)})`,`rgba(70,48,22,${1-p})`,2);
       for (let k=0;k<6;k++){ const a=k*1.05; ell(g,(f.x+Math.cos(a)*f.r*p)*s,(f.y+Math.sin(a)*f.r*.6*p)*s,s*.03,s*.025,`rgba(92,62,30,${1-p})`); } }
@@ -222,7 +235,8 @@ export function draw(clock){
   if (P && S.build===P.type){
     const T=TYPES[P.type], ok=buildable(P.c,P.r) && !S.towers.some(t=>t.c===P.c&&t.r===P.r), x=(P.c+.5)*s, y=(P.r+.5)*s;
     g.fillStyle=ok?'rgba(255,255,255,.35)':'rgba(194,69,107,.35)'; g.fillRect(P.c*s+1,P.r*s+1,s-2,s-2);
-    if (T.range && ok){ const R=T.range[0]*S.perks.rangeMul*(path.bonus.get(P.c+','+P.r)==='hill'?HILL:1)*s;
+    if (T.range && ok && T.line){ const R=T.range[0]*S.perks.rangeMul*(path.bonus.get(P.c+','+P.r)==='hill'?HILL:1); lineArea(g, P.c+.5, P.r+.5, bestDir(P.c,P.r,R), R, s, .14); }
+    else if (T.range && ok){ const R=T.range[0]*S.perks.rangeMul*(path.bonus.get(P.c+','+P.r)==='hill'?HILL:1)*s;
       g.beginPath(); g.arc(x,y,R,0,6.28); g.fillStyle='rgba(255,255,255,.14)'; g.fill();
       g.setLineDash([5,5]); g.strokeStyle='rgba(255,255,255,.85)'; g.lineWidth=2; g.stroke(); g.setLineDash([]); }
     if (ok){ g.save(); g.globalAlpha=.6; g.translate(x,y); DRAW[P.type](g,s,0,0,clockReal()); g.restore(); }
@@ -260,6 +274,12 @@ export function draw(clock){
   // Cow pats: brown splats with green stink curling up
   if (S.piles && S.piles.length){ const tt=clockReal();
     for (const p of S.piles){ const f=Math.min(1,p.life/.8), R=p.r*s;
+      if (p.fire){   // Firecone Pine: cracked, glowing ground with little flames dancing on it
+        ell(g,p.x*s,p.y*s+s*.06,R*.85,R*.45,`rgba(60,30,14,${.7*f})`,`rgba(255,120,40,${.8*f})`,1.5);
+        g.strokeStyle=`rgba(255,150,50,${.9*f})`; g.lineWidth=1.6; for (let k=0;k<5;k++){ const a=p.seed+k*1.26; g.beginPath(); g.moveTo(p.x*s,p.y*s+s*.06); g.lineTo(p.x*s+Math.cos(a)*R*.5,p.y*s+s*.06+Math.sin(a)*R*.25); g.lineTo(p.x*s+Math.cos(a+.3)*R*.75,p.y*s+s*.06+Math.sin(a+.3)*R*.38); g.stroke(); }
+        for (let k=0;k<4;k++){ const ph=tt*7+k*1.9+p.seed, x=p.x*s+(k-1.5)*R*.32, y=p.y*s+s*.06, h=s*(.16+.05*Math.sin(ph))*f;
+          g.beginPath(); g.moveTo(x-s*.05,y); g.quadraticCurveTo(x-s*.04,y-h*.6,x+Math.sin(ph)*s*.02,y-h); g.quadraticCurveTo(x+s*.04,y-h*.6,x+s*.05,y); g.closePath(); g.fillStyle=k%2?'#f6c344':'#ef7a2b'; g.globalAlpha=.85*f; g.fill(); g.globalAlpha=1; }
+        continue; }
       ell(g,p.x*s,p.y*s+s*.06,R*.7,R*.35,`rgba(92,62,30,${.75*f})`,`rgba(60,40,18,${.8*f})`,1.2);
       ell(g,p.x*s-R*.15,p.y*s+s*.03,R*.35,R*.16,`rgba(120,86,46,${.8*f})`);
       g.strokeStyle=`rgba(150,190,70,${.6*f})`; g.lineWidth=1.6; g.lineCap='round';
@@ -279,6 +299,16 @@ export function draw(clock){
   for (const it of items){
     g.save();
     if (it.t){ const t=it.t; g.translate(t.x*s,t.y*s);
+      if (TYPES[t.type].line){ const [dx,dy]=DIRS[t.dir||0];   // which way the scarecrow throws: three little chevrons on the ground
+        g.strokeStyle='rgba(60,40,20,.45)'; g.lineWidth=2.2; g.lineCap='round';
+        for (let k=0;k<3;k++){ const d=.42+k*.15, x=dx*d*s, y=dy*d*s+s*.18, w=s*.07; g.beginPath(); g.moveTo(x-dx*w-dy*w, y-dy*w-dx*w); g.lineTo(x, y); g.lineTo(x-dx*w+dy*w, y-dy*w+dx*w); g.stroke(); } }
+      if (t.lv>=3){ const tt=clockReal(), pl=.5+.5*Math.sin(tt*3+t.x);   // Super: a golden glow on the ground and sparkles drifting up
+        const gr=g.createRadialGradient(0,s*.22,0,0,s*.22,s*.55); gr.addColorStop(0,`rgba(255,220,100,${.45+.2*pl})`); gr.addColorStop(1,'rgba(255,220,100,0)');
+        g.fillStyle=gr; g.beginPath(); g.ellipse(0,s*.22,s*.55,s*.26,0,0,6.28); g.fill();
+        ell(g,0,s*.26,s*.38,s*.13,null,`rgba(255,210,80,${.6+.3*pl})`,2);
+        for (let k=0;k<4;k++){ const ph=(tt*.6+k*.25+t.x*.17)%1, x=Math.sin(k*2.3+tt)*s*.3, y=s*.2-ph*s*.7; g.globalAlpha=1-ph;
+          g.beginPath(); g.moveTo(x,y-s*.04); g.lineTo(x+s*.012,y-s*.012); g.lineTo(x+s*.04,y); g.lineTo(x+s*.012,y+s*.012); g.lineTo(x,y+s*.04); g.lineTo(x-s*.012,y+s*.012); g.lineTo(x-s*.04,y); g.lineTo(x-s*.012,y-s*.012); g.closePath(); g.fillStyle='#fff2a0'; g.fill(); }
+        g.globalAlpha=1; }
       if (S.sel===t) ell(g,0,s*.26,s*.36,s*.12,null,'#fff',2);
       if (t.wilt>0){ g.globalAlpha=.5; g.save(); g.translate(s*.06,s*.06); g.rotate(.22); DRAW[t.type](g,s,0,t.lv,0,t.look||1); g.restore(); g.globalAlpha=1;
         ell(g,s*.22,-s*.3,s*.07,s*.07,'#c4d65c','#7d8f2a',1); g.fillStyle='#4a5a14'; g.font=`800 ${Math.round(s*.13)}px Nunito, sans-serif`; g.textAlign='center'; g.fillText('!',s*.22,-s*.255); }
@@ -335,4 +365,14 @@ export function draw(clock){
     if (f.k==='txt'){ g.globalAlpha=a; g.font=`800 ${Math.round(s*.36)}px Sniglet, Nunito, ui-rounded, sans-serif`; g.textAlign='center';
       g.lineWidth=3; g.strokeStyle='rgba(255,255,255,.9)'; g.strokeText(f.t,f.x*s,f.y*s); g.fillStyle=f.c; g.fillText(f.t,f.x*s,f.y*s); g.globalAlpha=1; }
   }
+}
+
+// A Scarecrow's reach: a straight lane from its tile, one way.
+function lineArea(g, x, y, dir, L, s, alpha){
+  const [dx,dy]=DIRS[dir], w=CROW_W, x0=x+dx*.15, y0=y+dy*.15, x1=x+dx*L, y1=y+dy*L;
+  const lx=Math.min(x0,x1)-(dy?w:0), ly=Math.min(y0,y1)-(dx?w:0), lw=Math.abs(x1-x0)+(dy?2*w:0), lh=Math.abs(y1-y0)+(dx?2*w:0);
+  g.beginPath(); g.roundRect(lx*s, ly*s, lw*s, lh*s, s*.2); g.fillStyle=`rgba(255,255,255,${alpha})`; g.fill();
+  g.setLineDash([6,5]); g.strokeStyle='rgba(255,255,255,.85)'; g.lineWidth=2; g.stroke(); g.setLineDash([]);
+  g.fillStyle='rgba(255,255,255,.85)'; g.beginPath(); const hx=x1*s, hy=y1*s, a=s*.16;   // an arrowhead at the far end
+  g.moveTo(hx+dx*a*.6, hy+dy*a*.6); g.lineTo(hx-dx*a*.5-dy*a, hy-dy*a*.5-dx*a); g.lineTo(hx-dx*a*.5+dy*a, hy-dy*a*.5+dx*a); g.closePath(); g.fill();
 }

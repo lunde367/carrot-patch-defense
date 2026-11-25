@@ -209,7 +209,7 @@ export const CHAPTERS = [
 // three-star rate slopes down from about 90% early to about 25% on Big Dig even for a player who
 // never sprays. The Pesticide Sprayer then makes levels easier, a shortcut, never a requirement.
 // Pests in the first level of a garden start weak, so those levels need a bigger multiplier.
-const TOUGHNESS = [1.15, 1.32, 0.94, 2.24, 2.88, 1.48, 2.65, 1.43, 1.55, 5.13, 2.06, 2.43, 2.15, 3.06, 3.69, 5.15, 2.88, 2.95, 12.16, 1.81, 5.83, 0.91, 2.0, 1.32, 4.66, 3.35, 3.53, 7.91, 11.26, 6.78, 7.94, 7.53, 8.83, 10.52, 7.32, 13.05];
+const TOUGHNESS = [1.15, 1.32, 0.94, 2.24, 2.88, 1.48, 2.65, 1.43, 1.55, 5.13, 2.06, 2.43, 2.15, 3.06, 3.95, 5.15, 2.88, 2.95, 12.16, 1.81, 5.83, 0.91, 2.0, 1.32, 4.66, 3.35, 3.53, 7.91, 11.26, 6.78, 7.94, 7.53, 8.83, 10.52, 7.32, 13.05];
 
 // Flat list of every level in play order, each linked back to its chapter.
 export const LEVELS = [];

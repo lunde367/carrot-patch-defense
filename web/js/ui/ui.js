@@ -1,10 +1,10 @@
 // Everything the player sees and taps outside the board: HUD, tray, panels and overlays.
-import { G, isCompost, fertName, fertTimeNow, forecast, skipToWin, DIFFICULTY, BOONS, takeBoon, undoPlant, bossWave, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, canClear, sceneryPiece, clearScenery } from '../engine/game.js';
+import { G, isCompost, fertName, fertTimeNow, forecast, skipToWin, DIFFICULTY, BOONS, takeBoon, undoPlant, bossWave, startLevel, startWave, towerAt, plantAt, upgrade, sell, costOf, upCostOf, spray, sprayReady, sprayStats, swarmAt, starLimits, fertReady, fertilize, revive, addSeeds, refillSpray, clearCost, canClear, sceneryPiece, clearScenery, maxLvOf, turnTower } from '../engine/game.js';
 import { SCENERY_NAMES } from '../data/scenery.js';
 import { SPRAY, PLANTS } from '../data/spray.js';
 import { path } from '../engine/path.js';
 import { drawBonus } from '../render/art-scenery.js';
-import { TYPES, TRAY, statsText } from '../data/towers.js';
+import { TYPES, TRAY, statsText, SUPER_LV } from '../data/towers.js';
 import { ENEMY } from '../data/enemies.js';
 import { PARTS, CHAPTERS, LEVELS, ENDLESS, WAVES, ROWS, COLS } from '../data/levels.js';
 import { drawDiaryScene } from '../render/art-diary.js';
@@ -13,7 +13,7 @@ import { haptic, setHaptics } from '../../kit/js/haptics.js';
 import { shouldAskRating, answerRating } from '../../kit/js/rating.js';
 import { track, setTelemetry } from '../../kit/js/telemetry.js';
 import { VERSION } from '../data/config.js';
-import { SKILLS, SKILL_COSTS, SKILL_TOTAL, skillValues, skillsSpent } from '../data/skills.js';
+import { SKILLS, SKILL_COSTS, SKILL_TOTAL, skillValues, skillsSpent, SUPER_COST, skillsFull } from '../data/skills.js';
 import { challengesFor, challengeText, challengeMet, CHALLENGE_TOTAL } from '../data/challenges.js';
 import { drawEnemy } from '../render/art-enemies.js';
 import { PERKS, perkValues, ALL_PERKS, PRODUCTS } from '../data/perks.js';
@@ -44,9 +44,9 @@ export const lastOpenLevel = highest;
 const towerOpen = key => devMode || TYPES[key].unlock===0 || !!Save.data.seen[key] || (!!G.LV && !!G.S && G.S.mode==='play' && TYPES[key].unlock <= G.LV.gi);
 const unlockLevelName = key => LEVELS[TYPES[key].unlock].name;
 
-function drawIcon(canvas, key, size){
+function drawIcon(canvas, key, size, lv=0){
   const d=Math.min(2, window.devicePixelRatio||1); canvas.width=canvas.height=size*d;
-  const c=canvas.getContext('2d'); c.setTransform(d,0,0,d,size/2*d,size*.57*d); DRAW[key](c,size*.9,0,0,1,1);
+  const c=canvas.getContext('2d'); c.setTransform(d,0,0,d,size/2*d,size*.57*d); DRAW[key](c,size*.9,0,lv,1,1);
 }
 
 // ---------- start / restart ----------
@@ -506,14 +506,21 @@ function showSkills(){
       return `<div class="sk-branch"><span><b>${br.name}</b><span class="tiers">${SKILL_COSTS.map((_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>
           <small>${max ? br.desc(n-1) : `${br.desc(n)}${n===SKILL_COSTS.length-1 || !n ? '' : ' (again)'}`}</small></span>
         ${max ? '<span class="sk-max">Full</span>' : `<button class="btn ${left>=cost?'main':'ghost'} small" data-go="skill-buy" data-type="${k}" data-br="${br.id}" ${left>=cost?'':'disabled'}>${CH_ICON} ${cost}</button>`}</div>`; }).join('');
-    return `<div class="sk-card"><header><canvas data-tower="${k}"></canvas><b>${T.name}</b></header>${rows}</div>`; }).join('');
+    // The Super step: shown on every card, but it only says what it is once both skills are full.
+    const full=skillsFull(own), sup = own.s
+      ? `<div class="sk-branch sk-super on"><span><b>${T.sup.name}</b><small>${T.sup.desc} Upgrade a ${T.name} a 4th time in the garden.</small></span><canvas data-tower="${k}" data-lv="${SUPER_LV}"></canvas></div>`
+      : full
+      ? `<div class="sk-branch sk-super ready"><span><b>Super: ${T.sup.name}</b><small>${T.sup.desc} Opens a 4th upgrade in the garden.</small></span>
+          <button class="btn ${left>=SUPER_COST?'main':'ghost'} small" data-go="skill-buy" data-type="${k}" data-br="s" ${left>=SUPER_COST?'':'disabled'}>${CH_ICON} ${SUPER_COST}</button></div>`
+      : `<div class="sk-branch sk-super locked"><span><b>???</b><small>Fill both skills to find out.</small></span></div>`;
+    return `<div class="sk-card${own.s?' is-super':''}"><header><canvas data-tower="${k}"></canvas><b>${T.name}</b></header>${rows}${sup}</div>`; }).join('');
   tabAt=['upgrades','skills'];
   home(`<div class="home-head"><h2>Defender skills</h2><span class="star-count">${CH_ICON} ${left}</span></div>
     <p class="home-note">Earn ${CH_ICON} by replaying levels you’ve beaten and meeting their extra goals. ${chalCount()} of ${CHALLENGE_TOTAL} earned.</p>
     <div class="sk-list">${cards}</div>
     ${open.length<TRAY.length?`<p class="home-note">${TRAY.length-open.length} more defender${TRAY.length-open.length>1?'s':''} to unlock.</p>`:''}
     <div class="row"><button class="btn ghost small" data-go="skill-refund" ${skillsSpent(Save.data.skills)?'':'disabled'}>Refund all skills</button></div>`);
-  for (const cv of $('home').querySelectorAll('canvas[data-tower]')) drawIcon(cv, cv.dataset.tower, 44);
+  for (const cv of $('home').querySelectorAll('canvas[data-tower]')) drawIcon(cv, cv.dataset.tower, 44, +(cv.dataset.lv||0));
 }
 
 // ---------- Field guide: every defender and every pest met so far ----------
@@ -767,6 +774,9 @@ async function onOverlayClick(ev){
     case 'refund': Save.data.perks={}; Save.commit(); return showShed();
     case 'skills': leaveLevel(); return showSkills();
     case 'skill-buy': { const [type, br]=[b.dataset.type, b.dataset.br], o=Save.data.skills[type] || (Save.data.skills[type]={}), n=o[br]||0;
+      if (br==='s'){ if (o.s || !skillsFull(o) || chalLeft()<SUPER_COST) return Audio.play('denied');
+        o.s=1; Save.commit(); Audio.play('win'); haptic('success'); track('skill_buy', { type, branch:'super', step:1 }); emit('skill', type);
+        const y=window.scrollY; showSkills(); window.scrollTo(0,y); return; }
       if (n>=SKILL_COSTS.length || chalLeft()<SKILL_COSTS[n]) return Audio.play('denied');
       o[br]=n+1; Save.commit(); Audio.play('sparkle'); haptic('light'); track('skill_buy', { type, branch:br, step:n+1 }); emit('skill', type);
       const y=window.scrollY; showSkills(); window.scrollTo(0,y); return; }
@@ -901,7 +911,8 @@ export function renderInfo(){
   const t=G.S&&G.S.sel; $('info').hidden=!t; dirty(); if (!t) return;
   const T=TYPES[t.type];
   const extra=[tileNote(t).replace(/^.*?: /,'').replace(/^.*\. Hills.*$/,''), t.dry?'Thirsty: needs a Sprinkler nearby':''].filter(Boolean).join(' · ');
-  $('iName').innerHTML=`${T.name}<em>Level ${t.lv+1}</em>`; $('iDesc').textContent=T.desc; $('iStats').textContent=statsText(t, G.S.perks)+(extra?` · ${extra}`:'');
+  const sup=t.lv>=SUPER_LV; $('info').classList.toggle('is-super', sup); $('iTurn').hidden=!T.line;
+  $('iName').innerHTML=sup ? `${T.sup.name}<em class="sup">Super</em>` : `${T.name}<em>Level ${t.lv+1}</em>`; $('iDesc').textContent=sup ? T.sup.desc : T.desc; $('iStats').textContent=statsText(t, G.S.perks)+(extra?` · ${extra}`:'');
 }
 on('select', renderInfo);
 
@@ -923,8 +934,9 @@ export function refresh(){
   paintSpray(); paintFert(); paintOffers();
   if (S.selScen && !S.sel) paintScenePop();
   if (S.sel){ const up=$('iUp');
-    if (S.sel.lv>=2){ up.textContent='Max level'; up.disabled=true; }
-    else { const cost=upCostOf(S.sel); up.textContent=`Upgrade · ${cost}`; up.disabled=S.seeds<cost; }
+    const next=S.sel.lv+1, toSuper=next===SUPER_LV; up.classList.toggle('super-btn', toSuper && S.sel.lv<maxLvOf(S.sel.type));
+    if (S.sel.lv>=maxLvOf(S.sel.type)){ up.textContent='Max level'; up.disabled=true; }
+    else { const cost=upCostOf(S.sel); up.textContent=`${toSuper?'Super':'Upgrade'} · ${cost}`; up.disabled=S.seeds<cost; }
     $('iSell').textContent=`Sell · +${Math.floor(S.sel.spent*.7)}`; }
 }
 
@@ -1086,7 +1098,8 @@ export function initUI(){
     if (clearScenery(o)){ S.selScen=null; rebuild(); renderInfo(); Audio.play('pop'); msg(gentle?`${name} moved to a better spot. This one is free now.`:o.kind==='fire'?'Fire’s out! That spot is free now.':o.kind==='litter'||o.kind==='tire'?'All cleaned up! That spot is free now.':`${name} cleared. That spot is free now.`); }
     else { Audio.play('denied'); msg(`Not enough seeds. It costs ${clearCost(o)}.`); } };
   $('spClose').onclick=()=>{ G.S.selScen=null; renderInfo(); };
-  $('iUp').onclick=()=>{ const t=G.S.sel; if (upgrade(t)){ renderInfo(); msg(`${TYPES[t.type].name} upgraded to level ${t.lv+1}.`); } };
+  $('iUp').onclick=()=>{ const t=G.S.sel; if (upgrade(t)){ renderInfo(); if (t.lv>=SUPER_LV){ Audio.play('sparkle'); haptic('success'); msg(`It’s a ${TYPES[t.type].sup.name} now!`); } else msg(`${TYPES[t.type].name} upgraded to level ${t.lv+1}.`); } };
+  $('iTurn').onclick=()=>{ const t=G.S.sel; if (turnTower(t)){ Audio.play('tap'); dirty(); } };
   $('undo').onclick=()=>{ const t=lastPlanted; endUndo(); if (undoPlant(t)){ Audio.play('sell'); msg('Taken back. Your seeds are returned.'); renderBar(); renderInfo(); dirty(); } };
   on('levelStart', endUndo); on('upgrade', endUndo); on('sell', endUndo);
   $('iSell').onclick=()=>{ const v=sell(G.S.sel); renderInfo(); msg(`Sold for ${v} seeds.`); };

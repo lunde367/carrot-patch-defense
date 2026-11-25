@@ -22,8 +22,8 @@ export const SKILLS = {
                branch('b','Trick Shot','rate',[.03,.06,.06], ()=>'Throws acorns faster.', { fx:{ bounce:1 }, text:'Acorns bounce one more time.' }) ],
   owl:       [ branch('a','Keen Eyes','range',[.03,.06,.09], ()=>'Sees farther.'),
                branch('b','Sharp Talons','dmg',[.04,.08,.12], ()=>'Strikes harder.') ],
-  scarecrow: [ branch('a','Loud Rattle','push',[.06,.12,.18], ()=>'Scares fliers farther back.'),
-               branch('b','Quick Turn','rate',[.06,.12,.18], ()=>'Ready to scare again sooner.') ],
+  scarecrow: [ branch('a','Loud Caw','push',[.06,.12,.18], ()=>'Crows knock pests farther back.'),
+               branch('b','Quick Wings','rate',[.06,.12,.18], ()=>'Throws crows more often.') ],
   barrel:    [ branch('a','Long Hose','range',[.05,.1,.15], ()=>'Waters farther.'),
                branch('b','Cool Water','cool',[.02,.04,.06], ()=>'Plants it waters work faster.') ],
   hive:      [ branch('a','Busy Bees','boost',[.03,.06,.09], ()=>'Defenders near the hive work even faster.'),
@@ -35,9 +35,16 @@ export const SKILLS = {
 export function skillValues(owned = {}){
   const out = {};
   for (const type in SKILLS){ const o = owned[type]; if (!o) continue; const v = out[type] = {};
-    for (const b of SKILLS[type]){ const n = o[b.id] || 0; if (n) Object.assign(v, b.steps[n-1]); } }
+    for (const b of SKILLS[type]){ const n = o[b.id] || 0; if (n) Object.assign(v, b.steps[n-1]); }
+    if (o.s) v.super = true; }
   return out;
 }
-export const skillsSpent = (owned = {}) => Object.values(owned).reduce((s,o) => s + Object.values(o).reduce((t,n) => t + SKILL_COSTS.slice(0,n).reduce((a,b)=>a+b,0), 0), 0);
-export const SKILL_TOTAL = Object.keys(SKILLS).length * 2 * SKILL_COSTS.reduce((a,b)=>a+b,0);
+// The Super step: once both of a defender's skills are full, one more buy lets it grow a 4th level in the garden.
+export const SUPER_COST = 6;
+export const superReady = (o = {}) => SKILLS_FULL(o) && !o.s;
+const SKILLS_FULL = o => ['a','b'].every(id => (o[id]||0) >= SKILL_COSTS.length);
+export const skillsFull = o => SKILLS_FULL(o || {});
+const stepsCost = n => SKILL_COSTS.slice(0,n).reduce((a,b)=>a+b,0);
+export const skillsSpent = (owned = {}) => Object.values(owned).reduce((s,o) => s + Object.entries(o).reduce((t,[id,n]) => t + (id==='s' ? (n ? SUPER_COST : 0) : stepsCost(n)), 0), 0);
+export const SKILL_TOTAL = Object.keys(SKILLS).length * (2 * SKILL_COSTS.reduce((a,b)=>a+b,0) + SUPER_COST);
 export const skillOpen = (type, highest) => TYPES[type].unlock <= highest;
