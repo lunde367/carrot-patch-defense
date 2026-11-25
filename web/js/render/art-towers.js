@@ -335,10 +335,11 @@ export function drawShot(g,sh,s){
   if (sh.k==='crow'){ const w=s*(sh.big?.42:.28); if (sh.big) glow(g,s,.4,'rgba(170,120,255,.45)');      // a crow flying out along the line
     g.translate(0,-s*.25); if (sh.dx<0) g.scale(-1,1); else if (sh.dy) g.rotate(sh.dy*.35);
     crowBird(g,0,0,w,Math.sin(sh.spin*1.3),sh.big); return; }
-  if (sh.k==='carrot'){ if (sh.sup) glow(g,s,.2,'rgba(255,220,90,.6)'); g.rotate(sh.spin); g.beginPath(); g.moveTo(-s*.05,-s*.08); g.lineTo(s*.05,-s*.08); g.lineTo(0,s*.12); g.closePath();
+  if (sh.k==='carrot'){ if (sh.sup){ glow(g,s,.28,'rgba(255,220,90,.6)'); g.scale(1.45,1.45); } g.rotate(sh.a-Math.PI/2);   // flies point first, like a spike
+    g.beginPath(); g.moveTo(-s*.05,-s*.08); g.lineTo(s*.05,-s*.08); g.lineTo(0,s*.12); g.closePath();
     g.fillStyle=sh.sup?'#f6c945':'#ef8a2b'; g.fill(); if (sh.sup){ g.strokeStyle='#b88a1c'; g.lineWidth=1.2; g.stroke(); } ell(g,0,-s*.1,s*.045,s*.03,'#5fa040'); }
   else if (sh.k==='thorn'){ g.rotate(sh.a); if (sh.sup){ glow(g,s,.16,'rgba(255,90,120,.55)'); g.scale(1.35,1.35); } g.beginPath(); g.moveTo(s*.1,0); g.lineTo(-s*.06,-s*.035); g.lineTo(-s*.06,s*.035); g.closePath(); g.fillStyle=sh.sup?'#c8102e':'#8f1f37'; g.fill(); if (sh.sup){ g.strokeStyle='#f2c94a'; g.lineWidth=1; g.stroke(); } }
-  else if (sh.k==='acorn'){ if (sh.honey) glow(g,s,.14,'rgba(255,200,60,.55)'); g.rotate(sh.spin); ell(g,0,s*.02,s*.05,s*.06,sh.honey?'#e3a33a':'#9a6b3c',sh.honey?'#8a5a1a':'#5e3d20',1); ell(g,0,-s*.03,s*.055,s*.025,'#6b4423');
+  else if (sh.k==='acorn'){ if (sh.honey) glow(g,s,.2,'rgba(255,200,60,.55)'); g.scale(1.4,1.4); g.rotate(sh.spin); ell(g,0,s*.02,s*.05,s*.06,sh.honey?'#e3a33a':'#9a6b3c',sh.honey?'#8a5a1a':'#5e3d20',1); ell(g,0,-s*.03,s*.055,s*.025,'#6b4423');
     if (sh.honey) ell(g,s*.02,s*.08,s*.015,s*.03,'#f2c94a'); }
   else if (sh.k==='cone'){ const p=Math.min(1,sh.gone/sh.d0), h=Math.sin(p*Math.PI)*s*.9;
     ell(g,0,s*.3,s*.07,s*.025,'rgba(30,30,10,.25)'); g.translate(0,-h);
