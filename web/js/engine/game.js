@@ -47,6 +47,12 @@ const bossBite = () => Math.max(3, Math.round(G.S.maxLives*.25));
 // More pests per wave on some levels (a level's own `crowd`, else its garden's).
 // Every wave is CROWD times its old size, and a whole wave pays INCOME of what it used to, however many pests are in it.
 const CROWD = 1.35, INCOME = .85;
+// What a squashed pest pays: its own value, grown the further into the story the level is. The growth scales
+// each pest's own value rather than adding the same bonus to every pest, so a swarm of tiny pests pays little
+// and big, tough pests pay a lot. (A flat bonus made swarm gardens pay out far more than they should.)
+// Bosses keep the flat bonus, since they're worth a lot already.
+export const PAY_GROWTH = 9;
+export const payFor = d => d.boss ? d.reward + Math.floor(G.LV.gi/2) : d.reward * (1 + G.LV.gi/PAY_GROWTH);
 const crowdOf = () => (G.LV.crowd || G.CH.crowd || 1)*CROWD;
 export const bossWave = w => G.LV.endless ? w%5===0 : w===G.LV.waves;
 // Endless Garden weather: from wave 3 on, about half the waves bring rain, a heat wave or a swarm.
@@ -119,7 +125,7 @@ function spawnEnemy(type, dist, morph, lane=0){
   if (d.rise && dist===0){ dist=laneTotal(lane)*(SLUDGE_FROM+Math.random()*SLUDGE_SPREAD);   // Sludge bubbles up out of the creek, partway down the road
     if (!S.sludgeSeen){ S.sludgeSeen=true; emit('sludge'); } }
   const hp=Math.round(d.hp*sc), [x,y]=pointAt(dist, lane);
-  const e={ type, hp, max:hp, spd:d.spd, reward:d.reward+Math.floor(G.LV.gi/2), size:d.size, armor:d.armor||0,
+  const e={ type, hp, max:hp, spd:d.spd, reward:payFor(d), size:d.size, armor:d.armor||0,
     dist, x, y, face:1, slow:0, hit:0, ph:Math.random()*6, bt:0, fly:!!d.fly, lane, morphAt:morph?laneTotal(lane)*morph:null, cocoon:0, scared:0, st:0, rising:d.rise?SLUDGE_RISE:0, trail:dist };
   S.enemies.push(e);
   if (d.boss) emit('boss', type);
@@ -129,7 +135,7 @@ function grow(e){
   const S=G.S, ad=ENEMY[e.type].adult, d=ENEMY[ad], frac=e.hp/e.max, mx=Math.round(d.hp*hpScale(S.wave));
   // A grown-up comes out above ground (a grub that grows while tunneling must not stay hidden forever).
   Object.assign(e, { type:ad, max:mx, hp:Math.max(1,Math.round(mx*frac)), spd:d.spd, size:d.size, armor:d.armor||0, fly:!!d.fly,
-    reward:d.reward+Math.floor(G.LV.gi/2), under:false, bt:0 });
+    reward:payFor(d), under:false, bt:0 });
   puffs(e.x, e.y, 6, 1); emit('grow', e);
 }
 

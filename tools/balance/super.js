@@ -2,6 +2,7 @@
 //
 //   node tools/balance/super.js                        every level on Normal, 6 games per way per player
 //   node tools/balance/super.js --diff hard --from 15 --to 35 --runs 8
+//   node tools/balance/super.js --players none,spread         only some of the players
 //
 // Plays every level with the expert bot four times over, each with a different player's defender skills:
 //   none    no skills at all (never replays for challenge stars)
@@ -23,7 +24,7 @@ import { on } from '../../web/kit/js/events.js';
 const arg = (name, def) => { const i=process.argv.indexOf('--'+name); return i>0 ? +process.argv[i+1] : def; };
 const sarg = (name, def) => { const i=process.argv.indexOf('--'+name); return i>0 ? process.argv[i+1] : def; };
 const RUNS = arg('runs', 6), FROM = arg('from', 0), TO = arg('to', LEVELS.length-1), DT = 1/30;
-const DIFF = sarg('diff', 'normal'); G.diff = DIFFICULTY[DIFF].hp;
+const DIFF = sarg('diff', 'normal'), ONLY = sarg('players', ''); G.diff = DIFFICULTY[DIFF].hp;
 const mulberry32 = a => () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
 
 // The defenders a rusher builds up, most useful first.
@@ -77,11 +78,11 @@ function play(gi, seed, who, way){
 }
 const pct = x => `${Math.round(x*100)}%`.padStart(4);
 console.log(`Super check: ${DIFFICULTY[DIFF].name}, ${RUNS} games per way per player. Each cell: win · 3★ · crops lost (Supers grown per game)\n`);
-console.log('                     ' + Object.keys(PLAYERS).map(p=>p.padEnd(23)).join(''));
+console.log('                     ' + Object.keys(PLAYERS).filter(p => !ONLY || ONLY.split(',').includes(p)).map(p=>p.padEnd(23)).join(''));
 const tot = Object.fromEntries(Object.keys(PLAYERS).map(p=>[p,{win:0,three:0,lost:0,sup:0,n:0}]));
 for (const L of LEVELS.slice(FROM, TO+1)){
   const cells=[];
-  for (const who of Object.keys(PLAYERS)){
+  for (const who of Object.keys(PLAYERS).filter(p => !ONLY || ONLY.split(',').includes(p))){
     // the expert plays both of its ways and keeps the better one, like a person learning the level
     let best=null;
     for (const way of ['value','mixed']){ const g=[...Array(RUNS)].map((_,i)=>play(L.gi, 9000+i, who, way));
@@ -92,4 +93,4 @@ for (const L of LEVELS.slice(FROM, TO+1)){
   }
   console.log(`${String(L.gi).padStart(2)} ${L.name.padEnd(18)}${cells.join('')}`);
 }
-console.log('\nAverage              ' + Object.values(tot).map(T=>`${pct(T.win/T.n)} ${pct(T.three/T.n)} ${(T.lost/T.n*100).toFixed(0).padStart(3)}%lost (${(T.sup/T.n).toFixed(1)})`.padEnd(24)).join(''));
+console.log('\nAverage              ' + Object.entries(tot).filter(([p])=>!ONLY||ONLY.split(',').includes(p)).map(([,T])=>T).map(T=>`${pct(T.win/T.n)} ${pct(T.three/T.n)} ${(T.lost/T.n*100).toFixed(0).padStart(3)}%lost (${(T.sup/T.n).toFixed(1)})`.padEnd(24)).join(''));
