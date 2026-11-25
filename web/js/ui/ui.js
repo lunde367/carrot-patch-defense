@@ -534,13 +534,15 @@ function showGuide(tab){
         return `<div class="g-card"><canvas data-pest="${t}" width="128" height="128"></canvas><b>${E.name}${E.boss?' <i>Boss</i>':''}</b>
           <ul>${pestTraits(t).map(x=>`<li>${x}</li>`).join('')}</ul><p class="g-fact">${pestFact(t)}</p></div>`; }).join('')
     : TRAY.map(k => { const T=TYPES[k]; if (!towerOpen(k)) return `<div class="g-card unknown"><span class="g-q">?</span><b>Unlocks in ${LEVELS[T.unlock].ch.name}</b></div>`;
-        return `<div class="g-card"><canvas data-tower="${k}"></canvas><b>${T.name}</b><p>${T.desc}</p><p class="g-fact">${TOWER_FACTS[k]||''}</p></div>`; }).join('');
+        // once its Super is unlocked (in Skills), the card shows the Super form too
+        const sup = (Save.data.skills[k]||{}).s ? `<div class="g-super"><canvas data-tower="${k}" data-lv="${SUPER_LV}"></canvas><b><i>Super</i>${T.sup.name}</b><small>${T.sup.desc}</small></div>` : '';
+        return `<div class="g-card${sup?' is-super':''}"><canvas data-tower="${k}"></canvas><b>${T.name}</b><p>${T.desc}</p>${sup}<p class="g-fact">${TOWER_FACTS[k]||''}</p></div>`; }).join('');
   tabAt=['journal','guide'];
   home(`<div class="home-head"><h2>Field guide</h2></div>
     <div class="seg" role="tablist"><button role="tab" aria-checked="${tab!=='pests'}" data-go="guide" data-tab="defenders">Defenders ${TRAY.filter(towerOpen).length}/${TRAY.length}</button>
       <button role="tab" aria-checked="${tab==='pests'}" data-go="guide" data-tab="pests">Pests ${seen.length}/${pestIds.length}</button></div>
     <div class="guide">${cards}</div>`);
-  for (const cv of $('home').querySelectorAll('canvas[data-tower]')) drawIcon(cv, cv.dataset.tower, 64);
+  for (const cv of $('home').querySelectorAll('canvas[data-tower]')) drawIcon(cv, cv.dataset.tower, cv.dataset.lv ? 44 : 64, +(cv.dataset.lv||0));
   for (const cv of $('home').querySelectorAll('canvas[data-pest]')){
     const t=cv.dataset.pest, E=ENEMY[t], c=cv.getContext('2d'), sz=36/E.size;
     c.translate(64, 68 + (E.fly ? sz*.28 : 0)); drawEnemy(c, { type:t, size:E.size, ph:1.2, fly:!!E.fly, face:1, hp:1, max:1 }, sz);
