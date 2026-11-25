@@ -192,6 +192,9 @@ function home(html){
   const [tab, sub] = tabAt || []; tabAt = null;
   const subs = SUBS[tab] ? SUBS[tab]() : [];
   if (subs.length>1) html = html.replace('</div>', `</div><div class="seg sub-tabs" role="tablist">${subs.map(([go,label])=>`<button role="tab" aria-checked="${go===sub}" data-go="${go}">${label}</button>`).join('')}</div>`);
+  // The title row (and its tabs) stay pinned to the top while the list underneath scrolls.
+  if (html.startsWith('<div class="home-head">')){ const end = html.indexOf('</div>') + 6, tabs = subs.length>1 ? html.indexOf('</div>', html.indexOf('sub-tabs', end)) + 6 : end;
+    html = `<div class="home-top">${html.slice(0, tabs)}</div>${html.slice(tabs)}`; }
   const pip = shopPip();
   $('home').innerHTML = html + `<nav class="home-nav" aria-label="Main">
     <button data-go="menu" class="${tab==='gardens'?'on':''}">${IC_HOME}<span>Gardens</span></button>
@@ -415,7 +418,7 @@ function showShed(){
       <p class="home-note">Every 3 waves of your best Endless Garden run earns a star.</p><div class="perks">${postRows}</div>`:''}
     ${sprayUnlocked()?'':`<p class="home-note">More upgrades unlock in ${LEVELS[SPRAY.unlock].ch.name}.</p>`}
     <div class="shed-foot"><button class="btn main" data-go="menu">Back to gardens</button>
-    ${anyOwned?'<button class="btn ghost" data-go="refund">Refund all stars</button>':''}</div>`);
+    ${anyOwned?`<button class="btn ghost" data-go="refund">${tv()}Refund all stars</button>`:''}</div>`);
   emit('shedOpen');
 }
 function buyPerk(id){
@@ -519,7 +522,7 @@ function showSkills(){
     <p class="home-note">Earn ${CH_ICON} by replaying levels you’ve beaten and meeting their extra goals. ${chalCount()} of ${CHALLENGE_TOTAL} earned.</p>
     <div class="sk-list">${cards}</div>
     ${open.length<TRAY.length?`<p class="home-note">${TRAY.length-open.length} more defender${TRAY.length-open.length>1?'s':''} to unlock.</p>`:''}
-    <div class="row"><button class="btn ghost small" data-go="skill-refund" ${skillsSpent(Save.data.skills)?'':'disabled'}>Refund all skills</button></div>`);
+    <div class="row"><button class="btn ghost small" data-go="skill-refund" ${skillsSpent(Save.data.skills)?'':'disabled'}>${tv()}Refund all skills</button></div>`);
   for (const cv of $('home').querySelectorAll('canvas[data-tower]')) drawIcon(cv, cv.dataset.tower, 44, +(cv.dataset.lv||0));
 }
 
@@ -773,7 +776,9 @@ async function onOverlayClick(ev){
     case 'diff': { const s=Save.data.settings; s.diff=b.dataset.diff; s.diffAsked=true; delete s.tough; Save.commit(); showSettings(); return; }
     case 'replay-tutorial': Save.data.tutorialDone=false; Save.commit(); return play(0);
     case 'shed': leaveLevel(); return showShed();
-    case 'refund': Save.data.perks={}; Save.commit(); return showShed();
+    case 'refund': { b.disabled=true;   // refunds take a short ad (free with Remove Ads)
+      if (await earn('refund_stars', 'refund all your stars')){ Save.data.perks={}; Save.commit(); Audio.play('sparkle'); }
+      { const y=window.scrollY; showShed(); window.scrollTo(0,y); } return; }
     case 'skills': leaveLevel(); return showSkills();
     case 'skill-buy': { const [type, br]=[b.dataset.type, b.dataset.br], o=Save.data.skills[type] || (Save.data.skills[type]={}), n=o[br]||0;
       if (br==='s'){ if (o.s || !skillsFull(o) || chalLeft()<SUPER_COST) return Audio.play('denied');
@@ -782,7 +787,9 @@ async function onOverlayClick(ev){
       if (n>=SKILL_COSTS.length || chalLeft()<SKILL_COSTS[n]) return Audio.play('denied');
       o[br]=n+1; Save.commit(); Audio.play('sparkle'); haptic('light'); track('skill_buy', { type, branch:br, step:n+1 }); emit('skill', type);
       const y=window.scrollY; showSkills(); window.scrollTo(0,y); return; }
-    case 'skill-refund': Save.data.skills={}; Save.commit(); return showSkills();
+    case 'skill-refund': { b.disabled=true;
+      if (await earn('refund_skills', 'refund all your skills')){ Save.data.skills={}; Save.commit(); Audio.play('sparkle'); }
+      { const y=window.scrollY; showSkills(); window.scrollTo(0,y); } return; }
     case 'resume': return resume();
     case 'reset': {
       // Two taps: the first arms the button, the second erases.
