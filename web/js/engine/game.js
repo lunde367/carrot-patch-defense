@@ -420,7 +420,7 @@ export function update(dt){
     t.cd-=dt*(t.gunk ? SLUDGE_SLOW : 1)*(S.heat && !t.cool ? HEAT_SLOW : 1)*(t.dry ? DRY_SLOW : 1)*(t.tile==='sunny' ? SUNNY_RATE : 1)*hiveBoost(t)*coolBoost(t)*(S.fertT>0 ? fertBoostNow() : 1)*(S.perks.rateMul||1)*(1+(sk(t.type).rate||0))*sunBoost(t); t.hop=Math.max(0,t.hop-dt*4);
     if (t.wilt>0){ t.wilt=Math.max(0, t.wilt-dt); continue; }          // wilted by the spray
     if (t.type==='hive' && t.lv>=SUPER_LV && S.active){ t.sting=(t.sting||0)-dt;        // Queen's Hive: guard bees sting pests in reach
-      if (t.sting<=0){ t.sting=.5; const R=rangeOf(t); for (const e of S.enemies) if (targetable(e) && Math.hypot(e.x-t.x,e.y-t.y)<=R){ damage(e, SUPER.stingDps*.5); if (S.fx.length<MAX_FX) S.fx.push({k:'sting',x:t.x,y:t.y-.2,tx:e.x,ty:e.y,life:.35,max:.35}); } } }
+      if (t.sting<=0){ t.sting=.5; const R=rangeOf(t); for (const e of S.enemies) if (targetable(e) && Math.hypot(e.x-t.x,e.y-t.y)<=R){ damage(e, SUPER.stingDps*.5); if (S.fx.length<MAX_FX) S.fx.push({k:'sting',x:t.x,y:t.y-.2,tx:e.x,ty:e.y-(e.fly?.28:0),life:.5,max:.5}); } } }
     if (t.type==='barrel' && t.lv>=SUPER_LV && S.active){ t.frog=(t.frog||0)-dt;       // Frog Barrel: a frog snaps the pest in reach closest to the crops
       if (t.frog<=0){ const R=rangeOf(t), near=S.enemies.filter(e=>targetable(e) && Math.hypot(e.x-t.x,e.y-t.y)<=R);
         if (near.length){ t.frog=SUPER.frogEvery; t.hop=1; const e=near.reduce((a,b)=>(laneTotal(b.lane)-b.dist)<(laneTotal(a.lane)-a.dist)?b:a);

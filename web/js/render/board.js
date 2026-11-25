@@ -227,8 +227,6 @@ export function draw(clock){
       g.strokeStyle=`rgba(255,255,255,${a})`; g.lineWidth=1.5; g.stroke(); ell(g,f.x*s,f.y*s,s*.5*p+s*.1,s*.3*p+s*.06,`rgba(255,240,150,${.4*a})`); }
     if (f.k==='tongue'){ const q=p<.5?p*2:2-p*2, ex=f.x+(f.tx-f.x)*q, ey=f.y+(f.ty-f.y)*q;   // a frog's tongue shooting out and back
       g.strokeStyle='#e86a8a'; g.lineWidth=Math.max(2,s*.045); g.lineCap='round'; g.beginPath(); g.moveTo(f.x*s,f.y*s); g.lineTo(ex*s,ey*s); g.stroke(); ell(g,ex*s,ey*s,s*.05,s*.05,'#e86a8a','#b03a5a',1); }
-    if (f.k==='sting'){ const q=Math.min(1,p*1.6), bx=f.x+(f.tx-f.x)*q, by=f.y+(f.ty-f.y)*q-Math.sin(q*Math.PI)*.25;   // a guard bee darting out
-      ell(g,bx*s,by*s,s*.055,s*.04,'#f2c94a','#3a2614',1.2); g.fillStyle='#3a2614'; g.fillRect(bx*s-s*.01,by*s-s*.04,s*.015,s*.08); ell(g,bx*s,by*s-s*.04,s*.04,s*.022,'rgba(255,255,255,.85)'); }
     if (f.k==='carry'){ const a=1-p; g.save(); g.translate(f.x*s,(f.y-.3-p*.8)*s); g.globalAlpha=a; crowBird(g,0,0,s*.42,Math.sin(p*20),true); g.restore(); }   // the big crow flying off with a pest
     if (f.k==='superup'){ for (let k=0;k<3;k++){ const q=Math.min(1,p*1.4+k*.15); g.beginPath(); g.arc(f.x*s,f.y*s,s*(.3+q*1.1),0,6.28); g.strokeStyle=`rgba(255,215,90,${(1-q)*.9})`; g.lineWidth=4-k; g.stroke(); }
       for (let k=0;k<10;k++){ const a=k*.628+p*2; ell(g,(f.x+Math.cos(a)*p*.9)*s,(f.y-.2+Math.sin(a)*p*.6-p*.5)*s,s*.04,s*.04,`rgba(255,240,150,${1-p})`); } }
@@ -353,6 +351,21 @@ export function draw(clock){
     g.restore();
   }
   for (const sh of S.shots){ g.save(); g.translate(sh.x*s,sh.y*s); drawShot(g,sh,s); g.restore(); }
+  // Queen's Hive guard bees fly over the pests, so the sting shows
+  for (const f of S.fx){ if (f.k!=='sting') continue; const p=1-f.life/f.max;
+    { const q=Math.min(1,p*1.6), bx=f.x+(f.tx-f.x)*q, by=f.y+(f.ty-f.y)*q-Math.sin(q*Math.PI)*.25, dir=Math.sign(f.tx-f.x)||1;   // a guard bee darting out to sting
+      for (let k=1;k<4;k++){ const qq=Math.max(0,q-k*.09), tx=f.x+(f.tx-f.x)*qq, ty=f.y+(f.ty-f.y)*qq-Math.sin(qq*Math.PI)*.25; ell(g,tx*s,ty*s,s*.02*(1-k*.2),s*.02*(1-k*.2),`rgba(255,220,90,${.55-k*.15})`); }   // a buzzing trail
+      g.save(); g.translate(bx*s,by*s); g.scale(dir*1.5,1.5);
+      ell(g,0,-s*.05,s*.05,s*.03,'rgba(255,255,255,.9)','rgba(120,120,120,.5)',1);                                   // wings
+      ell(g,0,0,s*.075,s*.05,'#f2c94a','#3a2614',1.4); g.fillStyle='#3a2614'; g.fillRect(-s*.025,-s*.048,s*.018,s*.096); g.fillRect(s*.012,-s*.045,s*.016,s*.09);
+      g.beginPath(); g.moveTo(-s*.07,-s*.012); g.lineTo(-s*.12,0); g.lineTo(-s*.07,s*.012); g.fillStyle='#c8202e'; g.fill();   // a red stinger
+      ell(g,s*.05,-s*.012,s*.012,s*.012,'#1a1410'); g.strokeStyle='#1a1410'; g.lineWidth=1.2; g.beginPath(); g.moveTo(s*.035,-s*.035); g.lineTo(s*.065,-s*.028); g.stroke();   // an angry brow
+      g.restore();
+      if (q>=1){ const z=(p-1/1.6)/(1-1/1.6), r=s*(.14+z*.2);                                                       // the sting lands: a little red-and-yellow zap
+        g.strokeStyle=`rgba(232,60,50,${1-z})`; g.lineWidth=2.2; for (let k=0;k<6;k++){ const an=k*1.047; g.beginPath(); g.moveTo(f.tx*s+Math.cos(an)*r*.4,f.ty*s+Math.sin(an)*r*.4); g.lineTo(f.tx*s+Math.cos(an)*r,f.ty*s+Math.sin(an)*r); g.stroke(); }
+        ell(g,f.tx*s,f.ty*s,r*.35,r*.35,`rgba(255,230,90,${.8*(1-z)})`); } }
+  }
+
   const H=(ROWS-1)*s, tt=clockReal();
   if (G.CH.smog){   // drifting yellow-gray smog
     for (let i=0;i<4;i++){ const x=((tt*12+i*W/2.3)%(W*1.6))-W*.3, y=H*(.15+i*.22);
