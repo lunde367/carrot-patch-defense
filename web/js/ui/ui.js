@@ -930,14 +930,18 @@ let lastKey='';
 const dirty = () => { lastKey=''; };
 export function refresh(){
   const S=G.S; if (!S) return;
-  if (S.speed===3 && !fast3Open()){ S.speed=2; Save.data.settings.speed=2; Save.commit(); msg('Your hour of 3× speed is up. 2× is always free.'); }
-  const key=[S.seeds,S.lives,S.wave,S.active,S.mode,S.speed,S.paused,S.sel&&S.sel.lv,G.LV.gi,Math.ceil(S.sprayCd*4),S.aiming,S.sprayOn,Math.ceil(S.fertCd*4),Math.ceil(S.fertT*4),S.adSeeds,S.adRefill].join('|');
+  if (S.speed===3 && !fast3Open()){ S.speed=2; Save.data.settings.speed=2; Save.commit(); msg('Your 3× speed time is up. 2× is always free.'); }
+  // time left on an ad's 3× speed (none with Remove Ads): shown on the speed button, ticking every second
+  const fastLeft = noAds() ? 0 : Math.max(0, Math.ceil(((Save.data.fast3Until||0) - Date.now())/1000));
+  const key=[fastLeft,S.seeds,S.lives,S.wave,S.active,S.mode,S.speed,S.paused,S.sel&&S.sel.lv,G.LV.gi,Math.ceil(S.sprayCd*4),S.aiming,S.sprayOn,Math.ceil(S.fertCd*4),Math.ceil(S.fertT*4),S.adSeeds,S.adRefill].join('|');
   if (key===lastKey) return; lastKey=key;
   $('seeds').textContent=S.seeds; $('lives').textContent=S.lives; $('wave').textContent=G.LV.endless ? S.wave : `${S.wave}/${G.LV.waves}`;
   $('season').textContent=G.LV.endless?'wave':G.LV.season==='late summer'?'harvest':G.LV.season;
   const go=$('go'); go.disabled=S.active||S.mode!=='play'||S.paused;
   go.textContent = S.mode!=='play' ? 'Pick a level' : S.active ? `Wave ${S.wave}…` : bossWave(S.wave+1) ? 'Boss wave' : `Start wave ${S.wave+1}`;
-  $('spd').textContent=S.speed+'×';
+  const spd=$('spd'); spd.classList.toggle('timed', fastLeft>0);
+  spd.innerHTML = fastLeft>0 ? `<span>${S.speed}×</span><small>${Math.floor(fastLeft/60)}:${String(fastLeft%60).padStart(2,'0')}</small>` : S.speed+'×';
+  spd.setAttribute('aria-label', fastLeft>0 ? `Game speed ${S.speed}×. 3× speed: ${Math.ceil(fastLeft/60)} minutes left` : 'Game speed');
   $('restart').disabled=S.mode==='menu';
   for (const k of TRAY){ const el=$('card-'+k); if (el && towerOpen(k)) el.classList.toggle('poor', S.seeds<costOf(k)); }
   paintSpray(); paintFert(); paintOffers();
@@ -1085,8 +1089,8 @@ export function initUI(){
     const setSpeed = v => { S.speed=v; Save.data.settings.speed=v; Save.commit(); dirty(); };
     if (next===3 && !fast3Open()){
       if (!extrasHere()){ setSpeed(1); Audio.play('tap'); return; }        // no offers in the tutorial or first garden
-      return offerCard('Super speed: 3×', noAds() ? '' : `Watch a short ad to unlock 3× speed for ${EXTRAS.fastHours} hour. 1× and 2× are always free.`, `${tv()}Unlock 3×`,
-        async () => { if (await earn('fast_forward', `3× speed for ${EXTRAS.fastHours} hour`)){ Save.data.fast3Until=Date.now()+EXTRAS.fastHours*3600e3; setSpeed(3); msg('3× speed for the next hour!'); Audio.play('chime'); } else setSpeed(1); },
+      return offerCard('Super speed: 3×', noAds() ? '' : `Watch a short ad to unlock 3× speed for ${EXTRAS.fastMinutes} minutes. 1× and 2× are always free.`, `${tv()}Unlock 3×`,
+        async () => { if (await earn('fast_forward', `3× speed for ${EXTRAS.fastMinutes} minutes`)){ Save.data.fast3Until=Date.now()+EXTRAS.fastMinutes*60e3; setSpeed(3); msg(`3× speed for the next ${EXTRAS.fastMinutes} minutes!`); Audio.play('chime'); } else setSpeed(1); },
         () => setSpeed(1));
     }
     setSpeed(next); Audio.play('tap'); };
