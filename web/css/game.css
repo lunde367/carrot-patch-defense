@@ -527,9 +527,9 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after{
 @keyframes spd-pulse{ 50%{ box-shadow:0 0 0 3px rgba(240,145,58,.45) } }
 .reduce-motion #spd.timed.ending{ animation:none; box-shadow:0 0 0 2px rgba(240,145,58,.6) }
 
-/* The Sprayer and Fertilizer live in the row under the garden (Fertilizer left, Sprayer right of the message),
-   so they never cover the road or a defender. */
-.msg-row .spray-btn, .msg-row .fert-btn{ position:relative; inset:auto; flex:none; width:48px; height:48px; margin:2px 4px 12px }
-.msg-row .spray-btn svg, .msg-row .fert-btn svg{ width:26px; height:26px }
+/* The Sprayer and Fertilizer sit on the garden's left or right edge, at the height (--tools-y, from the bottom)
+   where they cover no road: ui.js picks the spot for each garden. */
+.board .spray-btn{ bottom:calc(var(--tools-y, 0px) + 20px) }
+.board .fert-btn{ bottom:calc(var(--tools-y, 0px) + 100px) }
+.board .fert-btn.solo{ bottom:calc(var(--tools-y, 0px) + 20px) }
 .board .offer-pill.small, .board.spray-left .offer-pill.small{ top:auto; right:auto; left:50%; transform:translateX(-50%); bottom:12px }
-.msg-row .fert-btn.nudge::before{ left:0; right:auto; transform:none }

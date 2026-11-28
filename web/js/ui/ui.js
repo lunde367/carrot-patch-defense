@@ -59,11 +59,27 @@ export function play(gi, bonusSeeds=0, { quiet=false }={}){
   startLevel(gi===ENDLESS.gi ? ENDLESS : gi, fast3Open() ? Save.data.settings.speed : Math.min(2, Save.data.settings.speed), bonusSeeds, { ...perkValues(owned), skills:skillValues(Save.data.skills) });
 }
 on('levelStart', (...a) => { drawLivesIcon(); return onLevelStart(...a); });
+// The Sprayer and Fertilizer sit on the garden's left or right edge. For each garden, find the stretch of edge
+// where the two buttons cover no road: as low as possible, never in the top rows (the challenge chip and offers
+// live there), and on a tie the side away from where the path leaves the garden.
+function placeTools(){
+  const cv=$('cv'), tile=cv.clientWidth/COLS; if (!tile) return;
+  const W=Math.ceil(84/tile), H=Math.ceil(170/tile);           // the patch the two buttons cover, in tiles
+  let best=null;
+  for (const left of [false, true]) for (let top=ROWS-H; top>=2; top--){
+    let road=0; for (let r=top; r<top+H; r++) for (let k=0; k<W; k++) if (path.cells.has((left ? k : COLS-1-k)+','+r)) road++;
+    const score = road*100 + (ROWS-H-top) + (left === (path.exitCol < COLS/2) ? .5 : 0);
+    if (!best || score < best.score) best={ score, left, top };
+  }
+  $('board').classList.toggle('spray-left', best.left);
+  $('board').style.setProperty('--tools-y', ((ROWS-best.top-H)*tile)+'px');
+}
+window.addEventListener('resize', () => { if (G.S && !$('board').hidden) placeTools(); });
 const onLevelStart = (LV => {
-  setHome(false); hideOverlay(); disarmRestart(); resize(); renderBar(); renderInfo(); dirty();
+  setHome(false); hideOverlay(); disarmRestart(); resize(); placeTools(); renderBar(); renderInfo(); dirty();
   msg(LV.endless ? `Endless Garden. Best so far: wave ${Save.data.endless.best}.` : `${LV.ch.name} ${LV.li+1}: ${LV.name}. Plant your defenders, then tap Start wave.`);
   paintDiff(); paintChal();
-  requestAnimationFrame(() => { refresh(); resize(); });   // the skill buttons may have just appeared beside the message
+  requestAnimationFrame(() => { refresh(); resize(); placeTools(); });   // the skill buttons may have just appeared beside the message
   if (quietStart){ quietStart=false; return; }                         // started silently behind the menu
   if (LV.gi===0 && !Save.data.tutorialDone){                           // the tutorial comes first, after the diary's opening page
     const p0=diaryEntry('start-cabbage');

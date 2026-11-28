@@ -121,7 +121,7 @@ export function startWave(){
   return true;
 }
 function spawnEnemy(type, dist, morph, lane=0){
-  const S=G.S, d=ENEMY[type], sc=d.boss?hpMul()*(G.LV.endless?(.6+S.wave*.12)*Math.pow(G.LV.growth, S.wave-1):1):hpScale(Math.max(1,S.wave));
+  const S=G.S, d=ENEMY[type], sc=(d.boss?hpMul()*(G.LV.endless?(.6+S.wave*.12)*Math.pow(G.LV.growth, S.wave-1):1):hpScale(Math.max(1,S.wave)))*superToughness();
   if (d.rise && dist===0){ dist=laneTotal(lane)*(SLUDGE_FROM+Math.random()*SLUDGE_SPREAD);   // Sludge bubbles up out of the creek, partway down the road
     if (!S.sludgeSeen){ S.sludgeSeen=true; emit('sludge'); } }
   const hp=Math.round(d.hp*sc), [x,y]=pointAt(dist, lane);
@@ -365,6 +365,11 @@ function hitShot(s){
     if (best) newShots.push({k:'acorn',x:s.tgt.x,y:s.tgt.y,tgt:best,tx:best.x,ty:best.y,spd:9,dmg:Math.max(1,Math.round(s.dmg*.75)),bounce:s.bounce-1,hits,a:0,spin:0,honey:s.honey});
   }
 }
+
+// Super defenders stay powerful, but the garden pushes back a little: pests are 5% tougher for every Super
+// planted in it right now, up to 6 Supers (+30%). The extra counts as each pest arrives.
+export const SUPER_TOUGH = .05, SUPER_TOUGH_MAX = 6;
+export const superToughness = () => 1 + SUPER_TOUGH*Math.min(SUPER_TOUGH_MAX, G.S.towers.filter(t => t.lv>=SUPER_LV).length);
 
 // A crow pecks a pest and knocks it back up the path: fliers the whole way, crawlers half, bosses much less.
 // A pest that was just knocked back can't be knocked again for a moment, so crows can't hold one forever.
