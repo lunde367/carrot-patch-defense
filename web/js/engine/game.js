@@ -366,9 +366,9 @@ function hitShot(s){
   }
 }
 
-// Super defenders stay powerful, but the garden pushes back a little: pests are 5% tougher for every Super
-// planted in it right now, up to 6 Supers (+30%). The extra counts as each pest arrives.
-export const SUPER_TOUGH = .05, SUPER_TOUGH_MAX = 6;
+// Super defenders stay powerful, but the garden pushes back a little: pests are 6% tougher for every Super
+// planted in it right now, up to 10 Supers (+60%). The extra counts as each pest arrives.
+export const SUPER_TOUGH = .06, SUPER_TOUGH_MAX = 10;
 export const superToughness = () => 1 + SUPER_TOUGH*Math.min(SUPER_TOUGH_MAX, G.S.towers.filter(t => t.lv>=SUPER_LV).length);
 
 // A crow pecks a pest and knocks it back up the path: fliers the whole way, crawlers half, bosses much less.

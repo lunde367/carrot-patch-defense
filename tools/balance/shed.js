@@ -1,5 +1,7 @@
 // What Garden Shed upgrades a player would realistically own when they reach a level.
-import { PERKS } from '../../web/js/data/perks.js';
+import { perkMax, PERKS } from '../../web/js/data/perks.js';
+import { LEVELS } from '../../web/js/data/levels.js';
+const PART4 = LEVELS.findIndex(l => l.ch.act===4);
 import { FERT } from '../../web/js/data/fertilizer.js';
 import { SPRAY } from '../../web/js/data/spray.js';
 import { SKILLS, SKILL_COSTS } from '../../web/js/data/skills.js';
@@ -20,8 +22,9 @@ export const starsBefore = (gi, starsPerLevel) => Math.floor(gi * starsPerLevel)
 export function shop(stars, gi = 99){
   const owned = {};
   for (;;){
-    const options = PERKS.filter(p => !p.post && (!p.spray || gi > SPRAY.unlock) && (!p.fert || gi > FERT.unlock)).map(p => ({ p, tier:owned[p.id]||0 }))
-      .filter(o => o.tier < o.p.costs.length && o.p.costs[o.tier] <= stars)
+    // from Part 4 the Sprayer is put away: its stars go to other upgrades, whose last tiers open there
+    const options = PERKS.filter(p => !p.post && (!p.spray || (gi > SPRAY.unlock && gi < PART4)) && (!p.fert || gi > FERT.unlock)).map(p => ({ p, tier:owned[p.id]||0 }))
+      .filter(o => o.tier < perkMax(o.p, gi >= PART4) && o.p.costs[o.tier] <= stars)
       .sort((a,b) => a.p.costs[a.tier] - b.p.costs[b.tier]);
     if (!options.length) break;
     const { p, tier } = options[0];

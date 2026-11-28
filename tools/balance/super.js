@@ -76,6 +76,9 @@ function play(gi, seed, who, way){
   const won = S.mode==='won', lost = S.maxLives - S.lives;
   return { won, three: won && starsFor(lost, S.maxLives)===3, lost, supers };
 }
+export { play, PLAYERS };
+const MAIN = import.meta.url === 'file://'+process.argv[1];
+if (MAIN){
 const pct = x => `${Math.round(x*100)}%`.padStart(4);
 console.log(`Super check: ${DIFFICULTY[DIFF].name}, ${RUNS} games per way per player. Each cell: win · 3★ · crops lost (Supers grown per game)\n`);
 console.log('                     ' + Object.keys(PLAYERS).filter(p => !ONLY || ONLY.split(',').includes(p)).map(p=>p.padEnd(23)).join(''));
@@ -94,3 +97,4 @@ for (const L of LEVELS.slice(FROM, TO+1)){
   console.log(`${String(L.gi).padStart(2)} ${L.name.padEnd(18)}${cells.join('')}`);
 }
 console.log('\nAverage              ' + Object.entries(tot).filter(([p])=>!ONLY||ONLY.split(',').includes(p)).map(([,T])=>T).map(T=>`${pct(T.win/T.n)} ${pct(T.three/T.n)} ${(T.lost/T.n*100).toFixed(0).padStart(3)}%lost (${(T.sup/T.n).toFixed(1)})`.padEnd(24)).join(''));
+}

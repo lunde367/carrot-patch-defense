@@ -16,8 +16,8 @@ import { VERSION } from '../data/config.js';
 import { SKILLS, SKILL_COSTS, SKILL_TOTAL, skillValues, skillsSpent, SUPER_COST, skillsFull } from '../data/skills.js';
 import { challengesFor, challengeText, challengeMet, CHALLENGE_TOTAL } from '../data/challenges.js';
 import { drawEnemy } from '../render/art-enemies.js';
-import { PERKS, perkValues, ALL_PERKS, PRODUCTS } from '../data/perks.js';
-import { Save, starsLeft, starsEarned, endlessStars } from '../save.js';
+import { PERKS, perkValues, ALL_PERKS, PRODUCTS, perkMax } from '../data/perks.js';
+import { Save, starsLeft, starsEarned, endlessStars, part4Open, sprayStars } from '../save.js';
 import { Audio } from '../../kit/js/audio.js';
 import { Ads, Store } from '../../kit/js/monetization.js';
 import { FERT } from '../data/fertilizer.js';
@@ -410,20 +410,22 @@ const storyDone = () => devMode || (Save.data.stars[LEVELS.length-1]||0)>0;
 function showShed(){
   const left=starsLeft();
   const perkRow = p => {
-    const tier=Save.data.perks[p.id]||0, maxed=tier>=p.costs.length, cost=p.costs[tier];
+    const max=perkMax(p, part4Open() || devMode), tier=Math.min(max, Save.data.perks[p.id]||0), maxed=tier>=max, cost=p.costs[tier];
     const desc = p.desc(maxed ? tier-1 : tier);
     return `<div class="perk"><h3>${p.name}</h3>
       <button data-perk="${p.id}" ${maxed||cost>left?'disabled':''}>${maxed?'Owned':`★ ${cost}`}</button>
       <p>${maxed?desc:(tier?`Next: ${desc}`:desc)}</p>
-      <span class="tiers">${p.costs.map((_,i)=>`<i class="${i<tier?'on':''}"></i>`).join('')}</span></div>`;
+      <span class="tiers">${p.costs.slice(0,max).map((_,i)=>`<i class="${i<tier?'on':''}"></i>`).join('')}</span></div>`;
   };
-  const rows = PERKS.filter(p => !p.post && (!p.spray || sprayUnlocked()) && (!p.fert || fertUnlocked())).map(perkRow).join('');
+  const retired = part4Open() && !devMode;   // Part 4: the Sprayer's upgrades leave the Shed
+  const rows = PERKS.filter(p => !p.post && (!p.spray || (sprayUnlocked() && !retired)) && (!p.fert || fertUnlocked())).map(perkRow).join('');
   const postRows = storyDone() ? PERKS.filter(p => p.post).map(perkRow).join('') : '';
   const anyOwned = Object.values(Save.data.perks).some(Boolean);
   tabAt=['upgrades','shed'];
   home(`<div class="home-head">
       <h2>Garden Shed</h2><span class="star-count">★ ${left}</span></div>
     <p class="home-note">Spend stars on upgrades that help in every level. Earn more stars by beating levels with more crops left.</p>
+    ${retired ? `<p class="home-note shed-news">The Sprayer is put away for good${sprayStars()?`, so the ★ ${sprayStars()} you spent on its upgrades are back to spend`:''}. New tiers have opened for Sturdy Fence, Long Reach and Compost.</p>` : ''}
     ${devMode?'<p class="devnote">Test mode: you play with every upgrade already owned, whatever you buy here.</p>':''}
     ${highest()>=EXTRAS.firstLevel ? (()=>{ const n=EXTRAS.starsPerDay-starsToday();
       return `<div class="shed-bonus"><span><b>Bonus star</b><small>${n>0?`${noAds()?'Claim':'Watch a short ad for'} an extra star. ${n} left today.`:'Come back tomorrow for more.'}</small></span>
@@ -438,7 +440,7 @@ function showShed(){
 }
 function buyPerk(id){
   const p=PERKS.find(x=>x.id===id), tier=Save.data.perks[id]||0, cost=p.costs[tier];
-  if (cost==null || cost>starsLeft()){ Audio.play('denied'); return; }
+  if (cost==null || tier>=perkMax(p, part4Open() || devMode) || (p.spray && part4Open()) || cost>starsLeft()){ Audio.play('denied'); return; }
   Save.data.perks[id]=tier+1; Save.commit(); Audio.play('sparkle'); const y=window.scrollY; showShed(); window.scrollTo(0,y); emit('perk', id); track('shed_buy', { perk:id, tier:tier+1 });
 }
 

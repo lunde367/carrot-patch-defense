@@ -1,6 +1,7 @@
 // This game's save data, built on the kit's save system.
 import { createSave } from '../kit/js/storage.js';
 import { PERKS } from './data/perks.js';
+import { LEVELS } from './data/levels.js';
 
 const defaults = () => ({
   v: 2,
@@ -50,5 +51,9 @@ export const Save = createSave({
 // The Endless Garden pays a star for every 3 waves of your best run.
 export const endlessStars = () => Math.floor((Save.data.endless.best||0)/3);
 export const starsEarned = () => Save.data.stars.reduce((a,b)=>a+(b||0),0) + (Save.data.bonusStars||0) + endlessStars();
-export const starsSpent = () => PERKS.reduce((sum,p)=>sum+p.costs.slice(0,Save.data.perks[p.id]||0).reduce((a,b)=>a+b,0),0);
+// Part 4 has begun once the last Part 3 garden is beaten: the Sprayer is put away and its upgrades are free again.
+export const PART4 = LEVELS.findIndex(l => l.ch.act===4);
+export const part4Open = () => (Save.data.stars[PART4-1]||0) > 0;
+export const sprayStars = () => PERKS.filter(p => p.spray).reduce((sum,p)=>sum+p.costs.slice(0,Save.data.perks[p.id]||0).reduce((a,b)=>a+b,0),0);
+export const starsSpent = () => PERKS.reduce((sum,p)=>sum+(p.spray && part4Open() ? 0 : p.costs.slice(0,Save.data.perks[p.id]||0).reduce((a,b)=>a+b,0)),0);
 export const starsLeft = () => starsEarned() - starsSpent();
