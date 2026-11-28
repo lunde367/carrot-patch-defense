@@ -526,3 +526,10 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after{
 #spd.timed.ending{ background:conic-gradient(from 0deg, rgba(240,145,58,.55) calc(var(--left)*360deg), transparent 0), var(--surface); animation:spd-pulse 1.2s ease-in-out infinite }
 @keyframes spd-pulse{ 50%{ box-shadow:0 0 0 3px rgba(240,145,58,.45) } }
 .reduce-motion #spd.timed.ending{ animation:none; box-shadow:0 0 0 2px rgba(240,145,58,.6) }
+
+/* The Sprayer and Fertilizer live in the row under the garden (Fertilizer left, Sprayer right of the message),
+   so they never cover the road or a defender. */
+.msg-row .spray-btn, .msg-row .fert-btn{ position:relative; inset:auto; flex:none; width:48px; height:48px; margin:2px 4px 12px }
+.msg-row .spray-btn svg, .msg-row .fert-btn svg{ width:26px; height:26px }
+.board .offer-pill.small, .board.spray-left .offer-pill.small{ top:auto; right:auto; left:50%; transform:translateX(-50%); bottom:12px }
+.msg-row .fert-btn.nudge::before{ left:0; right:auto; transform:none }

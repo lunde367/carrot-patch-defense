@@ -366,7 +366,7 @@ function hitShot(s){
   }
 }
 
-// A crow pecks a pest and knocks it back up the path: fliers the whole way, crawlers half, bosses half again.
+// A crow pecks a pest and knocks it back up the path: fliers the whole way, crawlers half, bosses much less.
 // A pest that was just knocked back can't be knocked again for a moment, so crows can't hold one forever.
 // The Crow King's big crow carries the first ordinary pest it meets back to the start.
 function crowHit(s, e){
@@ -375,7 +375,9 @@ function crowHit(s, e){
   if (s.big && !s.carried && !boss){ s.carried=true; S.fx.push({k:'carry',x:e.x,y:e.y,life:.7,max:.7});
     e.dist=.35; e.scared=2.6; const [x,y]=pointAt(e.dist, e.lane); e.x=x; e.y=y; puffs(x, y, 6, 1); floatText(e.x, e.y-.35, 'carried off!', '#6a4a8a', 1); emit('carry'); return; }
   if (e.scared>0) return;
-  e.dist=Math.max(.35, e.dist - s.push*(e.fly?1:.5)*(boss?.5:1)); e.scared=2.6;
+  // Bosses are heavy: a crow only nudges them, and they shrug off crows for a while after, so a row of
+  // Scarecrows (with Sprinklers slowing them too) can't hold a boss in place forever.
+  e.dist=Math.max(.35, e.dist - s.push*(e.fly?1:.5)*(boss?.3:1)); e.scared=boss?6:2.6;
   const [x,y]=pointAt(e.dist, e.lane); e.x=x; e.y=y;
 }
 

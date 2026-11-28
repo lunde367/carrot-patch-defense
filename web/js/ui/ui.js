@@ -60,7 +60,6 @@ export function play(gi, bonusSeeds=0, { quiet=false }={}){
 }
 on('levelStart', (...a) => { drawLivesIcon(); return onLevelStart(...a); });
 const onLevelStart = (LV => {
-  $('board').classList.toggle('spray-left', path.exitCol >= 5);   // keep the button off the path's end
   setHome(false); hideOverlay(); disarmRestart(); resize(); renderBar(); renderInfo(); dirty();
   msg(LV.endless ? `Endless Garden. Best so far: wave ${Save.data.endless.best}.` : `${LV.ch.name} ${LV.li+1}: ${LV.name}. Plant your defenders, then tap Start wave.`);
   paintDiff(); paintChal();
